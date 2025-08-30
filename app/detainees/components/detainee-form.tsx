@@ -43,8 +43,8 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 // Form validation schema
-const employeeFormSchema = z.object({
-  nom: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+const detaineeFormSchema = z.object({
+  nom: z.string().min(2, "Nom requis (min. 2 caractères)"),
   sex: z.enum(["Homme", "Femme"], {
     message: "Veuillez sélectionner le sexe",
   }),
@@ -52,12 +52,20 @@ const employeeFormSchema = z.object({
   dateNaissance: z.date({
     message: "La date de naissance est requise",
   }),
-  formation: z.string().min(2, "La formation est requise"),
   etatCivil: z.enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"], {
     message: "Veuillez sélectionner l'état civil",
   }),
-  fonction: z.string().min(2, "La fonction est requise"),
-  lieuDeployment: z.string().min(2, "Le lieu de déploiement est requis"),
+  religion: z.string().min(2, "La religion est requise"),
+  etudesFaites: z.string().min(2, "Les études faites sont requises"),
+  employment: z.string().min(2, "L'emploi est requis"),
+  statutDetention: z.enum(["En détention", "Libéré", "Transféré"], {
+    message: "Sélectionner le statut",
+  }),
+  dateArrestation: z.date({
+    message: "La date d'arrestation est requise",
+  }),
+  lieuArrestation: z.string().min(2, "Le lieu d'arrestation est requis"),
+  motifArrestation: z.string().min(2, "Le motif d'arrestation est requis"),
   residence: z.string().min(2, "La résidence est requise"),
   telephone: z
     .string()
@@ -66,27 +74,31 @@ const employeeFormSchema = z.object({
   photo: z.string().optional(),
 });
 
-type EmployeeFormValues = z.infer<typeof employeeFormSchema>;
+type DetaineeFormValues = z.infer<typeof detaineeFormSchema>;
 
-interface EmployeeFormProps {
-  onSubmit?: (data: EmployeeFormValues) => void;
+interface DetaineeFormProps {
+  onSubmit?: (data: DetaineeFormValues) => void;
 }
 
-export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
+export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const form = useForm<EmployeeFormValues>({
-    resolver: zodResolver(employeeFormSchema),
+  const form = useForm<DetaineeFormValues>({
+    resolver: zodResolver(detaineeFormSchema),
     defaultValues: {
       nom: "",
       sex: undefined,
       lieuNaissance: "",
       dateNaissance: undefined,
-      formation: "",
       etatCivil: undefined,
-      fonction: "",
-      lieuDeployment: "",
+      religion: "",
+      etudesFaites: "",
+      employment: "",
+      statutDetention: undefined,
+      dateArrestation: undefined,
+      lieuArrestation: "",
+      motifArrestation: "",
       residence: "",
       telephone: "",
       email: "",
@@ -94,7 +106,7 @@ export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
     },
   });
 
-  const handleSubmit = (data: EmployeeFormValues) => {
+  const handleSubmit = (data: DetaineeFormValues) => {
     onSubmit?.(data);
     form.reset();
     setImagePreview(null);
@@ -122,14 +134,14 @@ export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
       <DialogTrigger asChild>
         <Button className="">
           <Plus className="w-4 h-4 mr-2" />
-          Ajouter Employé
+          Ajouter Détenu
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl p-0">
         <DialogHeader className="p-4">
-          <DialogTitle>Ajouter un nouvel employé</DialogTitle>
+          <DialogTitle>Ajouter un nouveau détenu</DialogTitle>
           {/* <DialogDescription sr-only>
-            Remplissez les informations de l'employé ci-dessous.
+            Remplissez les informations du détenu ci-dessous.
           </DialogDescription> */}
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] overflow-hidden">
@@ -157,7 +169,7 @@ export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Jean-Baptiste Mbemba Tshimanga"
+                            placeholder="Pierre Mukamba Tshimanga"
                             {...field}
                           />
                         </FormControl>
@@ -258,7 +270,7 @@ export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
                     control={form.control}
                     name="etatCivil"
                     render={({ field }) => (
-                      <FormItem className="md:col-span-2">
+                      <FormItem>
                         <FormLabel className="text-gray-700">
                           État civil
                         </FormLabel>
@@ -289,11 +301,82 @@ export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
 
                   <FormField
                     control={form.control}
+                    name="religion"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">
+                          Religion
+                        </FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Sélectionner la religion" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Catholique">
+                              Catholique
+                            </SelectItem>
+                            <SelectItem value="Protestante">
+                              Protestante
+                            </SelectItem>
+                            <SelectItem value="Kimbanguiste">
+                              Kimbanguiste
+                            </SelectItem>
+                            <SelectItem value="Musulman">Musulman</SelectItem>
+                            <SelectItem value="Autres">Autres</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="etudesFaites"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">
+                          Études faites
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Licence en Administration Publique"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="employment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">
+                          Employment
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="Commerçant" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="photo"
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
                         <FormLabel className="text-gray-700">
-                          Photo de l&apos;employé
+                          Photo du détenu
                         </FormLabel>
                         <FormControl>
                           <Input type="hidden" {...field} />
@@ -326,7 +409,7 @@ export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
                               <div className="relative w-24 h-24 flex-shrink-0 rounded-md overflow-hidden">
                                 <Image
                                   src={imagePreview}
-                                  alt="Aperçu de la photo de l'employé"
+                                  alt="Aperçu de la photo du détenu"
                                   fill
                                   className="object-cover"
                                 />
@@ -344,8 +427,8 @@ export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
                           )}
                         </div>
                         <FormDescription>
-                          Cliquez sur la zone pour télécharger une photo de
-                          l&apos;employé.
+                          Cliquez sur la zone pour télécharger une photo du
+                          détenu.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -354,25 +437,102 @@ export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
                 </div>
               </div>
 
-              {/* Professional Information Section */}
+              {/* Detention Information Section */}
               <div className="space-y-4">
                 <div className="border-b border-gray-200">
                   {/* <h3 className="text-lg font-semibold text-gray-900">
-                  Informations professionnelles
+                  Informations de détention
                 </h3> */}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
                   <FormField
                     control={form.control}
-                    name="fonction"
+                    name="statutDetention"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
-                          Fonction / Rôle
+                          Statut de détention
+                        </FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Sélectionner le statut" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="En détention">
+                              En détention
+                            </SelectItem>
+                            <SelectItem value="Libéré">Libéré</SelectItem>
+                            <SelectItem value="Transféré">Transféré</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="dateArrestation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">
+                          Date d&apos;arrestation
+                        </FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={`w-full justify-start text-left font-normal ${
+                                  !field.value && "text-muted-foreground"
+                                }`}
+                              >
+                                {field.value ? (
+                                  format(field.value, "dd/MM/yyyy", {
+                                    locale: fr,
+                                  })
+                                ) : (
+                                  <span>Sélectionner une date</span>
+                                )}
+                                <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              captionLayout="dropdown"
+                              disabled={(date) =>
+                                date > new Date() ||
+                                date < new Date("1900-01-01")
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="lieuArrestation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">
+                          Lieu d&apos;arrestation
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Chef de Service" {...field} />
+                          <Input placeholder="Goma Centre" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -381,33 +541,14 @@ export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
 
                   <FormField
                     control={form.control}
-                    name="formation"
+                    name="motifArrestation"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
-                          Études faites / Formation
+                          Motif d&apos;arrestation
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Licence en Administration Publique"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="lieuDeployment"
-                    render={({ field }) => (
-                      <FormItem className="md:col-span-2">
-                        <FormLabel className="text-gray-700">
-                          Lieu de déploiement
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="Nord-Kivu - Goma" {...field} />
+                          <Input placeholder="Vol à main armée" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -434,7 +575,7 @@ export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
                         <FormControl>
                           <Input
                             type="email"
-                            placeholder="j.mbemba@dsr.gov.cd"
+                            placeholder="p.mukamba@email.com"
                             {...field}
                           />
                         </FormControl>
@@ -481,7 +622,7 @@ export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
                 <Button type="button" variant="outline">
                   Annuler
                 </Button>
-                <Button type="submit">Ajouter l&apos;employé</Button>
+                <Button type="submit">Ajouter le détenu</Button>
               </DialogFooter>
             </form>
           </Form>
@@ -492,4 +633,4 @@ export function EmployeeForm({ onSubmit }: EmployeeFormProps) {
 }
 
 // Export the form values type for use in other components
-export type { EmployeeFormValues };
+export type { DetaineeFormValues };

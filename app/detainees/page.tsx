@@ -3,14 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { Search, Filter } from "lucide-react";
 import {
-  EmployeesTable,
-  type Employee,
-  employeeColumnConfig,
-} from "./components/employees-table";
+  DetaineesTable,
+  type Detainee,
+  detaineeColumnConfig,
+} from "./components/detainee-table";
 import {
-  EmployeeForm,
-  type EmployeeFormValues,
-} from "./components/employee-form";
+  DetaineeForm,
+  type DetaineeFormValues,
+} from "./components/detainee-form";
 import { useState, useCallback } from "react";
 import { PaginationConfig } from "@/components/data-table";
 import {
@@ -18,115 +18,130 @@ import {
   type ColumnVisibilityOption,
 } from "@/components/column-visibility";
 
-// Dummy data for employees - Adapted for DRC government department (North Kivu focus)
-const employees: Employee[] = [
+// Dummy data for detainees - Adapted for DRC context (North Kivu focus)
+const detainees: Detainee[] = [
   {
-    id: "EMP001",
+    id: "DET001",
     photo: "/api/placeholder/40/40",
-    nom: "Jean-Baptiste Mbemba Tshimanga",
+    nom: "Pierre Mukamba Tshimanga",
     sex: "Homme",
     lieuNaissance: "Goma",
-    dateNaissance: "15/03/1985",
-    formation: "Licence en Administration Publique",
+    dateNaissance: "20/05/1988",
     etatCivil: "Marié(e)",
-    fonction: "Chef de Service",
-    lieuDeployment: "Nord-Kivu - Goma",
+    religion: "Catholique",
+    etudesFaites: "Études Secondaires",
+    employment: "Commerçant",
+    statutDetention: "En détention",
+    dateArrestation: "15/08/2024",
+    lieuArrestation: "Goma Centre",
+    motifArrestation: "Vol à main armée",
     residence: "Goma - Himbi",
     telephone: "+243 970 123 456",
-    email: "j.mbemba@dsr.gov.cd",
-    status: "Actif",
-    createdBy: "Admin Système",
-    updatedBy: "Marie Kalonji",
-    createdAt: "01 Jan, 2024",
-    updatedAt: "15 Aug, 2024",
+    email: "p.mukamba@email.com",
+    createdBy: "Agent Sécurité",
+    updatedBy: "Commissaire Adjoint",
+    createdAt: "15 Aug, 2024",
+    updatedAt: "28 Aug, 2024",
   },
   {
-    id: "EMP002",
+    id: "DET002",
     photo: "/api/placeholder/40/40",
-    nom: "Marie-Claire Kasongo Muela",
+    nom: "Marie Kasongo Muela",
     sex: "Femme",
     lieuNaissance: "Masisi",
-    dateNaissance: "22/07/1990",
-    formation: "Master en Criminologie",
+    dateNaissance: "10/12/1992",
     etatCivil: "Célibataire",
-    fonction: "Enquêteur Principal",
-    lieuDeployment: "Nord-Kivu - Masisi",
+    religion: "Protestante",
+    etudesFaites: "Licence en Comptabilité",
+    employment: "Comptable",
+    statutDetention: "En détention",
+    dateArrestation: "20/08/2024",
+    lieuArrestation: "Masisi Centre",
+    motifArrestation: "Fraude documentaire",
     residence: "Masisi Centre",
     telephone: "+243 970 654 321",
-    email: "m.kasongo@dsr.gov.cd",
-    status: "En transit",
-    createdBy: "Jean Muteba",
-    updatedBy: "Paul Ilunga",
-    createdAt: "15 Feb, 2024",
-    updatedAt: "20 Aug, 2024",
+    email: "m.kasongo@email.com",
+    createdBy: "Officier Judiciaire",
+    updatedBy: "Juge d'Instruction",
+    createdAt: "20 Aug, 2024",
+    updatedAt: "29 Aug, 2024",
   },
   {
-    id: "EMP003",
+    id: "DET003",
     photo: "/api/placeholder/40/40",
-    nom: "Paul Ilunga Kabongo",
+    nom: "Joseph Ilunga Kabongo",
     sex: "Homme",
     lieuNaissance: "Rutshuru",
-    dateNaissance: "10/11/1982",
-    formation: "Diplôme en Sécurité et Défense",
-    etatCivil: "Marié(e)",
-    fonction: "Agent de Sécurité Senior",
-    lieuDeployment: "Nord-Kivu - Rutshuru",
+    dateNaissance: "05/09/1985",
+    etatCivil: "Divorcé(e)",
+    religion: "Catholique",
+    etudesFaites: "Formation Professionnelle",
+    employment: "Mécanicien",
+    statutDetention: "Transféré",
+    dateArrestation: "10/08/2024",
+    lieuArrestation: "Rutshuru",
+    motifArrestation: "Agression physique",
     residence: "Rutshuru Centre",
     telephone: "+243 970 987 654",
-    email: "p.ilunga@dsr.gov.cd",
-    status: "Actif",
-    createdBy: "Sophie Mukendi",
-    updatedBy: "Admin Système",
-    createdAt: "10 Mar, 2024",
+    email: "j.ilunga@email.com",
+    createdBy: "Agent Police",
+    updatedBy: "Directeur Prison",
+    createdAt: "10 Aug, 2024",
     updatedAt: "25 Aug, 2024",
   },
   {
-    id: "EMP004",
+    id: "DET004",
     photo: "/api/placeholder/40/40",
     nom: "Agnès Mwenze Kalombo",
     sex: "Femme",
     lieuNaissance: "Goma",
-    dateNaissance: "05/09/1988",
-    formation: "Licence en Droit",
-    etatCivil: "Divorcé(e)",
-    fonction: "Conseiller Juridique",
-    lieuDeployment: "Nord-Kivu - Goma",
+    dateNaissance: "18/07/1990",
+    etatCivil: "Veuf(ve)",
+    religion: "Kimbanguiste",
+    etudesFaites: "Études Primaires",
+    employment: "Vendeuse",
+    statutDetention: "Libéré",
+    dateArrestation: "05/08/2024",
+    lieuArrestation: "Goma - Karisimbi",
+    motifArrestation: "Trouble à l'ordre public",
     residence: "Goma - Karisimbi",
     telephone: "+243 970 111 222",
-    email: "a.mwenze@dsr.gov.cd",
-    status: "Suspendu",
-    createdBy: "Gestionnaire RH",
-    updatedBy: "Directeur RH",
-    createdAt: "20 Jan, 2024",
-    updatedAt: "28 Aug, 2024",
+    email: "a.mwenze@email.com",
+    createdBy: "Gestionnaire Dossier",
+    updatedBy: "Procureur",
+    createdAt: "05 Aug, 2024",
+    updatedAt: "30 Aug, 2024",
   },
   {
-    id: "EMP005",
+    id: "DET005",
     photo: "/api/placeholder/40/40",
     nom: "David Kabeya Tshilombo",
     sex: "Homme",
     lieuNaissance: "Masisi",
-    dateNaissance: "18/12/1987",
-    formation: "Master en Technologies de l'Information",
+    dateNaissance: "25/11/1987",
     etatCivil: "Célibataire",
-    fonction: "Analyste IT",
-    lieuDeployment: "Nord-Kivu - Goma",
+    religion: "Musulman",
+    etudesFaites: "Master en Informatique",
+    employment: "Informaticien",
+    statutDetention: "En détention",
+    dateArrestation: "12/08/2024",
+    lieuArrestation: "Goma - Murara",
+    motifArrestation: "Trafic de stupéfiants",
     residence: "Goma - Murara",
     telephone: "+243 970 333 444",
-    email: "d.kabeya@dsr.gov.cd",
-    status: "Actif",
-    createdBy: "Gestionnaire IT",
-    updatedBy: "Chef Technique",
-    createdAt: "05 Apr, 2024",
-    updatedAt: "29 Aug, 2024",
+    email: "d.kabeya@email.com",
+    createdBy: "Brigade Stupéfiants",
+    updatedBy: "Chef Brigade",
+    createdAt: "12 Aug, 2024",
+    updatedAt: "30 Aug, 2024",
   },
 ];
 
-export default function EmployeesPage() {
+export default function DetaineesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [columnVisibility, setColumnVisibility] = useState<
     ColumnVisibilityOption[]
-  >(employeeColumnConfig.map((col) => ({ ...col, visible: true })));
+  >(detaineeColumnConfig.map((col) => ({ ...col, visible: true })));
 
   const itemsPerPage = 5;
   const totalItems = 1000; // This would come from your API
@@ -140,11 +155,11 @@ export default function EmployeesPage() {
     onPageChange: setCurrentPage,
   };
 
-  const handleAddEmployee = (data: EmployeeFormValues) => {
+  const handleAddDetainee = (data: DetaineeFormValues) => {
     // This is where you would typically send the data to your backend
-    console.log("New employee data:", data);
+    console.log("New detainee data:", data);
     // For now, we'll just log it since there's no backend yet
-    // You can add logic here to add the employee to your state or call an API
+    // You can add logic here to add the detainee to your state or call an API
   };
 
   const handleColumnVisibilityChange = useCallback(
@@ -163,7 +178,7 @@ export default function EmployeesPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Employés</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Détenus</h1>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -184,14 +199,14 @@ export default function EmployeesPage() {
           <ColumnVisibility
             columns={columnVisibility}
             onVisibilityChange={handleColumnVisibilityChange}
-            storageKey="employees-columns"
+            storageKey="detainees-columns"
           />
-          <EmployeeForm onSubmit={handleAddEmployee} />
+          <DetaineeForm onSubmit={handleAddDetainee} />
         </div>
       </div>
       {/* Table */}
-      <EmployeesTable
-        employees={employees}
+      <DetaineesTable
+        detainees={detainees}
         pagination={paginationConfig}
         visibleColumns={visibleColumnKeys}
       />
