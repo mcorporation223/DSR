@@ -13,6 +13,14 @@ import {
   LogOut,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+} from "./ui/dropdown-menu";
+import { Button } from "./ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -86,11 +94,44 @@ export function Sidebar() {
             </nav>
           </div>
         </div>
-        <div className="border-t py-4">
-          <Link href="/logout" className={getLinkClassName("/logout")}>
+        <div className="border-2 border-dashed rounded-md p-2 flex justify-between">
+          <Link
+            href="/logout"
+            className="flex justify-center items-center gap-3 text-black hover:bg-primary hover:text-white font-medium text-sm rounded-lg px-4 py-2"
+          >
             <LogOut className="w-4 h-4" />
             Logout
           </Link>
+          <div className="flex items-center gap-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="relative h-8 w-8 rounded-full cursor-pointer hover:bg-gray-100"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="" alt="@username" />
+                    <AvatarFallback className="bg-gray-200">JD</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium">John Doe</p>
+                    <p className="text-xs text-muted-foreground">
+                      john@example.com
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                {/* <DropdownMenuSeparator />
+                <DropdownMenuItem>Profile</DropdownMenuItem>
+                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Log out</DropdownMenuItem> */}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </div>
