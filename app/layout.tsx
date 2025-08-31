@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sidebar } from "@/components/sidebar";
-import { Header } from "@/components/header";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -23,20 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased font-sans`}>
-        <div className="flex bg-gray-50">
-          <Sidebar />
-
-          {/* Main Content */}
-          <div className="flex-1 flex flex-col">
-            <Header />
-
-            <ScrollArea className="mx-auto w-full h-[calc(100vh-56px)] overflow-hidden">
-              <div className="px-8">
-                {children}
-              </div>
-            </ScrollArea>
-          </div>
-        </div>
+        {children}
       </body>
     </html>
   );
