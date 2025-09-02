@@ -116,7 +116,7 @@ export function RichTextEditor({
 
   return (
     <div
-      className={`border rounded-md ${
+      className={`relative border rounded-md ${
         isFocused ? "ring-2 ring-blue-500 border-blue-500" : "border-gray-300"
       } ${className}`}
     >
@@ -178,19 +178,6 @@ export function RichTextEditor({
         suppressContentEditableWarning={true}
         data-placeholder={placeholder}
       />
-
-      {/* Placeholder */}
-      {(!value || value === "") && !isFocused && (
-        <div
-          className="absolute pointer-events-none text-gray-400 text-sm"
-          style={{
-            top: "52px", // Account for toolbar height
-            left: "12px",
-          }}
-        >
-          {placeholder}
-        </div>
-      )}
 
       <style jsx>{`
         [contenteditable]:empty:before {
