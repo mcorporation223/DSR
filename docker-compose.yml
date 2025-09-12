@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database Service
+  db:
+    image: postgres:15-alpine
+    container_name: dsr-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dsr
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dsr"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dsr-network
+
+  # Next.js Application Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dsr-app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://postgres:password@db:5432/dsr"
+      NEXTAUTH_SECRET: "8A4Q5ZO8joftDre1MRl/xn+IJjYpOO3RidaHP4ttRCg="
+      NEXTAUTH_URL: "http://localhost:3000"
+      DB_POOL_MIN: 2
+      DB_POOL_MAX: 10
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - dsr-network
+
+# Named volumes for data persistence
+volumes:
+  postgres_data:
+    driver: local
+
+# Custom network for service communication
+networks:
+  dsr-network:
+    driver: bridge
