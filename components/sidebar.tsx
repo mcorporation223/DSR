@@ -21,9 +21,15 @@ import {
 } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
+import { useSession, signOut } from "next-auth/react";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const handleLogout = async () => {
+    await signOut({ callbackUrl: "/signin" });
+  };
 
   const getLinkClassName = (path: string) => {
     const isActive = pathname === path;
@@ -95,13 +101,13 @@ export function Sidebar() {
           </div>
         </div>
         <div className="border-2 border-dashed rounded-md p-2 flex justify-between">
-          <Link
-            href="/signin"
-            className="flex justify-center items-center gap-3 text-black hover:bg-primary hover:text-white font-medium text-sm rounded-lg px-4 py-2"
+          <button
+            onClick={handleLogout}
+            className="cursor-pointer flex justify-center items-center gap-3 text-black hover:bg-primary hover:text-white font-medium text-sm rounded-lg px-4 py-2"
           >
             <LogOut className="w-4 h-4" />
             Logout
-          </Link>
+          </button>
           <div className="flex items-center gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -110,17 +116,30 @@ export function Sidebar() {
                   className="relative h-8 w-8 rounded-full cursor-pointer hover:bg-gray-100"
                 >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="" alt="@username" />
-                    <AvatarFallback className="bg-gray-200">JD</AvatarFallback>
+                    <AvatarImage src="" alt={session?.user?.name || "User"} />
+                    <AvatarFallback className="bg-gray-200">
+                      {session?.user?.name
+                        ? session.user.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                        : "U"}
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium">John Doe</p>
+                    <p className="text-sm font-medium">
+                      {session?.user?.name || "User"}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      john@example.com
+                      {session?.user?.email || "No email"}
+                    </p>
+                    <p className="text-xs text-blue-600 capitalize">
+                      {session?.user?.role || "No role"}
                     </p>
                   </div>
                 </DropdownMenuLabel>
