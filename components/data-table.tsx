@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "./ui/scroll-area";
+import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 
 // Types for table configuration
 export interface TableColumn<T = Record<string, unknown>> {
@@ -19,6 +20,13 @@ export interface TableColumn<T = Record<string, unknown>> {
   className?: string;
   render?: (value: unknown, row: T, index: number) => ReactNode;
   align?: "left" | "center" | "right";
+  sortable?: boolean;
+}
+
+export interface SortConfig {
+  sortBy: string | null;
+  sortOrder: "asc" | "desc";
+  onSort: (sortBy: string) => void;
 }
 
 export interface PaginationConfig {
@@ -40,6 +48,7 @@ export interface DataTableProps<T = Record<string, unknown>> {
   emptyMessage?: string;
   pagination?: PaginationConfig;
   showPagination?: boolean;
+  sortConfig?: SortConfig;
 }
 
 export function DataTable<T extends Record<string, unknown>>({
@@ -53,6 +62,7 @@ export function DataTable<T extends Record<string, unknown>>({
   emptyMessage = "Aucune donnée disponible",
   pagination,
   showPagination = false,
+  sortConfig,
 }: DataTableProps<T>) {
   const getRowClassName = (row: T, index: number) => {
     const baseClass = "hover:bg-gray-50/50 border-b border-gray-100";
@@ -73,6 +83,35 @@ export function DataTable<T extends Record<string, unknown>>({
       default:
         return "text-left";
     }
+  };
+
+  const getSortIcon = (columnKey: string) => {
+    if (
+      !sortConfig ||
+      !columns.find((col) => col.key === columnKey)?.sortable
+    ) {
+      return null;
+    }
+
+    if (sortConfig.sortBy === columnKey) {
+      return sortConfig.sortOrder === "asc" ? (
+        <ChevronUp className="w-4 h-4 ml-1" />
+      ) : (
+        <ChevronDown className="w-4 h-4 ml-1" />
+      );
+    }
+
+    return <ChevronsUpDown className="w-4 h-4 ml-1 opacity-50" />;
+  };
+
+  const handleSort = (columnKey: string) => {
+    if (
+      !sortConfig ||
+      !columns.find((col) => col.key === columnKey)?.sortable
+    ) {
+      return;
+    }
+    sortConfig.onSort(columnKey);
   };
 
   const renderPagination = () => {
@@ -177,9 +216,25 @@ export function DataTable<T extends Record<string, unknown>>({
                   key={column.key}
                   className={`text-sm font-medium text-gray-600 py-4 ${getAlignmentClass(
                     column.align
-                  )} ${column.className || ""}`}
+                  )} ${column.className || ""} ${
+                    column.sortable
+                      ? "cursor-pointer hover:bg-gray-100 transition-colors"
+                      : ""
+                  }`}
+                  onClick={() => handleSort(column.key)}
                 >
-                  {column.label}
+                  <div
+                    className={`flex items-center ${
+                      column.align === "center"
+                        ? "justify-center"
+                        : column.align === "right"
+                        ? "justify-end"
+                        : "justify-start"
+                    }`}
+                  >
+                    <span>{column.label}</span>
+                    {getSortIcon(column.key)}
+                  </div>
                 </TableHead>
               ))}
             </TableRow>

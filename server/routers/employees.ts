@@ -1,0 +1,106 @@
+import { router, publicProcedure } from "../trpc";
+import { employees } from "@/lib/db/schema";
+import { desc, asc, like, and, eq, or, count } from "drizzle-orm";
+import {
+  getAllEmployeesSchema,
+  getEmployeeByIdSchema,
+} from "../schemas/employees";
+
+export const employeesRouter = router({
+  // Fetch all employees with optional filters
+  getAll: publicProcedure
+    .input(getAllEmployeesSchema)
+    .query(async ({ ctx, input }) => {
+      const { page, limit, search, sortBy, sortOrder, isActive } = input;
+      
+      const offset = (page - 1) * limit;
+
+      // Build where conditions
+      const whereConditions = [];
+
+      if (search) {
+        whereConditions.push(
+          or(
+            like(employees.firstName, `%${search}%`),
+            like(employees.lastName, `%${search}%`),
+            like(employees.email, `%${search}%`)
+          )
+        );
+      }
+
+      if (isActive !== undefined) {
+        whereConditions.push(eq(employees.isActive, isActive));
+      }
+
+      // Build order clause
+      const orderBy = (() => {
+        switch (sortBy) {
+          case "firstName":
+            return sortOrder === "desc"
+              ? desc(employees.firstName)
+              : asc(employees.firstName);
+          case "lastName":
+            return sortOrder === "desc"
+              ? desc(employees.lastName)
+              : asc(employees.lastName);
+          case "email":
+            return sortOrder === "desc"
+              ? desc(employees.email)
+              : asc(employees.email);
+          case "createdAt":
+          default:
+            return sortOrder === "desc"
+              ? desc(employees.createdAt)
+              : asc(employees.createdAt);
+        }
+      })();
+
+      // Get total count
+      const [totalCount] = await ctx.db
+        .select({ count: count() })
+        .from(employees)
+        .where(
+          whereConditions.length > 0 ? and(...whereConditions) : undefined
+        );
+
+      // Get employees
+      const employeesList = await ctx.db
+        .select()
+        .from(employees)
+        .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset(offset);
+
+      const totalPages = Math.ceil(totalCount.count / limit);
+
+      return {
+        employees: employeesList,
+        pagination: {
+          page,
+          limit,
+          totalItems: totalCount.count,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      };
+    }),
+
+  // Fetch a single employee by ID
+  getById: publicProcedure
+    .input(getEmployeeByIdSchema)
+    .query(async ({ ctx, input }) => {
+      const employee = await ctx.db
+        .select()
+        .from(employees)
+        .where(eq(employees.id, input.id))
+        .limit(1);
+
+      if (!employee || employee.length === 0) {
+        throw new Error("Employee not found");
+      }
+
+      return employee[0];
+    }),
+});

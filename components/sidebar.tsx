@@ -96,7 +96,7 @@ export function Sidebar() {
         </div>
         <div className="border-2 border-dashed rounded-md p-2 flex justify-between">
           <Link
-            href="/logout"
+            href="/signin"
             className="flex justify-center items-center gap-3 text-black hover:bg-primary hover:text-white font-medium text-sm rounded-lg px-4 py-2"
           >
             <LogOut className="w-4 h-4" />
