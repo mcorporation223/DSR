@@ -15,6 +15,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Eye, EyeOff } from "lucide-react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const signInSchema = z.object({
   email: z.string().email("Adresse email invalide"),
@@ -28,6 +30,8 @@ type SignInFormData = z.infer<typeof signInSchema>;
 export function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const form = useForm<SignInFormData>({
     resolver: zodResolver(signInSchema),
@@ -39,17 +43,24 @@ export function SignInForm() {
 
   const onSubmit = async (data: SignInFormData) => {
     setIsLoading(true);
+    setError(null);
+
     try {
-      // TODO: Implement authentication logic
-      console.log("Sign in data:", data);
+      const result = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Redirect to dashboard or main app
-      window.location.href = "/";
+      if (result?.error) {
+        setError("Invalid email or password");
+      } else if (result?.ok) {
+        // Redirect to dashboard on successful login
+        router.push("/");
+      }
     } catch (error) {
       console.error("Sign in error:", error);
+      setError("An error occurred during sign in");
     } finally {
       setIsLoading(false);
     }
@@ -64,6 +75,12 @@ export function SignInForm() {
 
       <Form {...form}>
         <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              {error}
+            </div>
+          )}
+
           <div className="space-y-5">
             <FormField
               control={form.control}
