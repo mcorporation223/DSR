@@ -7,7 +7,15 @@ import {
   Search,
   Filter,
   Loader2,
+  Edit,
+  Trash2,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   DataTable,
   TableColumn,
@@ -20,7 +28,11 @@ import {
   type ColumnVisibilityOption,
 } from "@/components/column-visibility";
 import { trpc } from "@/components/trpc-provider";
-import { EmployeeForm, type EmployeeFormValues } from "./employee-form";
+import { EmployeeForm } from "./employee-form";
+import { EditEmployeeForm } from "./edit-employee-form";
+import { DeleteEmployeeDialog } from "./delete-employee-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getFileUrl } from "@/lib/upload-utils";
 
 // Types for employee data - Updated to match database schema exactly
 interface Employee extends Record<string, unknown> {
@@ -60,6 +72,12 @@ export function EmployeesTable() {
   const [columnVisibility, setColumnVisibility] = useState<
     ColumnVisibilityOption[]
   >(employeeColumnConfig.map((col) => ({ ...col, visible: true })));
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(
+    null
+  );
 
   const itemsPerPage = 10;
 
@@ -140,10 +158,25 @@ export function EmployeesTable() {
     .map((col) => col.key);
 
   // Handle adding new employee
-  const handleAddEmployee = (data: EmployeeFormValues) => {
-    // This will be implemented when we add create mutation
-    console.log("New employee data:", data);
-  };
+  const handleEmployeeSuccess = useCallback(() => {
+    refetch(); // Refresh the employees list
+  }, [refetch]);
+
+  // Handle delete employee
+  const handleDeleteEmployee = useCallback((employee: Employee) => {
+    setEmployeeToDelete(employee);
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const handleDeleteDialogClose = useCallback(() => {
+    setDeleteDialogOpen(false);
+    setEmployeeToDelete(null);
+  }, []);
+
+  const handleDeleteSuccess = useCallback(() => {
+    refetch(); // Refresh the employees list
+    handleDeleteDialogClose();
+  }, [refetch, handleDeleteDialogClose]);
   const allColumns: TableColumn<Employee>[] = [
     {
       key: "firstName",
@@ -154,19 +187,25 @@ export function EmployeesTable() {
         const fullName = `${employee.firstName || ""} ${
           employee.lastName || ""
         }`.trim();
-        const initials = fullName
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase()
-          .slice(0, 2);
 
         return (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-medium text-gray-600">
-                {initials}
-              </span>
+              <Avatar className="h-8 w-8">
+                <AvatarImage
+                  src={employee.photoUrl ? getFileUrl(employee.photoUrl) : ""}
+                  alt={fullName || "User"}
+                />
+                <AvatarFallback className="bg-gray-200">
+                  {fullName
+                    ? fullName
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                    : "U"}
+                </AvatarFallback>
+              </Avatar>
             </div>
             <div
               className="text-sm font-medium text-gray-900 truncate max-w-[140px]"
@@ -371,7 +410,7 @@ export function EmployeesTable() {
       label: "Actions",
       className: "w-24",
       align: "center",
-      render: () => (
+      render: (_, employee) => (
         <div className="flex items-center justify-center gap-1">
           <Button
             variant="ghost"
@@ -380,13 +419,35 @@ export function EmployeesTable() {
           >
             <Download className="w-4 h-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-          >
-            <MoreHorizontal className="w-4 h-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <EditEmployeeForm
+                employee={employee}
+                onSuccess={handleEmployeeSuccess}
+              >
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Modifier
+                </DropdownMenuItem>
+              </EditEmployeeForm>
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={() => handleDeleteEmployee(employee)}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Supprimer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ),
     },
@@ -472,7 +533,7 @@ export function EmployeesTable() {
             onVisibilityChange={handleColumnVisibilityChange}
             storageKey="employees-columns"
           />
-          <EmployeeForm onSubmit={handleAddEmployee} />
+          <EmployeeForm onSuccess={handleEmployeeSuccess} />
         </div>
       </div>
 
@@ -496,6 +557,16 @@ export function EmployeesTable() {
           pagination={paginationConfig}
           showPagination={!!paginationConfig}
           sortConfig={sortConfig}
+        />
+      )}
+
+      {/* Delete Dialog */}
+      {employeeToDelete && (
+        <DeleteEmployeeDialog
+          employee={employeeToDelete}
+          isOpen={deleteDialogOpen}
+          onClose={handleDeleteDialogClose}
+          onSuccess={handleDeleteSuccess}
         />
       )}
     </div>

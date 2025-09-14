@@ -37,8 +37,11 @@ services:
       NEXTAUTH_URL: "http://localhost:3000"
       DB_POOL_MIN: 2
       DB_POOL_MAX: 10
+      UPLOADS_PATH: "/app/uploads"
     ports:
       - "3000:3000"
+    volumes:
+      - ../dsr-data/uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
