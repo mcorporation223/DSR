@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { TRPCProvider } from "@/components/trpc-provider";
 import SessionProvider from "@/components/session-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -23,7 +24,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} antialiased font-sans`}>
         <SessionProvider>
-          <TRPCProvider>{children}</TRPCProvider>
+          <TRPCProvider>
+            {children}
+            <Toaster />
+          </TRPCProvider>
         </SessionProvider>
       </body>
     </html>

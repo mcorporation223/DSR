@@ -4,6 +4,8 @@ import { desc, asc, like, and, eq, or, count } from "drizzle-orm";
 import {
   getAllEmployeesSchema,
   getEmployeeByIdSchema,
+  createEmployeeSchema,
+  updateEmployeeSchema,
 } from "../schemas/employees";
 
 export const employeesRouter = router({
@@ -12,7 +14,7 @@ export const employeesRouter = router({
     .input(getAllEmployeesSchema)
     .query(async ({ ctx, input }) => {
       const { page, limit, search, sortBy, sortOrder, isActive } = input;
-      
+
       const offset = (page - 1) * limit;
 
       // Build where conditions
@@ -102,5 +104,86 @@ export const employeesRouter = router({
       }
 
       return employee[0];
+    }),
+
+  // Create a new employee
+  create: publicProcedure
+    .input(createEmployeeSchema)
+    .mutation(async ({ ctx, input }) => {
+      // TODO: Get current user ID from session - for now use null
+      // const currentUserId = ctx.session?.user?.id;
+
+      const newEmployee = await ctx.db
+        .insert(employees)
+        .values({
+          firstName: input.firstName,
+          lastName: input.lastName,
+          sex: input.sex,
+          placeOfBirth: input.placeOfBirth,
+          dateOfBirth: input.dateOfBirth,
+          education: input.education,
+          maritalStatus: input.maritalStatus,
+          function: input.function,
+          deploymentLocation: input.deploymentLocation,
+          residence: input.residence,
+          phone: input.phone,
+          email: input.email,
+          photoUrl: input.photoUrl,
+          // createdBy: currentUserId,
+          // updatedBy: currentUserId,
+        })
+        .returning();
+
+      return newEmployee[0];
+    }),
+
+  // Update an employee
+  update: publicProcedure
+    .input(updateEmployeeSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...updateData } = input;
+
+      // TODO: Get current user ID from session - for now use null
+      // const currentUserId = ctx.session?.user?.id;
+
+      const updatedEmployee = await ctx.db
+        .update(employees)
+        .set({
+          ...updateData,
+          // updatedBy: currentUserId,
+          updatedAt: new Date(),
+        })
+        .where(eq(employees.id, id))
+        .returning();
+
+      if (!updatedEmployee || updatedEmployee.length === 0) {
+        throw new Error("Employee not found");
+      }
+
+      return updatedEmployee[0];
+    }),
+
+  // Delete an employee (soft delete)
+  delete: publicProcedure
+    .input(getEmployeeByIdSchema)
+    .mutation(async ({ ctx, input }) => {
+      // TODO: Get current user ID from session - for now use null
+      // const currentUserId = ctx.session?.user?.id;
+
+      const deletedEmployee = await ctx.db
+        .update(employees)
+        .set({
+          isActive: false,
+          // updatedBy: currentUserId,
+          updatedAt: new Date(),
+        })
+        .where(eq(employees.id, input.id))
+        .returning();
+
+      if (!deletedEmployee || deletedEmployee.length === 0) {
+        throw new Error("Employee not found");
+      }
+
+      return deletedEmployee[0];
     }),
 });
