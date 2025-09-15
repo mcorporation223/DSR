@@ -3,7 +3,7 @@ import { type CreateNextContextOptions } from "@trpc/server/adapters/next";
 import { type FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { ZodError } from "zod";
 import { db } from "@/lib/db";
-import { users, type User } from "@/lib/db/schema";
+import { type User } from "@/lib/db/schema";
 
 /**
  * Context creation for tRPC (Next.js API Routes)
@@ -32,7 +32,7 @@ export async function createTRPCContext(opts: CreateNextContextOptions) {
  * Context creation for tRPC (App Router/Fetch)
  */
 export async function createTRPCFetchContext(
-  opts: FetchCreateContextFnOptions
+  _opts: FetchCreateContextFnOptions
 ) {
   // Get user from session/token (we'll implement auth later)
   async function getUserFromHeader(): Promise<User | null> {

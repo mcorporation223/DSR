@@ -89,6 +89,7 @@ export const detainees = pgTable(
     arrestLocation: varchar("arrest_location", { length: 255 }), // provenance (lieu/territoire)
     arrestedBy: varchar("arrested_by", { length: 255 }), // menye alimuleta (who brought them)
     arrestTime: timestamp("arrest_time"), // time taken
+    arrivalDate: timestamp("arrival_date"), // date arrived at detention facility
     arrivalTime: timestamp("arrival_time"), // time arrived
 
     // Custody Information
