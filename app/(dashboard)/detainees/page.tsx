@@ -1,5 +1,3 @@
-"use client";
-
 import { DetaineesTable } from "./components/detainee-table";
 
 export default function DetaineesPage() {

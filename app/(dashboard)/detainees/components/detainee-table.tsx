@@ -29,6 +29,8 @@ import {
 } from "@/components/column-visibility";
 import { trpc } from "@/components/trpc-provider";
 import { DetaineeForm } from "./detainee-form";
+import { EditDetaineeForm } from "./edit-detainee-form";
+import { DeleteDetaineeDialog } from "./delete-detainee-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 // Types for detainee data - Updated to match database schema exactly
@@ -79,6 +81,16 @@ export function DetaineesTable() {
   const [columnVisibility, setColumnVisibility] = useState<
     ColumnVisibilityOption[]
   >(detaineeColumnConfig.map((col) => ({ ...col, visible: true })));
+
+  // Edit detainee state
+  const [editingDetainee, setEditingDetainee] = useState<Detainee | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  // Delete detainee state
+  const [deletingDetainee, setDeletingDetainee] = useState<Detainee | null>(
+    null
+  );
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const itemsPerPage = 10;
 
@@ -160,6 +172,36 @@ export function DetaineesTable() {
 
   // Handle adding new detainee
   const handleDetaineeSuccess = useCallback(() => {
+    refetch(); // Refresh the detainees list
+  }, [refetch]);
+
+  // Handle editing detainee
+  const handleEditDetainee = useCallback((detainee: Detainee) => {
+    setEditingDetainee(detainee);
+    setIsEditDialogOpen(true);
+  }, []);
+
+  const handleEditDialogClose = useCallback(() => {
+    setIsEditDialogOpen(false);
+    setEditingDetainee(null);
+  }, []);
+
+  const handleEditSuccess = useCallback(() => {
+    refetch(); // Refresh the detainees list
+  }, [refetch]);
+
+  // Handle deleting detainee
+  const handleDeleteDetainee = useCallback((detainee: Detainee) => {
+    setDeletingDetainee(detainee);
+    setIsDeleteDialogOpen(true);
+  }, []);
+
+  const handleDeleteDialogClose = useCallback(() => {
+    setIsDeleteDialogOpen(false);
+    setDeletingDetainee(null);
+  }, []);
+
+  const handleDeleteSuccess = useCallback(() => {
     refetch(); // Refresh the detainees list
   }, [refetch]);
 
@@ -405,7 +447,7 @@ export function DetaineesTable() {
       label: "Actions",
       className: "w-24",
       align: "center",
-      render: () => (
+      render: (_, detainee) => (
         <div className="flex items-center justify-center gap-1">
           <Button
             variant="ghost"
@@ -425,15 +467,13 @@ export function DetaineesTable() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              <DropdownMenuItem onSelect={() => handleEditDetainee(detainee)}>
                 <Edit className="w-4 h-4 mr-2" />
                 Modifier
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
-                onSelect={() => {
-                  /* TODO: implement delete */
-                }}
+                onSelect={() => handleDeleteDetainee(detainee)}
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Supprimer
@@ -562,6 +602,22 @@ export function DetaineesTable() {
           sortConfig={sortConfig}
         />
       )}
+
+      {/* Edit Detainee Dialog */}
+      <EditDetaineeForm
+        detainee={editingDetainee}
+        isOpen={isEditDialogOpen}
+        onClose={handleEditDialogClose}
+        onSuccess={handleEditSuccess}
+      />
+
+      {/* Delete Detainee Dialog */}
+      <DeleteDetaineeDialog
+        detainee={deletingDetainee}
+        isOpen={isDeleteDialogOpen}
+        onClose={handleDeleteDialogClose}
+        onSuccess={handleDeleteSuccess}
+      />
     </div>
   );
 }
