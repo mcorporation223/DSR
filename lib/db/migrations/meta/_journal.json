@@ -8,6 +8,13 @@
       "when": 1757617139801,
       "tag": "0000_fast_the_initiative",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1757926375636,
+      "tag": "0001_cynical_the_leader",
+      "breakpoints": true
     }
   ]
 }

@@ -12,13 +12,13 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { TimePicker } from "@/components/time-picker";
 import {
   Select,
   SelectContent,
@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Upload, ChevronDown } from "lucide-react";
+import { Plus, ChevronDown, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -37,100 +37,104 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useRef, useState } from "react";
-import Image from "next/image";
+import { useState } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { trpc } from "@/components/trpc-provider";
+import { toast } from "sonner";
 
-// Form validation schema
+// Form validation schema matching the database schema
 const detaineeFormSchema = z.object({
-  nom: z.string().min(2, "Nom requis (min. 2 caractères)"),
-  sex: z.enum(["Homme", "Femme"], {
+  firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
+  lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  sex: z.enum(["Male", "Female"], {
     message: "Veuillez sélectionner le sexe",
   }),
-  lieuNaissance: z.string().min(2, "Le lieu de naissance est requis"),
-  dateNaissance: z.date({
+  placeOfBirth: z.string().min(2, "Le lieu de naissance est requis"),
+  dateOfBirth: z.date({
     message: "La date de naissance est requise",
   }),
-  etatCivil: z.enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"], {
-    message: "Veuillez sélectionner l'état civil",
-  }),
-  religion: z.string().min(2, "La religion est requise"),
-  etudesFaites: z.string().min(2, "Les études faites sont requises"),
-  employment: z.string().min(2, "L'emploi est requis"),
-  statutDetention: z.enum(["En détention", "Libéré", "Transféré"], {
-    message: "Sélectionner le statut",
-  }),
-  dateArrestation: z.date({
+  parentNames: z.string().optional(),
+  originNeighborhood: z.string().optional(),
+  education: z.string().optional(),
+  employment: z.string().optional(),
+  maritalStatus: z
+    .enum(["Single", "Married", "Divorced", "Widowed"])
+    .optional(),
+  maritalDetails: z.string().optional(),
+  religion: z.string().optional(),
+  residence: z.string().min(2, "La résidence est requise"),
+  phoneNumber: z.string().optional(),
+  crimeReason: z.string().min(2, "Le motif du crime est requis"),
+  arrestDate: z.date({
     message: "La date d'arrestation est requise",
   }),
-  lieuArrestation: z.string().min(2, "Le lieu d'arrestation est requis"),
-  motifArrestation: z.string().min(2, "Le motif d'arrestation est requis"),
-  residence: z.string().min(2, "La résidence est requise"),
-  telephone: z
-    .string()
-    .min(10, "Le numéro de téléphone doit contenir au moins 10 chiffres"),
-  email: z.string().email("Veuillez entrer une adresse email valide"),
-  photo: z.string().optional(),
+  arrestLocation: z.string().min(2, "Le lieu d'arrestation est requis"),
+  arrestedBy: z.string().optional(),
+  arrestTime: z.string().optional(), // Time in HH:mm format to match DB field name
+  arrivalDate: z.date().optional(), // Date of arrival at detention facility
+  arrivalTime: z.string().optional(), // Time in HH:mm format to match DB field name
+  cellNumber: z.string().optional(),
+  location: z.string().optional(),
 });
 
 type DetaineeFormValues = z.infer<typeof detaineeFormSchema>;
 
 interface DetaineeFormProps {
-  onSubmit?: (data: DetaineeFormValues) => void;
+  onSuccess?: () => void;
 }
 
-export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  // TRPC mutation for creating detainee
+  const createDetainee = trpc.detainees.create.useMutation({
+    onSuccess: () => {
+      toast.success("Détenu ajouté avec succès");
+      form.reset();
+      setIsOpen(false);
+      onSuccess?.();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erreur lors de l'ajout du détenu");
+    },
+  });
 
   const form = useForm<DetaineeFormValues>({
     resolver: zodResolver(detaineeFormSchema),
     defaultValues: {
-      nom: "",
+      firstName: "",
+      lastName: "",
       sex: undefined,
-      lieuNaissance: "",
-      dateNaissance: undefined,
-      etatCivil: undefined,
-      religion: "",
-      etudesFaites: "",
+      placeOfBirth: "",
+      dateOfBirth: undefined,
+      parentNames: "",
+      originNeighborhood: "",
+      education: "",
       employment: "",
-      statutDetention: undefined,
-      dateArrestation: undefined,
-      lieuArrestation: "",
-      motifArrestation: "",
+      maritalStatus: undefined,
+      maritalDetails: "",
+      religion: "",
       residence: "",
-      telephone: "",
-      email: "",
-      photo: "",
+      phoneNumber: "",
+      crimeReason: "",
+      arrestDate: undefined,
+      arrestLocation: "",
+      arrestedBy: "",
+      arrestTime: "", // Time field as string
+      arrivalDate: undefined, // Date field
+      arrivalTime: "", // Time field as string
+      cellNumber: "",
+      location: "",
     },
   });
 
   const handleSubmit = (data: DetaineeFormValues) => {
-    onSubmit?.(data);
-    form.reset();
-    setImagePreview(null);
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setImagePreview(result);
-        form.setValue("photo", result);
-      };
-      reader.readAsDataURL(file);
-    }
+    createDetainee.mutate(data);
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button className="">
           <Plus className="w-4 h-4 mr-2" />
@@ -140,9 +144,6 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
       <DialogContent className="max-w-2xl p-0">
         <DialogHeader className="p-4">
           <DialogTitle>Ajouter un nouveau détenu</DialogTitle>
-          {/* <DialogDescription sr-only>
-            Remplissez les informations du détenu ci-dessous.
-          </DialogDescription> */}
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] overflow-hidden">
           <Form {...form}>
@@ -152,26 +153,29 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
             >
               {/* Personal Information Section */}
               <div className="space-y-4">
-                <div className="border-t border-gray-200">
-                  {/* <h3 className=" font-semibold text-gray-900">
-                  Informations personnelles
-                </h3> */}
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
                   <FormField
                     control={form.control}
-                    name="nom"
+                    name="firstName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-700">
-                          Nom complet
-                        </FormLabel>
+                        <FormLabel className="text-gray-700">Prénom</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Pierre Mukamba Tshimanga"
-                            {...field}
-                          />
+                          <Input placeholder="Pierre" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">Nom</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Mukamba" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -194,8 +198,8 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Homme">Homme</SelectItem>
-                            <SelectItem value="Femme">Femme</SelectItem>
+                            <SelectItem value="Male">Homme</SelectItem>
+                            <SelectItem value="Female">Femme</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -205,7 +209,7 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
 
                   <FormField
                     control={form.control}
-                    name="dateNaissance"
+                    name="dateOfBirth"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
@@ -252,7 +256,7 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
 
                   <FormField
                     control={form.control}
-                    name="lieuNaissance"
+                    name="placeOfBirth"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
@@ -268,7 +272,42 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
 
                   <FormField
                     control={form.control}
-                    name="etatCivil"
+                    name="parentNames"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">
+                          Nom des parents
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Jean et Marie Mukamba"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="originNeighborhood"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">
+                          Quartier d&apos;origine
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="Himbi" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="maritalStatus"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
@@ -284,16 +323,31 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Célibataire">
-                              Célibataire
-                            </SelectItem>
-                            <SelectItem value="Marié(e)">Marié(e)</SelectItem>
-                            <SelectItem value="Divorcé(e)">
-                              Divorcé(e)
-                            </SelectItem>
-                            <SelectItem value="Veuf(ve)">Veuf(ve)</SelectItem>
+                            <SelectItem value="Single">Célibataire</SelectItem>
+                            <SelectItem value="Married">Marié(e)</SelectItem>
+                            <SelectItem value="Divorced">Divorcé(e)</SelectItem>
+                            <SelectItem value="Widowed">Veuf(ve)</SelectItem>
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="maritalDetails"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">
+                          Détails état civil
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Nombre d'enfants, conjoint..."
+                            {...field}
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -307,29 +361,9 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
                         <FormLabel className="text-gray-700">
                           Religion
                         </FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Sélectionner la religion" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Catholique">
-                              Catholique
-                            </SelectItem>
-                            <SelectItem value="Protestante">
-                              Protestante
-                            </SelectItem>
-                            <SelectItem value="Kimbanguiste">
-                              Kimbanguiste
-                            </SelectItem>
-                            <SelectItem value="Musulman">Musulman</SelectItem>
-                            <SelectItem value="Autres">Autres</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <Input placeholder="Catholique" {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -337,7 +371,7 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
 
                   <FormField
                     control={form.control}
-                    name="etudesFaites"
+                    name="education"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
@@ -359,9 +393,7 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
                     name="employment"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-700">
-                          Employment
-                        </FormLabel>
+                        <FormLabel className="text-gray-700">Emploi</FormLabel>
                         <FormControl>
                           <Input placeholder="Commerçant" {...field} />
                         </FormControl>
@@ -372,64 +404,31 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
 
                   <FormField
                     control={form.control}
-                    name="photo"
+                    name="residence"
                     render={({ field }) => (
-                      <FormItem className="md:col-span-2">
+                      <FormItem>
                         <FormLabel className="text-gray-700">
-                          Photo du détenu
+                          Résidence
                         </FormLabel>
                         <FormControl>
-                          <Input type="hidden" {...field} />
+                          <Input placeholder="Goma - Himbi" {...field} />
                         </FormControl>
-                        <div
-                          className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors min-h-[120px]"
-                          onClick={triggerFileInput}
-                        >
-                          <input
-                            type="file"
-                            ref={fileInputRef}
-                            accept="image/*"
-                            onChange={handleImageChange}
-                            className="hidden"
-                            id="image-upload"
-                          />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                          {!imagePreview ? (
-                            <>
-                              <Upload className="h-8 w-8 text-gray-400 mb-1" />
-                              <div className="text-blue-600 font-medium">
-                                Télécharger une photo
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                PNG, JPG, GIF jusqu&apos;à 5MB
-                              </div>
-                            </>
-                          ) : (
-                            <div className="w-full flex items-center gap-4">
-                              <div className="relative w-24 h-24 flex-shrink-0 rounded-md overflow-hidden">
-                                <Image
-                                  src={imagePreview}
-                                  alt="Aperçu de la photo du détenu"
-                                  fill
-                                  className="object-cover"
-                                />
-                              </div>
-                              <div className="flex-1 flex flex-col">
-                                <p className="text-sm font-medium truncate">
-                                  Photo sélectionnée
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  Cliquez pour changer la photo
-                                </p>
-                              </div>
-                              <Upload className="h-5 w-5 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-                        <FormDescription>
-                          Cliquez sur la zone pour télécharger une photo du
-                          détenu.
-                        </FormDescription>
+                  <FormField
+                    control={form.control}
+                    name="phoneNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">
+                          Téléphone
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="+243 970 123 456" {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -439,46 +438,46 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
 
               {/* Detention Information Section */}
               <div className="space-y-4">
-                <div className="border-b border-gray-200">
-                  {/* <h3 className="text-lg font-semibold text-gray-900">
-                  Informations de détention
-                </h3> */}
+                <div className="border-t border-gray-200 pt-4">
+                  <h3 className="text-lg font-semibold text-gray-900 px-4">
+                    Informations d&apos;arrestation
+                  </h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
                   <FormField
                     control={form.control}
-                    name="statutDetention"
+                    name="crimeReason"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="md:col-span-2">
                         <FormLabel className="text-gray-700">
-                          Statut de détention
+                          Motif du crime
                         </FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Sélectionner le statut" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="En détention">
-                              En détention
-                            </SelectItem>
-                            <SelectItem value="Libéré">Libéré</SelectItem>
-                            <SelectItem value="Transféré">Transféré</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <Input placeholder="Vol à main armée" {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="dateArrestation"
+                    name="arrestLocation"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel className="text-gray-700">
+                          Lieu d&apos;arrestation
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="Goma Centre" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="arrestDate"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
@@ -510,10 +509,7 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
                               selected={field.value}
                               onSelect={field.onChange}
                               captionLayout="dropdown"
-                              disabled={(date) =>
-                                date > new Date() ||
-                                date < new Date("1900-01-01")
-                              }
+                              disabled={(date) => date > new Date()}
                               initialFocus
                             />
                           </PopoverContent>
@@ -525,58 +521,17 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
 
                   <FormField
                     control={form.control}
-                    name="lieuArrestation"
+                    name="arrestTime"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
-                          Lieu d&apos;arrestation
+                          Heure d&apos;arrestation
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Goma Centre" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="motifArrestation"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-700">
-                          Motif d&apos;arrestation
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="Vol à main armée" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-
-              {/* Contact Information Section */}
-              <div className="space-y-4">
-                <div className="border-b border-gray-200">
-                  {/* <h3 className="text-lg font-semibold text-gray-900">
-                  Informations de contact
-                </h3> */}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-700">Email</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="p.mukamba@email.com"
-                            {...field}
+                          <TimePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Sélectionner l'heure d'arrestation"
                           />
                         </FormControl>
                         <FormMessage />
@@ -586,14 +541,14 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
 
                   <FormField
                     control={form.control}
-                    name="telephone"
+                    name="arrestedBy"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="md:col-span-2">
                         <FormLabel className="text-gray-700">
-                          Téléphone
+                          Arrêté par
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="+243 970 123 456" {...field} />
+                          <Input placeholder="Police Nationale" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -602,14 +557,94 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
 
                   <FormField
                     control={form.control}
-                    name="residence"
+                    name="arrivalDate"
                     render={({ field }) => (
-                      <FormItem className="md:col-span-2">
+                      <FormItem>
                         <FormLabel className="text-gray-700">
-                          Résidence
+                          Date d&apos;arrivée
+                        </FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={`w-full justify-start text-left font-normal ${
+                                  !field.value && "text-muted-foreground"
+                                }`}
+                              >
+                                {field.value ? (
+                                  format(field.value, "dd/MM/yyyy", {
+                                    locale: fr,
+                                  })
+                                ) : (
+                                  <span>Sélectionner date d&apos;arrivée</span>
+                                )}
+                                <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              captionLayout="dropdown"
+                              disabled={(date) => date > new Date()}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="arrivalTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">
+                          Heure d&apos;arrivée
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Goma - Himbi" {...field} />
+                          <TimePicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Sélectionner l'heure d'arrivée"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="cellNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">
+                          Numéro de cellule
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="C-12" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">
+                          Localisation
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="Bloc A" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -619,10 +654,20 @@ export function DetaineeForm({ onSubmit }: DetaineeFormProps) {
               </div>
 
               <DialogFooter className="gap-2 px-4 mb-4">
-                <Button type="button" variant="outline">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsOpen(false)}
+                  disabled={createDetainee.isPending}
+                >
                   Annuler
                 </Button>
-                <Button type="submit">Ajouter le détenu</Button>
+                <Button type="submit" disabled={createDetainee.isPending}>
+                  {createDetainee.isPending && (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  )}
+                  Ajouter le détenu
+                </Button>
               </DialogFooter>
             </form>
           </Form>
