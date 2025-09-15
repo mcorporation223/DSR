@@ -33,13 +33,13 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
       links: [
         httpBatchLink({
           url: `${getBaseUrl()}/api/trpc`,
-          // Optional: Add headers for authentication
-          // headers: async () => {
-          //   const token = getToken();
-          //   return {
-          //     Authorization: token ? `Bearer ${token}` : '',
-          //   };
-          // },
+          // Include credentials (cookies) with requests
+          fetch(url, options) {
+            return fetch(url, {
+              ...options,
+              credentials: "include",
+            });
+          },
         }),
       ],
     })

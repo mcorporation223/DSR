@@ -3,7 +3,10 @@ import { type CreateNextContextOptions } from "@trpc/server/adapters/next";
 import { type FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { ZodError } from "zod";
 import { db } from "@/lib/db";
-import { type User } from "@/lib/db/schema";
+import { type User, users } from "@/lib/db/schema";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/server/auth";
+import { eq } from "drizzle-orm";
 
 /**
  * Context creation for tRPC (Next.js API Routes)
@@ -11,14 +14,19 @@ import { type User } from "@/lib/db/schema";
 export async function createTRPCContext(opts: CreateNextContextOptions) {
   const { req, res } = opts;
 
-  // Get user from session/token (we'll implement auth later)
-  async function getUserFromHeader(): Promise<User | null> {
-    // TODO: Implement JWT/session validation
-    // For now, return null (unauthenticated)
-    return null;
-  }
+  // Get user from NextAuth session
+  const session = await getServerSession(authOptions);
 
-  const user = await getUserFromHeader();
+  let user: User | null = null;
+  if (session?.user?.id) {
+    // Fetch full user details from database
+    const userResult = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
+    user = userResult[0] || null;
+  }
 
   return {
     db,
@@ -32,16 +40,38 @@ export async function createTRPCContext(opts: CreateNextContextOptions) {
  * Context creation for tRPC (App Router/Fetch)
  */
 export async function createTRPCFetchContext(
-  _opts: FetchCreateContextFnOptions
+  opts: FetchCreateContextFnOptions
 ) {
-  // Get user from session/token (we'll implement auth later)
-  async function getUserFromHeader(): Promise<User | null> {
-    // TODO: Implement JWT/session validation from headers
-    // For now, return null (unauthenticated)
-    return null;
-  }
+  // Extract headers from the request
+  const { req } = opts;
 
-  const user = await getUserFromHeader();
+  // Get the cookie header from the request
+  const cookieHeader = req.headers.get("cookie") || "";
+
+  // Debug logging
+  console.log(
+    "TRPC Context - Cookie header:",
+    cookieHeader ? "Present" : "Missing"
+  );
+
+  // Get user from NextAuth session with proper request context
+  const session = await getServerSession(authOptions);
+
+  let user: User | null = null;
+  if (session?.user?.id) {
+    try {
+      // Fetch full user details from database
+      const userResult = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, session.user.id))
+        .limit(1);
+      user = userResult[0] || null;
+    } catch (error) {
+      console.error("Error fetching user from database:", error);
+      user = null;
+    }
+  }
 
   return {
     db,
