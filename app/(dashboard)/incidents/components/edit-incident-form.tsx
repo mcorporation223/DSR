@@ -8,7 +8,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -26,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -39,9 +38,10 @@ import {
 } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { trpc } from "@/components/trpc-provider";
 import { toastNotification } from "@/components/toast-notification";
+import type { Incident } from "./incident-table";
 
 // Form validation schema
 const victimSchema = z.object({
@@ -52,7 +52,7 @@ const victimSchema = z.object({
   causeDuDeces: z.string().min(2, "La cause du décès est requise"),
 });
 
-const incidentFormSchema = z.object({
+const editIncidentFormSchema = z.object({
   typeIncident: z.enum(["Assassinats", "Fusillades"], {
     message: "Sélectionner le type d'incident",
   }),
@@ -65,32 +65,38 @@ const incidentFormSchema = z.object({
   victimes: z.array(victimSchema).optional(),
 });
 
-type IncidentFormValues = z.infer<typeof incidentFormSchema>;
+type EditIncidentFormValues = z.infer<typeof editIncidentFormSchema>;
 
-interface IncidentFormProps {
+interface EditIncidentFormProps {
+  incident: Incident | null;
+  isOpen: boolean;
+  onClose: () => void;
   onSuccess?: () => void;
 }
 
-export function IncidentForm({ onSuccess }: IncidentFormProps) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  // TRPC mutation for creating incident
-  const createIncident = trpc.incidents.create.useMutation({
+export function EditIncidentForm({
+  incident,
+  isOpen,
+  onClose,
+  onSuccess,
+}: EditIncidentFormProps) {
+  // TRPC mutation for updating incident
+  const updateIncident = trpc.incidents.update.useMutation({
     onSuccess: () => {
-      toastNotification.success("Succès", "Incident ajouté avec succès");
-      setIsOpen(false);
-      form.reset();
+      toastNotification.success("Succès", "Incident modifié avec succès");
+      onClose();
       onSuccess?.();
     },
     onError: (error) => {
       toastNotification.error(
         "Erreur",
-        error.message || "Erreur lors de l'ajout de l'incident"
+        error.message || "Erreur lors de la modification de l'incident"
       );
     },
   });
-  const form = useForm<IncidentFormValues>({
-    resolver: zodResolver(incidentFormSchema),
+
+  const form = useForm<EditIncidentFormValues>({
+    resolver: zodResolver(editIncidentFormSchema),
     defaultValues: {
       typeIncident: undefined,
       dateIncident: undefined,
@@ -120,9 +126,34 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
     }
   }, [nombre, typeIncident, form]);
 
-  const handleSubmit = (data: IncidentFormValues) => {
+  // Reset and populate form when incident changes
+  useEffect(() => {
+    if (incident && isOpen) {
+      const victimes =
+        incident.victims?.map((victim) => ({
+          nom: victim.name || "",
+          sexe: (victim.sex === "Male" ? "Homme" : "Femme") as
+            | "Homme"
+            | "Femme",
+          causeDuDeces: victim.causeOfDeath || "",
+        })) || [];
+
+      form.reset({
+        typeIncident: incident.eventType as "Assassinats" | "Fusillades",
+        dateIncident: new Date(incident.incidentDate),
+        lieuIncident: incident.location || "",
+        nombre: incident.numberOfVictims || undefined,
+        victimes: victimes,
+      });
+    }
+  }, [incident, isOpen, form]);
+
+  const handleSubmit = (data: EditIncidentFormValues) => {
+    if (!incident) return;
+
     // Transform data to match API expectations
-    const createData = {
+    const updateData = {
+      id: incident.id,
       eventType: data.typeIncident,
       incidentDate: data.dateIncident.toISOString(),
       location: data.lieuIncident,
@@ -141,24 +172,24 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
           : [],
     };
 
-    createIncident.mutate(createData);
+    updateIncident.mutate(updateData);
   };
 
+  const handleClose = () => {
+    form.reset();
+    onClose();
+  };
+
+  if (!incident) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button className="">
-          <Plus className="w-4 h-4 mr-2" />
-          Ajouter Incident
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl p-0">
         <DialogHeader className="p-4">
-          <DialogTitle>Ajouter un nouveau incident</DialogTitle>
-          <DialogDescription>
-            Remplissez les informations ci-dessous pour ajouter un nouvel
-            incident au système.
-          </DialogDescription>
+          <DialogTitle>
+            Modifier l&apos;incident: {incident.eventType}
+          </DialogTitle>
+          <DialogDescription></DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] overflow-hidden">
           <Form {...form}>
@@ -181,7 +212,7 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
                         </FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger className="w-full">
@@ -337,7 +368,7 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
                                       </FormLabel>
                                       <Select
                                         onValueChange={field.onChange}
-                                        value={field.value || ""}
+                                        value={field.value}
                                       >
                                         <FormControl>
                                           <SelectTrigger className="w-full">
@@ -391,16 +422,16 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsOpen(false)}
-                  disabled={createIncident.isPending}
+                  onClick={handleClose}
+                  disabled={updateIncident.isPending}
                 >
                   Annuler
                 </Button>
-                <Button type="submit" disabled={createIncident.isPending}>
-                  {createIncident.isPending && (
+                <Button type="submit" disabled={updateIncident.isPending}>
+                  {updateIncident.isPending && (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   )}
-                  Ajouter l&apos;incident
+                  Modifier l&apos;incident
                 </Button>
               </DialogFooter>
             </form>
@@ -410,6 +441,3 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
     </Dialog>
   );
 }
-
-// Export the form values type for use in other components
-export type { IncidentFormValues };

@@ -1,0 +1,260 @@
+import { z } from "zod";
+import { router, protectedProcedure, publicProcedure } from "../trpc";
+import { db } from "@/lib/db";
+import { incidents, victims } from "@/lib/db/schema";
+import { and, count, desc, asc, eq, or, ilike, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
+
+const incidentInputSchema = z.object({
+  incidentDate: z.string().datetime(),
+  location: z.string().min(1, "Location is required"),
+  eventType: z.string().min(1, "Event type is required"),
+  numberOfVictims: z.number().int().min(0).optional().default(0),
+  victims: z
+    .array(
+      z.object({
+        name: z.string().min(1, "Victim name is required"),
+        sex: z.enum(["Male", "Female"]),
+        causeOfDeath: z.string().optional(),
+      })
+    )
+    .optional()
+    .default([]),
+});
+
+const incidentUpdateSchema = incidentInputSchema.partial().extend({
+  id: z.string().uuid(),
+});
+
+export const incidentsRouter = router({
+  getAll: publicProcedure
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(100).default(10),
+        search: z.string().optional(),
+        sortBy: z
+          .enum(["incidentDate", "location", "eventType", "createdAt"])
+          .default("createdAt"),
+        sortOrder: z.enum(["asc", "desc"]).default("desc"),
+        eventType: z.string().optional(),
+      })
+    )
+    .query(async ({ input, ctx }) => {
+      const { page, limit, search, sortBy, sortOrder, eventType } = input;
+      const offset = (page - 1) * limit;
+
+      let whereConditions: SQL[] = [];
+
+      // Search functionality
+      if (search) {
+        whereConditions.push(
+          or(
+            ilike(incidents.location, `%${search}%`),
+            ilike(incidents.eventType, `%${search}%`)
+          )!
+        );
+      }
+
+      // Filter by event type
+      if (eventType) {
+        whereConditions.push(eq(incidents.eventType, eventType));
+      }
+
+      const whereClause =
+        whereConditions.length > 0 ? and(...whereConditions) : undefined;
+
+      // Get total count
+      const totalResult = await db
+        .select({ count: count() })
+        .from(incidents)
+        .where(whereClause);
+
+      const totalItems = totalResult[0]?.count || 0;
+
+      // Get incidents with sorting
+      const orderBy =
+        sortOrder === "asc" ? asc(incidents[sortBy]) : desc(incidents[sortBy]);
+
+      const incidentsResult = await db
+        .select({
+          id: incidents.id,
+          incidentDate: incidents.incidentDate,
+          location: incidents.location,
+          eventType: incidents.eventType,
+          numberOfVictims: incidents.numberOfVictims,
+          createdBy: incidents.createdBy,
+          updatedBy: incidents.updatedBy,
+          createdAt: incidents.createdAt,
+          updatedAt: incidents.updatedAt,
+        })
+        .from(incidents)
+        .where(whereClause)
+        .orderBy(orderBy)
+        .limit(limit)
+        .offset(offset);
+
+      // Get victims for each incident
+      const incidentsWithVictims = await Promise.all(
+        incidentsResult.map(async (incident) => {
+          const incidentVictims = await db
+            .select({
+              id: victims.id,
+              name: victims.name,
+              sex: victims.sex,
+              causeOfDeath: victims.causeOfDeath,
+            })
+            .from(victims)
+            .where(eq(victims.incidentId, incident.id));
+
+          return {
+            ...incident,
+            victims: incidentVictims,
+          };
+        })
+      );
+
+      return {
+        incidents: incidentsWithVictims,
+        pagination: {
+          page,
+          limit,
+          totalItems,
+          totalPages: Math.ceil(totalItems / limit),
+        },
+      };
+    }),
+
+  getById: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ input }) => {
+      const incident = await db
+        .select()
+        .from(incidents)
+        .where(eq(incidents.id, input.id))
+        .limit(1);
+
+      if (!incident[0]) {
+        throw new Error("Incident not found");
+      }
+
+      // Get victims for this incident
+      const incidentVictims = await db
+        .select()
+        .from(victims)
+        .where(eq(victims.incidentId, input.id));
+
+      return {
+        ...incident[0],
+        victims: incidentVictims,
+      };
+    }),
+
+  create: protectedProcedure
+    .input(incidentInputSchema)
+    .mutation(async ({ input, ctx }) => {
+      const { victims: inputVictims, ...incidentData } = input;
+
+      // Create the incident
+      const newIncident = await db
+        .insert(incidents)
+        .values({
+          ...incidentData,
+          incidentDate: new Date(incidentData.incidentDate),
+          createdBy: ctx.user.id,
+          updatedBy: ctx.user.id,
+        })
+        .returning();
+
+      // Create victims if any
+      if (inputVictims && inputVictims.length > 0) {
+        await db.insert(victims).values(
+          inputVictims.map((victim) => ({
+            ...victim,
+            incidentId: newIncident[0].id,
+            createdBy: ctx.user.id,
+            updatedBy: ctx.user.id,
+          }))
+        );
+      }
+
+      return newIncident[0];
+    }),
+
+  update: protectedProcedure
+    .input(incidentUpdateSchema)
+    .mutation(async ({ input, ctx }) => {
+      const { id, victims: inputVictims, ...incidentData } = input;
+
+      // Prepare update data with proper date conversion
+      const updateData: any = {
+        ...incidentData,
+        updatedBy: ctx.user.id,
+        updatedAt: new Date(),
+      };
+
+      // Convert incidentDate if provided
+      if (incidentData.incidentDate) {
+        updateData.incidentDate = new Date(incidentData.incidentDate);
+      }
+
+      // Update the incident
+      const updatedIncident = await db
+        .update(incidents)
+        .set(updateData)
+        .where(eq(incidents.id, id))
+        .returning();
+
+      // Update victims if provided
+      if (inputVictims !== undefined) {
+        // Delete existing victims
+        await db.delete(victims).where(eq(victims.incidentId, id));
+
+        // Insert new victims
+        if (inputVictims.length > 0) {
+          await db.insert(victims).values(
+            inputVictims.map((victim) => ({
+              ...victim,
+              incidentId: id,
+              createdBy: ctx.user.id,
+              updatedBy: ctx.user.id,
+            }))
+          );
+        }
+      }
+
+      return updatedIncident[0];
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ input }) => {
+      // Delete victims first (due to foreign key constraint)
+      await db.delete(victims).where(eq(victims.incidentId, input.id));
+
+      // Delete the incident
+      await db.delete(incidents).where(eq(incidents.id, input.id));
+
+      return { success: true };
+    }),
+
+  getStats: protectedProcedure.query(async () => {
+    const totalIncidents = await db.select({ count: count() }).from(incidents);
+
+    const incidentsByType = await db
+      .select({
+        eventType: incidents.eventType,
+        count: count(),
+      })
+      .from(incidents)
+      .groupBy(incidents.eventType);
+
+    const totalVictims = await db.select({ count: count() }).from(victims);
+
+    return {
+      totalIncidents: totalIncidents[0]?.count || 0,
+      incidentsByType,
+      totalVictims: totalVictims[0]?.count || 0,
+    };
+  }),
+});
