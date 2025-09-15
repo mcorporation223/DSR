@@ -89,7 +89,7 @@ export function Sidebar() {
                 <AlertTriangle className="w-4 h-4" />
                 Incidents
               </Link>
-              <Link href="/saisie" className={getLinkClassName("/saisie")}>
+              <Link href="/seizure" className={getLinkClassName("/seizure")}>
                 <Gavel className="w-4 h-4" />
                 Saisie
               </Link>
