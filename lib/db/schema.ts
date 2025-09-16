@@ -172,6 +172,7 @@ export const reports = pgTable("reports", {
   id: uuid("id").defaultRandom().primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content"),
+  location: varchar("location", { length: 255 }),
   createdBy: uuid("created_by").references(() => users.id),
   updatedBy: uuid("updated_by").references(() => users.id),
   reportDate: timestamp("report_date").notNull(),

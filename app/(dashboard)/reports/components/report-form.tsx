@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/rich-text-editor";
-import { Plus, ChevronDown } from "lucide-react";
+import { Plus, ChevronDown, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -32,17 +32,18 @@ import {
 } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { trpc } from "@/components/trpc-provider";
+import { useState } from "react";
+import { toastNotification } from "@/components/toast-notification";
 
 // Form validation schema
 const reportFormSchema = z.object({
-  titreRapport: z
-    .string()
-    .min(5, "Le titre doit contenir au moins 5 caractères"),
-  dateRapport: z.date({
+  title: z.string().min(5, "Le titre doit contenir au moins 5 caractères"),
+  reportDate: z.date({
     message: "La date du rapport est requise",
   }),
-  lieuRapport: z.string().min(2, "Le lieu du rapport est requis"),
-  contenuRapport: z
+  location: z.string().optional(),
+  content: z
     .string()
     .min(10, "Le contenu du rapport doit contenir au moins 10 caractères"),
 });
@@ -51,26 +52,57 @@ type ReportFormValues = z.infer<typeof reportFormSchema>;
 
 interface ReportFormProps {
   onSubmit?: (data: ReportFormValues) => void;
+  onSuccess?: () => void;
 }
 
-export function ReportForm({ onSubmit }: ReportFormProps) {
+export function ReportForm({ onSubmit, onSuccess }: ReportFormProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   const form = useForm<ReportFormValues>({
     resolver: zodResolver(reportFormSchema),
     defaultValues: {
-      titreRapport: "",
-      dateRapport: undefined,
-      lieuRapport: "",
-      contenuRapport: "",
+      title: "",
+      location: "",
+      reportDate: undefined,
+      content: "",
+    },
+  });
+
+  // TRPC mutation for creating reports
+  const createReportMutation = trpc.reports.create.useMutation({
+    onSuccess: () => {
+      setIsOpen(false);
+      form.reset();
+      onSuccess?.();
+      toastNotification.success(
+        "Rapport créé avec succès",
+        "Le nouveau rapport a été ajouté à la base de données."
+      );
+    },
+    onError: (error) => {
+      console.error("Error creating report:", error);
+      toastNotification.error(
+        "Erreur lors de la création",
+        error.message ||
+          "Une erreur s'est produite lors de la création du rapport."
+      );
     },
   });
 
   const handleSubmit = (data: ReportFormValues) => {
+    // Convert date to ISO string for the backend
+    const reportData = {
+      title: data.title,
+      content: data.content,
+      reportDate: data.reportDate.toISOString(),
+    };
+
+    createReportMutation.mutate(reportData);
     onSubmit?.(data);
-    form.reset();
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button className="">
           <Plus className="w-4 h-4 mr-2" />
@@ -94,7 +126,7 @@ export function ReportForm({ onSubmit }: ReportFormProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
                   <FormField
                     control={form.control}
-                    name="titreRapport"
+                    name="title"
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
                         <FormLabel className="text-gray-700">
@@ -113,7 +145,7 @@ export function ReportForm({ onSubmit }: ReportFormProps) {
 
                   <FormField
                     control={form.control}
-                    name="dateRapport"
+                    name="reportDate"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
@@ -160,7 +192,7 @@ export function ReportForm({ onSubmit }: ReportFormProps) {
 
                   <FormField
                     control={form.control}
-                    name="lieuRapport"
+                    name="location"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
@@ -176,7 +208,7 @@ export function ReportForm({ onSubmit }: ReportFormProps) {
 
                   <FormField
                     control={form.control}
-                    name="contenuRapport"
+                    name="content"
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
                         <FormLabel className="text-gray-700">
@@ -198,10 +230,24 @@ export function ReportForm({ onSubmit }: ReportFormProps) {
               </div>
 
               <DialogFooter className="gap-2 px-4 mb-4">
-                <Button type="button" variant="outline">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsOpen(false)}
+                  disabled={createReportMutation.isPending}
+                >
                   Annuler
                 </Button>
-                <Button type="submit">Ajouter le rapport</Button>
+                <Button type="submit" disabled={createReportMutation.isPending}>
+                  {createReportMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Création...
+                    </>
+                  ) : (
+                    "Ajouter le rapport"
+                  )}
+                </Button>
               </DialogFooter>
             </form>
           </Form>
