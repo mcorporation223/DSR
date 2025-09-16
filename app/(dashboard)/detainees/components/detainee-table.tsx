@@ -9,6 +9,7 @@ import {
   Loader2,
   Edit,
   Trash2,
+  Eye,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -31,6 +32,7 @@ import { trpc } from "@/components/trpc-provider";
 import { DetaineeForm } from "./detainee-form";
 import { EditDetaineeForm } from "./edit-detainee-form";
 import { DeleteDetaineeDialog } from "./delete-detainee-dialog";
+import { DetaineeDetailsDialog } from "./detainee-details-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 // Types for detainee data - Updated to match database schema exactly
@@ -91,6 +93,10 @@ export function DetaineesTable() {
     null
   );
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // Details dialog state
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [detaineeToView, setDetaineeToView] = useState<Detainee | null>(null);
 
   const itemsPerPage = 10;
 
@@ -204,6 +210,25 @@ export function DetaineesTable() {
   const handleDeleteSuccess = useCallback(() => {
     refetch(); // Refresh the detainees list
   }, [refetch]);
+
+  // Handle view detainee details
+  const handleViewDetainee = useCallback((detainee: Detainee) => {
+    setDetaineeToView(detainee);
+    setDetailsDialogOpen(true);
+  }, []);
+
+  const handleDetailsDialogClose = useCallback(() => {
+    setDetailsDialogOpen(false);
+    setDetaineeToView(null);
+  }, []);
+
+  // Handle row click
+  const handleRowClick = useCallback(
+    (detainee: Detainee) => {
+      handleViewDetainee(detainee);
+    },
+    [handleViewDetainee]
+  );
 
   // Get status display text
   const getStatusDisplay = (status: string | null) => {
@@ -448,7 +473,18 @@ export function DetaineesTable() {
       className: "w-24",
       align: "center",
       render: (_, detainee) => (
-        <div className="flex items-center justify-center gap-1">
+        <div
+          className="flex items-center justify-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            onClick={() => handleViewDetainee(detainee)}
+          >
+            <Eye className="w-4 h-4 cursor-pointer" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -600,6 +636,7 @@ export function DetaineesTable() {
           pagination={paginationConfig}
           showPagination={!!paginationConfig}
           sortConfig={sortConfig}
+          onRowClick={handleRowClick}
         />
       )}
 
@@ -617,6 +654,13 @@ export function DetaineesTable() {
         isOpen={isDeleteDialogOpen}
         onClose={handleDeleteDialogClose}
         onSuccess={handleDeleteSuccess}
+      />
+
+      {/* Details Dialog */}
+      <DetaineeDetailsDialog
+        detainee={detaineeToView}
+        isOpen={detailsDialogOpen}
+        onClose={handleDetailsDialogClose}
       />
     </div>
   );
