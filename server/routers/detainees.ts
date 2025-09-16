@@ -1,12 +1,14 @@
-import { router, publicProcedure } from "../trpc";
+import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { db } from "@/lib/db";
 import { detainees } from "@/lib/db/schema";
-import { desc, asc, like, and, eq, or, count } from "drizzle-orm";
+import { desc, asc, like, and, eq, or, count, sql, ilike } from "drizzle-orm";
 import {
   getAllDetaineesSchema,
   getDetaineeByIdSchema,
   createDetaineeSchema,
   updateDetaineeSchema,
 } from "../schemas/detainees";
+import { z } from "zod";
 
 export const detaineesRouter = router({
   // Fetch all detainees with optional filters
@@ -235,5 +237,40 @@ export const detaineesRouter = router({
       }
 
       return deletedDetainee[0];
+    }),
+
+  // Search detainees for autocomplete (used in statement forms)
+  search: protectedProcedure
+    .input(
+      z.object({
+        query: z.string().min(1, "Search query is required"),
+        limit: z.number().min(1).max(20).default(10),
+      })
+    )
+    .query(async ({ input }) => {
+      const { query, limit } = input;
+
+      const searchResults = await db
+        .select({
+          id: detainees.id,
+          firstName: detainees.firstName,
+          lastName: detainees.lastName,
+          fullName: sql<string>`CONCAT(${detainees.firstName}, ' ', ${detainees.lastName})`,
+        })
+        .from(detainees)
+        .where(
+          or(
+            ilike(detainees.firstName, `%${query}%`),
+            ilike(detainees.lastName, `%${query}%`),
+            ilike(
+              sql`CONCAT(${detainees.firstName}, ' ', ${detainees.lastName})`,
+              `%${query}%`
+            )
+          )
+        )
+        .limit(limit)
+        .orderBy(asc(detainees.firstName));
+
+      return searchResults;
     }),
 });

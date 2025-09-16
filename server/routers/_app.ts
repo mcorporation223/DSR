@@ -4,6 +4,7 @@ import { detaineesRouter } from "./detainees";
 import { incidentsRouter } from "./incidents";
 import { seizuresRouter } from "./seizures";
 import { reportsRouter } from "./reports";
+import { statementsRouter } from "./statements";
 
 export const appRouter = router({
   employees: employeesRouter,
@@ -11,6 +12,7 @@ export const appRouter = router({
   incidents: incidentsRouter,
   seizures: seizuresRouter,
   reports: reportsRouter,
+  statements: statementsRouter,
 });
 
 export type AppRouter = typeof appRouter;

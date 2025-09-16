@@ -22,6 +22,13 @@
       "when": 1757961334103,
       "tag": "0002_red_red_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1758016974361,
+      "tag": "0003_curious_hawkeye",
+      "breakpoints": true
     }
   ]
 }
