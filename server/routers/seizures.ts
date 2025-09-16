@@ -1,7 +1,8 @@
 import { router, protectedProcedure, publicProcedure } from "../trpc";
 import { db } from "@/lib/db";
-import { seizures } from "@/lib/db/schema";
-import { and, count, desc, asc, eq, or, ilike } from "drizzle-orm";
+import { seizures, users } from "@/lib/db/schema";
+import { and, count, desc, asc, eq, or, ilike, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
 import {
   seizureInputSchema,
@@ -10,6 +11,10 @@ import {
   seizureByIdSchema,
   seizureDeleteSchema,
 } from "../schemas/seizures";
+
+// Create aliases for the users table to handle both createdBy and updatedBy
+const createdByUser = alias(users, "createdByUser");
+const updatedByUser = alias(users, "updatedByUser");
 
 export const seizuresRouter = router({
   getAll: publicProcedure
@@ -53,7 +58,7 @@ export const seizuresRouter = router({
 
       const totalItems = totalResult[0]?.count || 0;
 
-      // Get seizures with sorting
+      // Get seizures with sorting and user names
       const orderBy =
         sortOrder === "asc" ? asc(seizures[sortBy]) : desc(seizures[sortBy]);
 
@@ -74,8 +79,13 @@ export const seizuresRouter = router({
           updatedBy: seizures.updatedBy,
           createdAt: seizures.createdAt,
           updatedAt: seizures.updatedAt,
+          // User names
+          createdByName: sql<string>`CONCAT(${createdByUser.firstName}, ' ', ${createdByUser.lastName})`,
+          updatedByName: sql<string>`CONCAT(${updatedByUser.firstName}, ' ', ${updatedByUser.lastName})`,
         })
         .from(seizures)
+        .leftJoin(createdByUser, eq(seizures.createdBy, createdByUser.id))
+        .leftJoin(updatedByUser, eq(seizures.updatedBy, updatedByUser.id))
         .where(whereClause)
         .orderBy(orderBy)
         .limit(limit)
@@ -96,8 +106,29 @@ export const seizuresRouter = router({
     .input(seizureByIdSchema)
     .query(async ({ input }) => {
       const seizure = await db
-        .select()
+        .select({
+          id: seizures.id,
+          itemName: seizures.itemName,
+          type: seizures.type,
+          seizureLocation: seizures.seizureLocation,
+          chassisNumber: seizures.chassisNumber,
+          plateNumber: seizures.plateNumber,
+          ownerName: seizures.ownerName,
+          ownerResidence: seizures.ownerResidence,
+          seizureDate: seizures.seizureDate,
+          status: seizures.status,
+          releaseDate: seizures.releaseDate,
+          createdBy: seizures.createdBy,
+          updatedBy: seizures.updatedBy,
+          createdAt: seizures.createdAt,
+          updatedAt: seizures.updatedAt,
+          // User names
+          createdByName: sql<string>`CONCAT(${createdByUser.firstName}, ' ', ${createdByUser.lastName})`,
+          updatedByName: sql<string>`CONCAT(${updatedByUser.firstName}, ' ', ${updatedByUser.lastName})`,
+        })
         .from(seizures)
+        .leftJoin(createdByUser, eq(seizures.createdBy, createdByUser.id))
+        .leftJoin(updatedByUser, eq(seizures.updatedBy, updatedByUser.id))
         .where(eq(seizures.id, input.id))
         .limit(1);
 
