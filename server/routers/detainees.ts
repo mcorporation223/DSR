@@ -1,7 +1,8 @@
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { db } from "@/lib/db";
-import { detainees } from "@/lib/db/schema";
+import { detainees, users } from "@/lib/db/schema";
 import { desc, asc, like, and, eq, or, count, sql, ilike } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import {
   getAllDetaineesSchema,
   getDetaineeByIdSchema,
@@ -9,6 +10,10 @@ import {
   updateDetaineeSchema,
 } from "../schemas/detainees";
 import { z } from "zod";
+
+// Create aliases for the users table to handle both createdBy and updatedBy
+const createdByUser = alias(users, "createdByUser");
+const updatedByUser = alias(users, "updatedByUser");
 
 export const detaineesRouter = router({
   // Fetch all detainees with optional filters
@@ -68,10 +73,48 @@ export const detaineesRouter = router({
           whereConditions.length > 0 ? and(...whereConditions) : undefined
         );
 
-      // Get detainees
+      // Get detainees with user names
       const detaineesList = await ctx.db
-        .select()
+        .select({
+          // All detainee fields
+          id: detainees.id,
+          firstName: detainees.firstName,
+          lastName: detainees.lastName,
+          sex: detainees.sex,
+          placeOfBirth: detainees.placeOfBirth,
+          dateOfBirth: detainees.dateOfBirth,
+          parentNames: detainees.parentNames,
+          originNeighborhood: detainees.originNeighborhood,
+          education: detainees.education,
+          employment: detainees.employment,
+          maritalStatus: detainees.maritalStatus,
+          maritalDetails: detainees.maritalDetails,
+          religion: detainees.religion,
+          residence: detainees.residence,
+          phoneNumber: detainees.phoneNumber,
+          crimeReason: detainees.crimeReason,
+          arrestDate: detainees.arrestDate,
+          arrestLocation: detainees.arrestLocation,
+          arrestedBy: detainees.arrestedBy,
+          arrestTime: detainees.arrestTime,
+          arrivalDate: detainees.arrivalDate,
+          arrivalTime: detainees.arrivalTime,
+          cellNumber: detainees.cellNumber,
+          location: detainees.location,
+          status: detainees.status,
+          releaseDate: detainees.releaseDate,
+          releaseReason: detainees.releaseReason,
+          createdBy: detainees.createdBy,
+          updatedBy: detainees.updatedBy,
+          createdAt: detainees.createdAt,
+          updatedAt: detainees.updatedAt,
+          // User names
+          createdByName: sql<string>`CONCAT(${createdByUser.firstName}, ' ', ${createdByUser.lastName})`,
+          updatedByName: sql<string>`CONCAT(${updatedByUser.firstName}, ' ', ${updatedByUser.lastName})`,
+        })
         .from(detainees)
+        .leftJoin(createdByUser, eq(detainees.createdBy, createdByUser.id))
+        .leftJoin(updatedByUser, eq(detainees.updatedBy, updatedByUser.id))
         .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
         .orderBy(orderBy)
         .limit(limit)
@@ -92,13 +135,51 @@ export const detaineesRouter = router({
       };
     }),
 
-  // Fetch a single detainee by ID
+  // Fetch a single detainee by ID with user names
   getById: publicProcedure
     .input(getDetaineeByIdSchema)
     .query(async ({ ctx, input }) => {
       const detainee = await ctx.db
-        .select()
+        .select({
+          // All detainee fields
+          id: detainees.id,
+          firstName: detainees.firstName,
+          lastName: detainees.lastName,
+          sex: detainees.sex,
+          placeOfBirth: detainees.placeOfBirth,
+          dateOfBirth: detainees.dateOfBirth,
+          parentNames: detainees.parentNames,
+          originNeighborhood: detainees.originNeighborhood,
+          education: detainees.education,
+          employment: detainees.employment,
+          maritalStatus: detainees.maritalStatus,
+          maritalDetails: detainees.maritalDetails,
+          religion: detainees.religion,
+          residence: detainees.residence,
+          phoneNumber: detainees.phoneNumber,
+          crimeReason: detainees.crimeReason,
+          arrestDate: detainees.arrestDate,
+          arrestLocation: detainees.arrestLocation,
+          arrestedBy: detainees.arrestedBy,
+          arrestTime: detainees.arrestTime,
+          arrivalDate: detainees.arrivalDate,
+          arrivalTime: detainees.arrivalTime,
+          cellNumber: detainees.cellNumber,
+          location: detainees.location,
+          status: detainees.status,
+          releaseDate: detainees.releaseDate,
+          releaseReason: detainees.releaseReason,
+          createdBy: detainees.createdBy,
+          updatedBy: detainees.updatedBy,
+          createdAt: detainees.createdAt,
+          updatedAt: detainees.updatedAt,
+          // User names
+          createdByName: sql<string>`CONCAT(${createdByUser.firstName}, ' ', ${createdByUser.lastName})`,
+          updatedByName: sql<string>`CONCAT(${updatedByUser.firstName}, ' ', ${updatedByUser.lastName})`,
+        })
         .from(detainees)
+        .leftJoin(createdByUser, eq(detainees.createdBy, createdByUser.id))
+        .leftJoin(updatedByUser, eq(detainees.updatedBy, updatedByUser.id))
         .where(eq(detainees.id, input.id))
         .limit(1);
 

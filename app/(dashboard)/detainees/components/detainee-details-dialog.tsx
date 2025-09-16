@@ -385,24 +385,24 @@ export function DetaineeDetailsDialog({
                   </p>
                 </div>
 
-                {detainee.createdBy && (
+                {detainee.createdByName && (
                   <div>
                     <label className="text-sm font-medium text-gray-500">
                       Enregistré par
                     </label>
                     <p className="text-sm text-gray-900">
-                      {detainee.createdBy}
+                      {detainee.createdByName}
                     </p>
                   </div>
                 )}
 
-                {detainee.updatedBy && (
+                {detainee.updatedByName && (
                   <div>
                     <label className="text-sm font-medium text-gray-500">
                       Modifié par
                     </label>
                     <p className="text-sm text-gray-900">
-                      {detainee.updatedBy}
+                      {detainee.updatedByName}
                     </p>
                   </div>
                 )}

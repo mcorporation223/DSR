@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "../trpc";
 import { db } from "@/lib/db";
-import { incidents, victims } from "@/lib/db/schema";
+import { incidents, victims, users } from "@/lib/db/schema";
 import { and, count, desc, asc, eq, or, ilike, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
 
 const incidentInputSchema = z.object({
@@ -76,6 +77,10 @@ export const incidentsRouter = router({
       const orderBy =
         sortOrder === "asc" ? asc(incidents[sortBy]) : desc(incidents[sortBy]);
 
+      // Create aliases for users table to join twice
+      const createdByUser = alias(users, "createdByUser");
+      const updatedByUser = alias(users, "updatedByUser");
+
       const incidentsResult = await db
         .select({
           id: incidents.id,
@@ -87,8 +92,13 @@ export const incidentsRouter = router({
           updatedBy: incidents.updatedBy,
           createdAt: incidents.createdAt,
           updatedAt: incidents.updatedAt,
+          // Join with users table to get names
+          createdByName: sql<string>`CONCAT(${createdByUser.firstName}, ' ', ${createdByUser.lastName})`,
+          updatedByName: sql<string>`CONCAT(${updatedByUser.firstName}, ' ', ${updatedByUser.lastName})`,
         })
         .from(incidents)
+        .leftJoin(createdByUser, eq(incidents.createdBy, createdByUser.id))
+        .leftJoin(updatedByUser, eq(incidents.updatedBy, updatedByUser.id))
         .where(whereClause)
         .orderBy(orderBy)
         .limit(limit)
