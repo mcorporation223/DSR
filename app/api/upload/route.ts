@@ -13,11 +13,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
     }
 
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    // Validate file type based on upload type
+    let allowedTypes: string[];
+    if (type === "statement") {
+      // For statements, allow document types
+      allowedTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/plain",
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+      ];
+    } else {
+      // For other types (like employee photos), only allow images
+      allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    }
+
     if (!allowedTypes.includes(file.type)) {
+      const typeDescription =
+        type === "statement"
+          ? "PDF, Word documents, text files, and images"
+          : "images";
       return NextResponse.json(
-        { error: "Invalid file type. Only images are allowed." },
+        { error: `Invalid file type. Only ${typeDescription} are allowed.` },
         { status: 400 }
       );
     }
@@ -68,6 +89,8 @@ export async function POST(request: NextRequest) {
     const relativePath =
       type === "employee"
         ? path.join("employees/photos", fileName)
+        : type === "statement"
+        ? path.join("statements", fileName)
         : path.join(type, fileName);
 
     return NextResponse.json({

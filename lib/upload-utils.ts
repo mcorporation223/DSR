@@ -61,6 +61,32 @@ export function validateImageFile(file: File): string | null {
   return null; // No error
 }
 
+export function validateDocumentFile(file: File): string | null {
+  // Check file type - allow documents and images
+  const allowedTypes = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+  ];
+
+  if (!allowedTypes.includes(file.type)) {
+    return "Type de fichier non supporté. Utilisez PDF, Word, TXT, ou images (JPG, PNG, WebP, GIF).";
+  }
+
+  // Check file size (10MB limit for documents)
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  if (file.size > maxSize) {
+    return "Fichier trop volumineux. Taille maximale: 10MB.";
+  }
+
+  return null; // No error
+}
+
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B";
 

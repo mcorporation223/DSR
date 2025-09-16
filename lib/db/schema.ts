@@ -223,6 +223,9 @@ export const seizures = pgTable(
 export const statements = pgTable("statements", {
   id: uuid("id").defaultRandom().primaryKey(),
   fileUrl: varchar("file_url", { length: 500 }).notNull(), // URL or path to the statement file
+  detaineeId: uuid("detainee_id")
+    .notNull()
+    .references(() => detainees.id), // Foreign key to detainees
   // Audit Fields
   createdBy: uuid("created_by").references(() => users.id),
   updatedBy: uuid("updated_by").references(() => users.id),

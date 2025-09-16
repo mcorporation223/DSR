@@ -1,0 +1,2 @@
+ALTER TABLE "statements" ADD COLUMN "detainee_id" uuid NOT NULL;--> statement-breakpoint
+ALTER TABLE "statements" ADD CONSTRAINT "statements_detainee_id_detainees_id_fk" FOREIGN KEY ("detainee_id") REFERENCES "public"."detainees"("id") ON DELETE no action ON UPDATE no action;
