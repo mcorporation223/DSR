@@ -33,7 +33,6 @@ import { DetaineeForm } from "./detainee-form";
 import { EditDetaineeForm } from "./edit-detainee-form";
 import { DeleteDetaineeDialog } from "./delete-detainee-dialog";
 import { DetaineeDetailsDialog } from "./detainee-details-dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 // Types for detainee data - Updated to match database schema exactly
 interface Detainee extends Record<string, unknown> {
@@ -259,7 +258,7 @@ export function DetaineesTable() {
 
         return (
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+            {/* <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-gray-200">
                   {fullName
@@ -271,7 +270,7 @@ export function DetaineesTable() {
                     : "D"}
                 </AvatarFallback>
               </Avatar>
-            </div>
+            </div> */}
             <div
               className="text-sm font-medium text-gray-900 truncate max-w-[140px]"
               title={fullName}

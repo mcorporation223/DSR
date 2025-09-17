@@ -9,6 +9,7 @@ import {
   Loader2,
   Edit,
   Trash2,
+  Eye,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -30,6 +31,7 @@ import { trpc } from "@/components/trpc-provider";
 import { ReportForm } from "./report-form";
 import { EditReportForm } from "./edit-report-form";
 import { DeleteReportDialog } from "./delete-report-dialog";
+import { ReportDetailsDialog } from "./report-details-dialog";
 
 // Types for report data
 interface Report extends Record<string, unknown> {
@@ -65,6 +67,10 @@ export function ReportsTable() {
   // Delete report state
   const [deletingReport, setDeletingReport] = useState<Report | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // Details report state
+  const [viewingReport, setViewingReport] = useState<Report | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
   const itemsPerPage = 10;
 
@@ -169,6 +175,17 @@ export function ReportsTable() {
   const handleDeleteSuccess = useCallback(() => {
     refetch(); // Refresh the reports list
   }, [refetch]);
+
+  // Handle viewing report details
+  const handleViewReport = useCallback((report: Report) => {
+    setViewingReport(report);
+    setIsDetailsDialogOpen(true);
+  }, []);
+
+  const handleDetailsDialogClose = useCallback(() => {
+    setIsDetailsDialogOpen(false);
+    setViewingReport(null);
+  }, []);
 
   // Format date for display
   const formatDate = (date: Date) => {
@@ -319,6 +336,14 @@ export function ReportsTable() {
       align: "center",
       render: (_, record) => (
         <div className="flex items-center justify-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            onClick={() => handleViewReport(record as Report)}
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -427,6 +452,7 @@ export function ReportsTable() {
             sortOrder,
             onSort: handleSort,
           }}
+          onRowClick={handleViewReport}
         />
       )}
 
@@ -444,6 +470,13 @@ export function ReportsTable() {
         isOpen={isDeleteDialogOpen}
         onClose={handleDeleteDialogClose}
         onSuccess={handleDeleteSuccess}
+      />
+
+      {/* Report Details Dialog */}
+      <ReportDetailsDialog
+        report={viewingReport}
+        isOpen={isDetailsDialogOpen}
+        onClose={handleDetailsDialogClose}
       />
     </div>
   );

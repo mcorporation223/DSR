@@ -6,7 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import type { Detainee } from "./detainee-table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -68,7 +67,7 @@ export function DetaineeDetailsDialog({
       <DialogContent className="max-w-4xl max-h-[80vh]">
         <DialogHeader>
           <div className="flex items-center gap-4 mb-4">
-            <Avatar className="h-16 w-16">
+            {/* <Avatar className="h-16 w-16">
               <AvatarFallback className="bg-gray-200 text-lg">
                 {fullName
                   ? fullName
@@ -78,7 +77,7 @@ export function DetaineeDetailsDialog({
                       .toUpperCase()
                   : "D"}
               </AvatarFallback>
-            </Avatar>
+            </Avatar> */}
             <div className="flex-1">
               <DialogTitle className="text-xl font-semibold text-gray-900">
                 {fullName}
@@ -153,7 +152,7 @@ export function DetaineeDetailsDialog({
 
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Quartier d'origine
+                    Quartier d&apos;origine
                   </label>
                   <p className="text-sm text-gray-900">
                     {detainee.originNeighborhood || "N/A"}
@@ -199,7 +198,7 @@ export function DetaineeDetailsDialog({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Niveau d'études
+                    Niveau d&apos;études
                   </label>
                   <p className="text-sm text-gray-900">
                     {detainee.education || "N/A"}
@@ -238,12 +237,12 @@ export function DetaineeDetailsDialog({
             {/* Informations d'arrestation */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
-                Informations d'arrestation
+                Informations d&apos;arrestation
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Motif d'arrestation
+                    Motif d&apos;arrestation
                   </label>
                   <p className="text-sm text-gray-900">
                     {detainee.crimeReason || "N/A"}
@@ -252,7 +251,7 @@ export function DetaineeDetailsDialog({
 
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Date d'arrestation
+                    Date d&apos;arrestation
                   </label>
                   <p className="text-sm text-gray-900">
                     {formatDate(detainee.arrestDate)}
@@ -261,7 +260,7 @@ export function DetaineeDetailsDialog({
 
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Lieu d'arrestation
+                    Lieu d&apos;arrestation
                   </label>
                   <p className="text-sm text-gray-900">
                     {detainee.arrestLocation || "N/A"}
@@ -279,7 +278,7 @@ export function DetaineeDetailsDialog({
 
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Heure d'arrestation
+                    Heure d&apos;arrestation
                   </label>
                   <p className="text-sm text-gray-900">
                     {formatTime(detainee.arrestTime)}
@@ -288,7 +287,7 @@ export function DetaineeDetailsDialog({
 
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Heure d'arrivée
+                    Heure d&apos;arrivée
                   </label>
                   <p className="text-sm text-gray-900">
                     {formatTime(detainee.arrivalTime)}
@@ -369,7 +368,7 @@ export function DetaineeDetailsDialog({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Date d'enregistrement
+                    Date d&apos;enregistrement
                   </label>
                   <p className="text-sm text-gray-900">
                     {formatDateTime(detainee.createdAt)}

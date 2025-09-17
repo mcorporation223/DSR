@@ -143,12 +143,6 @@ export function StatementsTable() {
     refetch(); // Refresh the statements list
   }, [refetch]);
 
-  // Handle editing statement
-  const handleEditStatement = useCallback((statement: Statement) => {
-    setEditingStatement(statement);
-    setIsEditDialogOpen(true);
-  }, []);
-
   const handleEditDialogClose = useCallback(() => {
     setIsEditDialogOpen(false);
     setEditingStatement(null);

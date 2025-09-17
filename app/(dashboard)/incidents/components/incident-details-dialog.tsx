@@ -9,7 +9,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { Incident, Victim } from "./incident-table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Scroll } from "lucide-react";
 
 interface IncidentDetailsDialogProps {
   incident: Incident | null;
@@ -85,7 +84,7 @@ export function IncidentDetailsDialog({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Type d'événement
+                    Type d&apos;événement
                   </label>
                   <div className="flex items-center gap-2 border px-2 py-1 rounded-md w-max">
                     <div
@@ -101,7 +100,7 @@ export function IncidentDetailsDialog({
 
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Date de l'incident
+                    Date de l&apos;incident
                   </label>
                   <p className="text-sm text-gray-900">
                     {formatDate(incident.incidentDate)}
@@ -110,7 +109,7 @@ export function IncidentDetailsDialog({
 
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Lieu de l'incident
+                    Lieu de l&apos;incident
                   </label>
                   <p className="text-sm text-gray-900">
                     {incident.location || "N/A"}
@@ -193,7 +192,7 @@ export function IncidentDetailsDialog({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Date d'enregistrement
+                    Date d&apos;enregistrement
                   </label>
                   <p className="text-sm text-gray-900">
                     {formatDateTime(incident.createdAt)}

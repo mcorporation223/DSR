@@ -6,7 +6,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Seizure } from "./seizure-table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
@@ -47,15 +46,6 @@ export function SeizureDetailsDialog({
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
-
-  const getInitials = (name: string): string => {
-    const words = name.split(" ");
-    return words
-      .map((word) => word.charAt(0))
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
   };
 
   const getStatusColor = (status: string | null) => {
@@ -125,7 +115,7 @@ export function SeizureDetailsDialog({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Nom de l'objet
+                    Nom de l&apos;objet
                   </label>
                   <p className="text-sm text-gray-900">
                     {seizure.itemName || "N/A"}
@@ -253,7 +243,7 @@ export function SeizureDetailsDialog({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Date d'enregistrement
+                    Date d&apos;enregistrement
                   </label>
                   <p className="text-sm text-gray-900">
                     {formatDateTime(seizure.createdAt)}
