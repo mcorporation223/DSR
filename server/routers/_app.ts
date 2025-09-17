@@ -5,8 +5,10 @@ import { incidentsRouter } from "./incidents";
 import { seizuresRouter } from "./seizures";
 import { reportsRouter } from "./reports";
 import { statementsRouter } from "./statements";
+import { dashboardRouter } from "./dashboard";
 
 export const appRouter = router({
+  dashboard: dashboardRouter,
   employees: employeesRouter,
   detainees: detaineesRouter,
   incidents: incidentsRouter,

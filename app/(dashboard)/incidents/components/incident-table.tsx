@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import {
   MoreHorizontal,
-  Download,
   Search,
   Filter,
   Loader2,
@@ -389,13 +388,6 @@ export function IncidentTable() {
             onClick={() => handleViewIncident(incident)}
           >
             <Eye className="w-4 h-4 cursor-pointer" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-          >
-            <Download className="w-4 h-4" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
