@@ -156,8 +156,7 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
         <DialogHeader className="p-4">
           <DialogTitle>Ajouter un nouveau incident</DialogTitle>
           <DialogDescription>
-            Remplissez les informations ci-dessous pour ajouter un nouvel
-            incident au système.
+
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] overflow-hidden">

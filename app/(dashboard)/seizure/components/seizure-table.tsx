@@ -9,6 +9,7 @@ import {
   Loader2,
   Edit,
   Trash2,
+  Eye,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -31,6 +32,7 @@ import { trpc } from "@/components/trpc-provider";
 import { SeizureForm } from "./seizure-form";
 import { EditSeizureForm } from "./edit-seizure-form";
 import { DeleteSeizureDialog } from "./delete-seizure-dialog";
+import { SeizureDetailsDialog } from "./seizure-details-dialog";
 
 // Types for seizure data
 interface Seizure extends Record<string, unknown> {
@@ -49,6 +51,8 @@ interface Seizure extends Record<string, unknown> {
   updatedBy: string | null;
   createdAt: Date;
   updatedAt: Date;
+  createdByName?: string | null; // User name fields from backend joins
+  updatedByName?: string | null;
 }
 
 export function SeizureTable() {
@@ -74,6 +78,10 @@ export function SeizureTable() {
   // Delete seizure state
   const [deletingSeizure, setDeletingSeizure] = useState<Seizure | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // Details seizure state
+  const [viewingSeizure, setViewingSeizure] = useState<Seizure | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
   const itemsPerPage = 10;
 
@@ -200,6 +208,17 @@ export function SeizureTable() {
   const handleDeleteSuccess = useCallback(() => {
     refetch(); // Refresh the seizures list
   }, [refetch]);
+
+  // Handle viewing seizure details
+  const handleViewSeizure = useCallback((seizure: Seizure) => {
+    setViewingSeizure(seizure);
+    setIsDetailsDialogOpen(true);
+  }, []);
+
+  const handleDetailsDialogClose = useCallback(() => {
+    setIsDetailsDialogOpen(false);
+    setViewingSeizure(null);
+  }, []);
 
   const allColumns: TableColumn<Seizure>[] = [
     {
@@ -344,6 +363,14 @@ export function SeizureTable() {
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            onClick={() => handleViewSeizure(seizure)}
+          >
+            <Eye className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
           >
             <Download className="w-4 h-4" />
           </Button>
@@ -483,6 +510,7 @@ export function SeizureTable() {
           pagination={paginationConfig}
           showPagination={!!paginationConfig}
           sortConfig={sortConfig}
+          onRowClick={handleViewSeizure}
         />
       )}
 
@@ -500,6 +528,13 @@ export function SeizureTable() {
         isOpen={isDeleteDialogOpen}
         onClose={handleDeleteDialogClose}
         onSuccess={handleDeleteSuccess}
+      />
+
+      {/* Seizure Details Dialog */}
+      <SeizureDetailsDialog
+        seizure={viewingSeizure}
+        isOpen={isDetailsDialogOpen}
+        onClose={handleDetailsDialogClose}
       />
     </div>
   );

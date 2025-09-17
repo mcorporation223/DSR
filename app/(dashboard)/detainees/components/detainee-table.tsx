@@ -9,6 +9,7 @@ import {
   Loader2,
   Edit,
   Trash2,
+  Eye,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -31,7 +32,7 @@ import { trpc } from "@/components/trpc-provider";
 import { DetaineeForm } from "./detainee-form";
 import { EditDetaineeForm } from "./edit-detainee-form";
 import { DeleteDetaineeDialog } from "./delete-detainee-dialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { DetaineeDetailsDialog } from "./detainee-details-dialog";
 
 // Types for detainee data - Updated to match database schema exactly
 interface Detainee extends Record<string, unknown> {
@@ -65,6 +66,8 @@ interface Detainee extends Record<string, unknown> {
   updatedBy: string | null;
   createdAt: string; // This comes as string from the database
   updatedAt: string; // This comes as string from the database
+  createdByName?: string | null; // User name fields from backend joins
+  updatedByName?: string | null;
 }
 
 export function DetaineesTable() {
@@ -91,6 +94,10 @@ export function DetaineesTable() {
     null
   );
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // Details dialog state
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [detaineeToView, setDetaineeToView] = useState<Detainee | null>(null);
 
   const itemsPerPage = 10;
 
@@ -205,6 +212,25 @@ export function DetaineesTable() {
     refetch(); // Refresh the detainees list
   }, [refetch]);
 
+  // Handle view detainee details
+  const handleViewDetainee = useCallback((detainee: Detainee) => {
+    setDetaineeToView(detainee);
+    setDetailsDialogOpen(true);
+  }, []);
+
+  const handleDetailsDialogClose = useCallback(() => {
+    setDetailsDialogOpen(false);
+    setDetaineeToView(null);
+  }, []);
+
+  // Handle row click
+  const handleRowClick = useCallback(
+    (detainee: Detainee) => {
+      handleViewDetainee(detainee);
+    },
+    [handleViewDetainee]
+  );
+
   // Get status display text
   const getStatusDisplay = (status: string | null) => {
     switch (status) {
@@ -232,7 +258,7 @@ export function DetaineesTable() {
 
         return (
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+            {/* <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-gray-200">
                   {fullName
@@ -244,7 +270,7 @@ export function DetaineesTable() {
                     : "D"}
                 </AvatarFallback>
               </Avatar>
-            </div>
+            </div> */}
             <div
               className="text-sm font-medium text-gray-900 truncate max-w-[140px]"
               title={fullName}
@@ -448,7 +474,18 @@ export function DetaineesTable() {
       className: "w-24",
       align: "center",
       render: (_, detainee) => (
-        <div className="flex items-center justify-center gap-1">
+        <div
+          className="flex items-center justify-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            onClick={() => handleViewDetainee(detainee)}
+          >
+            <Eye className="w-4 h-4 cursor-pointer" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -600,6 +637,7 @@ export function DetaineesTable() {
           pagination={paginationConfig}
           showPagination={!!paginationConfig}
           sortConfig={sortConfig}
+          onRowClick={handleRowClick}
         />
       )}
 
@@ -617,6 +655,13 @@ export function DetaineesTable() {
         isOpen={isDeleteDialogOpen}
         onClose={handleDeleteDialogClose}
         onSuccess={handleDeleteSuccess}
+      />
+
+      {/* Details Dialog */}
+      <DetaineeDetailsDialog
+        detainee={detaineeToView}
+        isOpen={detailsDialogOpen}
+        onClose={handleDetailsDialogClose}
       />
     </div>
   );

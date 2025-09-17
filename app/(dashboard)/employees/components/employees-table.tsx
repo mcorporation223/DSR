@@ -3,12 +3,12 @@
 import { Button } from "@/components/ui/button";
 import {
   MoreHorizontal,
-  Download,
   Search,
   Filter,
   Loader2,
   Edit,
   Trash2,
+  Eye,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -31,6 +31,7 @@ import { trpc } from "@/components/trpc-provider";
 import { EmployeeForm } from "./employee-form";
 import { EditEmployeeForm } from "./edit-employee-form";
 import { DeleteEmployeeDialog } from "./delete-employee-dialog";
+import { EmployeeDetailsDialog } from "./employee-details-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getFileUrl } from "@/lib/upload-utils";
 
@@ -78,6 +79,10 @@ export function EmployeesTable() {
   const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(
     null
   );
+
+  // Details dialog state
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [employeeToView, setEmployeeToView] = useState<Employee | null>(null);
 
   const itemsPerPage = 10;
 
@@ -177,6 +182,25 @@ export function EmployeesTable() {
     refetch(); // Refresh the employees list
     handleDeleteDialogClose();
   }, [refetch, handleDeleteDialogClose]);
+
+  // Handle view employee details
+  const handleViewEmployee = useCallback((employee: Employee) => {
+    setEmployeeToView(employee);
+    setDetailsDialogOpen(true);
+  }, []);
+
+  const handleDetailsDialogClose = useCallback(() => {
+    setDetailsDialogOpen(false);
+    setEmployeeToView(null);
+  }, []);
+
+  // Handle row click
+  const handleRowClick = useCallback(
+    (employee: Employee) => {
+      handleViewEmployee(employee);
+    },
+    [handleViewEmployee]
+  );
   const allColumns: TableColumn<Employee>[] = [
     {
       key: "firstName",
@@ -411,13 +435,17 @@ export function EmployeesTable() {
       className: "w-24",
       align: "center",
       render: (_, employee) => (
-        <div className="flex items-center justify-center gap-1">
+        <div
+          className="flex items-center justify-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
           <Button
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            onClick={() => handleViewEmployee(employee)}
           >
-            <Download className="w-4 h-4" />
+            <Eye className="w-4 h-4 cursor-pointer" />
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -557,6 +585,7 @@ export function EmployeesTable() {
           pagination={paginationConfig}
           showPagination={!!paginationConfig}
           sortConfig={sortConfig}
+          onRowClick={handleRowClick}
         />
       )}
 
@@ -569,6 +598,13 @@ export function EmployeesTable() {
           onSuccess={handleDeleteSuccess}
         />
       )}
+
+      {/* Details Dialog */}
+      <EmployeeDetailsDialog
+        employee={employeeToView}
+        isOpen={detailsDialogOpen}
+        onClose={handleDetailsDialogClose}
+      />
     </div>
   );
 }

@@ -9,7 +9,7 @@ import {
   UserX,
   AlertTriangle,
   Gavel,
-  Settings,
+  // Settings,
   LogOut,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -93,10 +93,10 @@ export function Sidebar() {
                 <Gavel className="w-4 h-4" />
                 Saisie
               </Link>
-              <Link href="/settings" className={getLinkClassName("/settings")}>
+              {/* <Link href="/settings" className={getLinkClassName("/settings")}>
                 <Settings className="w-4 h-4" />
                 Settings
-              </Link>
+              </Link> */}
             </nav>
           </div>
         </div>

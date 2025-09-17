@@ -9,6 +9,7 @@ import {
   Loader2,
   Edit,
   Trash2,
+  Eye,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -31,6 +32,7 @@ import { trpc } from "@/components/trpc-provider";
 import { IncidentForm } from "./incident-form";
 import { EditIncidentForm } from "./edit-incident-form";
 import { DeleteIncidentDialog } from "./delete-incident-dialog";
+import { IncidentDetailsDialog } from "./incident-details-dialog";
 
 // Types for incident data
 interface Victim {
@@ -51,6 +53,8 @@ interface Incident extends Record<string, unknown> {
   updatedBy: string | null;
   createdAt: Date;
   updatedAt: Date;
+  createdByName?: string | null; // User name fields from backend joins
+  updatedByName?: string | null;
 }
 
 export function IncidentTable() {
@@ -77,6 +81,10 @@ export function IncidentTable() {
     null
   );
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // Details dialog state
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [incidentToView, setIncidentToView] = useState<Incident | null>(null);
 
   const itemsPerPage = 10;
 
@@ -200,6 +208,25 @@ export function IncidentTable() {
   const handleDeleteSuccess = useCallback(() => {
     refetch(); // Refresh the incidents list
   }, [refetch]);
+
+  // Handle view incident details
+  const handleViewIncident = useCallback((incident: Incident) => {
+    setIncidentToView(incident);
+    setDetailsDialogOpen(true);
+  }, []);
+
+  const handleDetailsDialogClose = useCallback(() => {
+    setDetailsDialogOpen(false);
+    setIncidentToView(null);
+  }, []);
+
+  // Handle row click
+  const handleRowClick = useCallback(
+    (incident: Incident) => {
+      handleViewIncident(incident);
+    },
+    [handleViewIncident]
+  );
 
   const allColumns: TableColumn<Incident>[] = [
     {
@@ -351,7 +378,18 @@ export function IncidentTable() {
       className: "w-24",
       align: "center",
       render: (_, incident) => (
-        <div className="flex items-center justify-center gap-1">
+        <div
+          className="flex items-center justify-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            onClick={() => handleViewIncident(incident)}
+          >
+            <Eye className="w-4 h-4 cursor-pointer" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -492,6 +530,7 @@ export function IncidentTable() {
           pagination={paginationConfig}
           showPagination={!!paginationConfig}
           sortConfig={sortConfig}
+          onRowClick={handleRowClick}
         />
       )}
 
@@ -509,6 +548,13 @@ export function IncidentTable() {
         isOpen={isDeleteDialogOpen}
         onClose={handleDeleteDialogClose}
         onSuccess={handleDeleteSuccess}
+      />
+
+      {/* Details Dialog */}
+      <IncidentDetailsDialog
+        incident={incidentToView}
+        isOpen={detailsDialogOpen}
+        onClose={handleDetailsDialogClose}
       />
     </div>
   );
