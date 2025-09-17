@@ -32,7 +32,9 @@ export function Sidebar() {
   };
 
   const getLinkClassName = (path: string) => {
-    const isActive = pathname === path;
+    // Special case for dashboard/home: consider both "/dashboard" and "/" as active
+    const isActive =
+      pathname === path || (path === "/dashboard" && pathname === "/");
     return `px-4 py-2 rounded-lg flex items-center gap-3 ${
       isActive
         ? "bg-primary text-white font-medium text-sm"
