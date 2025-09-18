@@ -11,6 +11,7 @@ import {
   Gavel,
   // Settings,
   LogOut,
+  UserCog,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import {
@@ -65,6 +66,10 @@ export function Sidebar() {
               >
                 <Users className="w-4 h-4" />
                 <span className="text-sm font-medium">Employees</span>
+              </Link>
+              <Link href="/users" className={getLinkClassName("/users")}>
+                <UserCog className="w-4 h-4" />
+                <span className="text-sm font-medium">Users</span>
               </Link>
               <Link href="/reports" className={getLinkClassName("/reports")}>
                 <FileBarChart className="w-4 h-4" />
