@@ -11,6 +11,7 @@ import {
   seizureByIdSchema,
   seizureDeleteSchema,
 } from "../schemas/seizures";
+import { logSeizureAction, captureChanges } from "@/lib/audit-logger";
 
 // Create aliases for the users table to handle both createdBy and updatedBy
 const createdByUser = alias(users, "createdByUser");
@@ -156,6 +157,15 @@ export const seizuresRouter = router({
         .values(seizureData)
         .returning();
 
+      // Log the seizure creation
+      await logSeizureAction(ctx.user, "create", newSeizure[0].id, {
+        description: `Nouvelle saisie enregistrée: ${input.itemName}`,
+        itemName: input.itemName,
+        type: input.type,
+        seizureLocation: input.seizureLocation,
+        ownerName: input.ownerName,
+      });
+
       return newSeizure[0];
     }),
 
@@ -163,6 +173,17 @@ export const seizuresRouter = router({
     .input(seizureUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...seizureData } = input;
+
+      // Get current seizure data for change tracking
+      const currentSeizure = await db
+        .select()
+        .from(seizures)
+        .where(eq(seizures.id, id))
+        .limit(1);
+
+      if (!currentSeizure || currentSeizure.length === 0) {
+        throw new Error("Saisie non trouvée");
+      }
 
       // Prepare update data with proper date conversion
       const updateData: any = {
@@ -184,6 +205,22 @@ export const seizuresRouter = router({
         .set(updateData)
         .where(eq(seizures.id, id))
         .returning();
+
+      // Capture and log changes (detect status changes)
+      const changes = captureChanges(currentSeizure[0], updateData);
+      const isStatusChange = changes.status !== undefined;
+
+      await logSeizureAction(
+        ctx.user,
+        isStatusChange ? "status_change" : "update",
+        id,
+        {
+          description: isStatusChange
+            ? `Changement de statut de la saisie: ${updatedSeizure[0].itemName} (${changes.status.old} → ${changes.status.new})`
+            : `Modification de la saisie: ${updatedSeizure[0].itemName}`,
+          changed: changes,
+        }
+      );
 
       return updatedSeizure[0];
     }),

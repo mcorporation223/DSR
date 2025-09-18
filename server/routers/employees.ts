@@ -1,4 +1,4 @@
-import { router, publicProcedure } from "../trpc";
+import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { employees } from "@/lib/db/schema";
 import { desc, asc, like, and, eq, or, count } from "drizzle-orm";
 import {
@@ -7,6 +7,7 @@ import {
   createEmployeeSchema,
   updateEmployeeSchema,
 } from "../schemas/employees";
+import { logEmployeeAction, captureChanges } from "@/lib/audit-logger";
 
 export const employeesRouter = router({
   // Fetch all employees with optional filters
@@ -107,12 +108,9 @@ export const employeesRouter = router({
     }),
 
   // Create a new employee
-  create: publicProcedure
+  create: protectedProcedure
     .input(createEmployeeSchema)
     .mutation(async ({ ctx, input }) => {
-      // TODO: Get current user ID from session - for now use null
-      // const currentUserId = ctx.session?.user?.id;
-
       const newEmployee = await ctx.db
         .insert(employees)
         .values({
@@ -129,36 +127,59 @@ export const employeesRouter = router({
           phone: input.phone,
           email: input.email,
           photoUrl: input.photoUrl,
-          // createdBy: currentUserId,
-          // updatedBy: currentUserId,
+          createdBy: ctx.user.id,
+          updatedBy: ctx.user.id,
         })
         .returning();
+
+      // Log the employee creation
+      await logEmployeeAction(ctx.user, "create", newEmployee[0].id, {
+        description: `Nouvel employé enregistré: ${input.firstName} ${input.lastName}`,
+        function: input.function,
+        deploymentLocation: input.deploymentLocation,
+        email: input.email,
+      });
 
       return newEmployee[0];
     }),
 
   // Update an employee
-  update: publicProcedure
+  update: protectedProcedure
     .input(updateEmployeeSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
 
-      // TODO: Get current user ID from session - for now use null
-      // const currentUserId = ctx.session?.user?.id;
+      // Get current employee data for change tracking
+      const currentEmployee = await ctx.db
+        .select()
+        .from(employees)
+        .where(eq(employees.id, id))
+        .limit(1);
+
+      if (!currentEmployee || currentEmployee.length === 0) {
+        throw new Error("Employé non trouvé");
+      }
 
       const updatedEmployee = await ctx.db
         .update(employees)
         .set({
           ...updateData,
-          // updatedBy: currentUserId,
+          updatedBy: ctx.user.id,
           updatedAt: new Date(),
         })
         .where(eq(employees.id, id))
         .returning();
 
       if (!updatedEmployee || updatedEmployee.length === 0) {
-        throw new Error("Employee not found");
+        throw new Error("Employé non trouvé");
       }
+
+      // Capture and log changes
+      const changes = captureChanges(currentEmployee[0], updateData);
+      await logEmployeeAction(ctx.user, "update", id, {
+        description: `Modification de l'employé: ${updatedEmployee[0].firstName} ${updatedEmployee[0].lastName}`,
+        changed: changes,
+      });
 
       return updatedEmployee[0];
     }),

@@ -10,6 +10,7 @@ import {
   updateDetaineeSchema,
 } from "../schemas/detainees";
 import { z } from "zod";
+import { logDetaineeAction, captureChanges } from "@/lib/audit-logger";
 
 // Create aliases for the users table to handle both createdBy and updatedBy
 const createdByUser = alias(users, "createdByUser");
@@ -191,12 +192,9 @@ export const detaineesRouter = router({
     }),
 
   // Create a new detainee
-  create: publicProcedure
+  create: protectedProcedure
     .input(createDetaineeSchema)
     .mutation(async ({ ctx, input }) => {
-      // TODO: Get current user ID from session - for now use null
-      // const currentUserId = ctx.session?.user?.id;
-
       // Helper function to convert time string (HH:mm) to timestamp
       const timeStringToTimestamp = (
         timeStr: string | undefined
@@ -241,23 +239,38 @@ export const detaineesRouter = router({
           cellNumber: input.cellNumber,
           location: input.location,
           status: "in_custody", // Automatically set status for new detainees
-          // Removed releaseDate and releaseReason from create operation
-          // createdBy: currentUserId,
-          // updatedBy: currentUserId,
+          createdBy: ctx.user.id,
+          updatedBy: ctx.user.id,
         })
         .returning();
+
+      // Log the detainee creation
+      await logDetaineeAction(ctx.user, "create", newDetainee[0].id, {
+        description: `Nouveau détenu enregistré: ${input.firstName} ${input.lastName}`,
+        crimeReason: input.crimeReason,
+        arrestLocation: input.arrestLocation,
+        arrestedBy: input.arrestedBy,
+      });
 
       return newDetainee[0];
     }),
 
   // Update a detainee
-  update: publicProcedure
+  update: protectedProcedure
     .input(updateDetaineeSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
 
-      // TODO: Get current user ID from session - for now use null
-      // const currentUserId = ctx.session?.user?.id;
+      // Get current detainee data for change tracking
+      const currentDetainee = await ctx.db
+        .select()
+        .from(detainees)
+        .where(eq(detainees.id, id))
+        .limit(1);
+
+      if (!currentDetainee || currentDetainee.length === 0) {
+        throw new Error("Détenu non trouvé");
+      }
 
       // Helper function to convert time string (HH:mm) to timestamp
       const timeStringToTimestamp = (
@@ -291,31 +304,56 @@ export const detaineesRouter = router({
         .update(detainees)
         .set({
           ...processedUpdateData,
-          // updatedBy: currentUserId,
+          updatedBy: ctx.user.id,
           updatedAt: new Date(),
         })
         .where(eq(detainees.id, id))
         .returning();
 
       if (!updatedDetainee || updatedDetainee.length === 0) {
-        throw new Error("Detainee not found");
+        throw new Error("Détenu non trouvé");
       }
+
+      // Capture and log changes
+      const changes = captureChanges(currentDetainee[0], processedUpdateData);
+      await logDetaineeAction(ctx.user, "update", id, {
+        description: `Modification du détenu: ${updatedDetainee[0].firstName} ${updatedDetainee[0].lastName}`,
+        changed: changes,
+      });
 
       return updatedDetainee[0];
     }),
 
   // Delete a detainee (hard delete since there's no isActive field)
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(getDetaineeByIdSchema)
     .mutation(async ({ ctx, input }) => {
+      // Get detainee data before deletion for logging
+      const detaineeToDelete = await ctx.db
+        .select()
+        .from(detainees)
+        .where(eq(detainees.id, input.id))
+        .limit(1);
+
+      if (!detaineeToDelete || detaineeToDelete.length === 0) {
+        throw new Error("Détenu non trouvé");
+      }
+
       const deletedDetainee = await ctx.db
         .delete(detainees)
         .where(eq(detainees.id, input.id))
         .returning();
 
       if (!deletedDetainee || deletedDetainee.length === 0) {
-        throw new Error("Detainee not found");
+        throw new Error("Détenu non trouvé");
       }
+
+      // Log the detainee deletion
+      await logDetaineeAction(ctx.user, "delete", input.id, {
+        description: `Suppression du détenu: ${detaineeToDelete[0].firstName} ${detaineeToDelete[0].lastName}`,
+        crimeReason: detaineeToDelete[0].crimeReason,
+        arrestLocation: detaineeToDelete[0].arrestLocation,
+      });
 
       return deletedDetainee[0];
     }),

@@ -1,4 +1,4 @@
-import { router, publicProcedure } from "../trpc";
+import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { users } from "@/lib/db/schema";
 import { desc, asc, like, and, eq, or, count, not } from "drizzle-orm";
 import {
@@ -9,6 +9,7 @@ import {
   updateUserPasswordSchema,
 } from "../schemas/users";
 import bcrypt from "bcrypt";
+import { logUserAction, captureChanges } from "@/lib/audit-logger";
 
 export const usersRouter = router({
   // Fetch all users with optional filters
@@ -128,8 +129,59 @@ export const usersRouter = router({
       return user[0];
     }),
 
-  // Create a new user
-  create: publicProcedure
+  // Create the first admin user (no authentication required)
+  createFirstAdmin: publicProcedure
+    .input(createUserSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Check if any users exist
+      const existingUsers = await ctx.db.select({ count: count() }).from(users);
+
+      if (existingUsers[0]?.count > 0) {
+        throw new Error(
+          "Des utilisateurs existent déjà. Utilisez l'endpoint create pour créer de nouveaux utilisateurs."
+        );
+      }
+
+      // Check if user with email already exists (double check)
+      const existingUser = await ctx.db
+        .select()
+        .from(users)
+        .where(eq(users.email, input.email))
+        .limit(1);
+
+      if (existingUser.length > 0) {
+        throw new Error("Un utilisateur avec cet email existe déjà");
+      }
+
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(input.password, 12);
+
+      const newUser = await ctx.db
+        .insert(users)
+        .values({
+          firstName: input.firstName,
+          lastName: input.lastName,
+          email: input.email,
+          passwordHash: hashedPassword,
+          role: "admin", // First user is always admin
+          isActive: true,
+        })
+        .returning({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          role: users.role,
+          isActive: users.isActive,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+        });
+
+      return newUser[0];
+    }),
+
+  // Create a new user (requires authentication)
+  create: protectedProcedure
     .input(createUserSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if user with email already exists
@@ -167,14 +219,32 @@ export const usersRouter = router({
           updatedAt: users.updatedAt,
         });
 
+      // Log the user creation
+      await logUserAction(ctx.user, "create", newUser[0].id, {
+        description: `Création d'un utilisateur: ${input.firstName} ${input.lastName}`,
+        email: input.email,
+        role: input.role,
+      });
+
       return newUser[0];
     }),
 
   // Update a user
-  update: publicProcedure
+  update: protectedProcedure
     .input(updateUserSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
+
+      // Get current user data for change tracking
+      const currentUser = await ctx.db
+        .select()
+        .from(users)
+        .where(eq(users.id, id))
+        .limit(1);
+
+      if (!currentUser || currentUser.length === 0) {
+        throw new Error("Utilisateur non trouvé");
+      }
 
       // If email is being updated, check if it's already taken by another user
       if (updateData.email) {
@@ -213,11 +283,18 @@ export const usersRouter = router({
         throw new Error("Utilisateur non trouvé");
       }
 
+      // Capture and log changes
+      const changes = captureChanges(currentUser[0], updateData);
+      await logUserAction(ctx.user, "update", id, {
+        description: `Modification de l'utilisateur: ${updatedUser[0].firstName} ${updatedUser[0].lastName}`,
+        changed: changes,
+      });
+
       return updatedUser[0];
     }),
 
   // Update user password
-  updatePassword: publicProcedure
+  updatePassword: protectedProcedure
     .input(updateUserPasswordSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, currentPassword, newPassword } = input;
@@ -255,13 +332,30 @@ export const usersRouter = router({
         })
         .where(eq(users.id, id));
 
+      // Log the password change
+      await logUserAction(ctx.user, "update", id, {
+        description: `Changement de mot de passe pour: ${user[0].firstName} ${user[0].lastName}`,
+        action: "password_change",
+      });
+
       return { success: true };
     }),
 
   // Delete a user (soft delete)
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(getUserByIdSchema)
     .mutation(async ({ ctx, input }) => {
+      // Get user data before deletion for logging
+      const userToDelete = await ctx.db
+        .select()
+        .from(users)
+        .where(eq(users.id, input.id))
+        .limit(1);
+
+      if (!userToDelete || userToDelete.length === 0) {
+        throw new Error("Utilisateur non trouvé");
+      }
+
       const deletedUser = await ctx.db
         .update(users)
         .set({
@@ -283,6 +377,13 @@ export const usersRouter = router({
       if (!deletedUser || deletedUser.length === 0) {
         throw new Error("Utilisateur non trouvé");
       }
+
+      // Log the user deletion
+      await logUserAction(ctx.user, "delete", input.id, {
+        description: `Suppression (désactivation) de l'utilisateur: ${userToDelete[0].firstName} ${userToDelete[0].lastName}`,
+        email: userToDelete[0].email,
+        role: userToDelete[0].role,
+      });
 
       return deletedUser[0];
     }),
