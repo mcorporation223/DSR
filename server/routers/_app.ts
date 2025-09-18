@@ -7,6 +7,7 @@ import { reportsRouter } from "./reports";
 import { statementsRouter } from "./statements";
 import { dashboardRouter } from "./dashboard";
 import { usersRouter } from "./users";
+import { auditLogsRouter } from "./audit-logs";
 
 export const appRouter = router({
   dashboard: dashboardRouter,
@@ -17,6 +18,7 @@ export const appRouter = router({
   reports: reportsRouter,
   statements: statementsRouter,
   users: usersRouter,
+  auditLogs: auditLogsRouter,
 });
 
 export type AppRouter = typeof appRouter;

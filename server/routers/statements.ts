@@ -11,6 +11,7 @@ import {
   statementByIdSchema,
   statementDeleteSchema,
 } from "../schemas/statements";
+import { logStatementAction, captureChanges } from "@/lib/audit-logger";
 
 export const statementsRouter = router({
   getAll: protectedProcedure
@@ -124,6 +125,13 @@ export const statementsRouter = router({
         .values(statementData)
         .returning();
 
+      // Log the statement creation
+      await logStatementAction(ctx.user, "create", newStatement[0].id, {
+        description: `Nouvelle déclaration enregistrée`,
+        fileUrl: input.fileUrl,
+        detaineeId: input.detaineeId,
+      });
+
       return newStatement[0];
     }),
 
@@ -131,6 +139,17 @@ export const statementsRouter = router({
     .input(statementUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...statementData } = input;
+
+      // Get current statement data for change tracking
+      const currentStatement = await db
+        .select()
+        .from(statements)
+        .where(eq(statements.id, id))
+        .limit(1);
+
+      if (!currentStatement || currentStatement.length === 0) {
+        throw new Error("Déclaration non trouvée");
+      }
 
       // Prepare update data
       const updateData: any = {
@@ -145,13 +164,39 @@ export const statementsRouter = router({
         .where(eq(statements.id, id))
         .returning();
 
+      // Capture and log changes
+      const changes = captureChanges(currentStatement[0], updateData);
+      await logStatementAction(ctx.user, "update", id, {
+        description: `Modification de la déclaration`,
+        changed: changes,
+      });
+
       return updatedStatement[0];
     }),
 
   delete: protectedProcedure
     .input(statementDeleteSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Get statement data before deletion for logging
+      const statementToDelete = await db
+        .select()
+        .from(statements)
+        .where(eq(statements.id, input.id))
+        .limit(1);
+
+      if (!statementToDelete || statementToDelete.length === 0) {
+        throw new Error("Déclaration non trouvée");
+      }
+
       await db.delete(statements).where(eq(statements.id, input.id));
+
+      // Log the statement deletion
+      await logStatementAction(ctx.user, "delete", input.id, {
+        description: `Suppression de la déclaration`,
+        fileUrl: statementToDelete[0].fileUrl,
+        detaineeId: statementToDelete[0].detaineeId,
+      });
+
       return { success: true };
     }),
 

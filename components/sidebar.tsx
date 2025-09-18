@@ -9,6 +9,7 @@ import {
   UserX,
   AlertTriangle,
   Gavel,
+  ScrollText,
   // Settings,
   LogOut,
   UserCog,
@@ -99,6 +100,13 @@ export function Sidebar() {
               <Link href="/seizure" className={getLinkClassName("/seizure")}>
                 <Gavel className="w-4 h-4" />
                 Saisie
+              </Link>
+              <Link
+                href="/audit-logs"
+                className={getLinkClassName("/audit-logs")}
+              >
+                <ScrollText className="w-4 h-4" />
+                <span className="text-sm font-medium">Audit Logs</span>
               </Link>
               {/* <Link href="/settings" className={getLinkClassName("/settings")}>
                 <Settings className="w-4 h-4" />

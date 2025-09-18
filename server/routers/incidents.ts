@@ -5,6 +5,7 @@ import { incidents, victims, users } from "@/lib/db/schema";
 import { and, count, desc, asc, eq, or, ilike, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
+import { logIncidentAction, captureChanges } from "@/lib/audit-logger";
 
 const incidentInputSchema = z.object({
   incidentDate: z.string().datetime(),
@@ -187,6 +188,15 @@ export const incidentsRouter = router({
           }))
         );
       }
+
+      // Log the incident creation
+      await logIncidentAction(ctx.user, "create", newIncident[0].id, {
+        description: `Nouvel incident enregistré: ${incidentData.eventType} à ${incidentData.location}`,
+        eventType: incidentData.eventType,
+        location: incidentData.location,
+        numberOfVictims: incidentData.numberOfVictims,
+        victimNames: inputVictims?.map((v) => v.name) || [],
+      });
 
       return newIncident[0];
     }),

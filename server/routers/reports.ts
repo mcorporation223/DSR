@@ -11,6 +11,7 @@ import {
   reportByIdSchema,
   reportDeleteSchema,
 } from "../schemas/reports";
+import { logReportAction, captureChanges } from "@/lib/audit-logger";
 
 export const reportsRouter = router({
   getAll: protectedProcedure
@@ -115,6 +116,13 @@ export const reportsRouter = router({
 
       const newReport = await db.insert(reports).values(reportData).returning();
 
+      // Log the report creation
+      await logReportAction(ctx.user, "create", newReport[0].id, {
+        description: `Nouveau rapport créé: ${input.title}`,
+        title: input.title,
+        location: input.location,
+      });
+
       return newReport[0];
     }),
 
@@ -122,6 +130,17 @@ export const reportsRouter = router({
     .input(reportUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...reportData } = input;
+
+      // Get current report data for change tracking
+      const currentReport = await db
+        .select()
+        .from(reports)
+        .where(eq(reports.id, id))
+        .limit(1);
+
+      if (!currentReport || currentReport.length === 0) {
+        throw new Error("Rapport non trouvé");
+      }
 
       // Prepare update data with proper date conversion
       const updateData: any = {
@@ -141,13 +160,39 @@ export const reportsRouter = router({
         .where(eq(reports.id, id))
         .returning();
 
+      // Capture and log changes
+      const changes = captureChanges(currentReport[0], updateData);
+      await logReportAction(ctx.user, "update", id, {
+        description: `Modification du rapport: ${updatedReport[0].title}`,
+        changed: changes,
+      });
+
       return updatedReport[0];
     }),
 
   delete: protectedProcedure
     .input(reportDeleteSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Get report data before deletion for logging
+      const reportToDelete = await db
+        .select()
+        .from(reports)
+        .where(eq(reports.id, input.id))
+        .limit(1);
+
+      if (!reportToDelete || reportToDelete.length === 0) {
+        throw new Error("Rapport non trouvé");
+      }
+
       await db.delete(reports).where(eq(reports.id, input.id));
+
+      // Log the report deletion
+      await logReportAction(ctx.user, "delete", input.id, {
+        description: `Suppression du rapport: ${reportToDelete[0].title}`,
+        title: reportToDelete[0].title,
+        location: reportToDelete[0].location,
+      });
+
       return { success: true };
     }),
 
