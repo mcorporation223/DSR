@@ -59,8 +59,7 @@ export function DeleteUserDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-red-600">
-            <AlertTriangle className="w-5 h-5" />
+          <DialogTitle className="flex items-center gap-2">
             Désactiver l&apos;utilisateur
           </DialogTitle>
         </DialogHeader>

@@ -16,11 +16,13 @@ export const config = {
     /*
      * Match all request paths except for the ones starting with:
      * - api/auth (auth API routes)
+     * - api/trpc (TRPC API routes - needed for public procedures)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - signin (signin page)
+     * - setup-password (setup password page)
      */
-    "/((?!api/auth|_next/static|_next/image|favicon.ico|signin).*)",
+    "/((?!api/auth|api/trpc|_next/static|_next/image|favicon.ico|signin|setup-password).*)",
   ],
 };

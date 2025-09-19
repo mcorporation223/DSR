@@ -12,9 +12,12 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-full flex">
+    <div className="min-h-full flex" suppressHydrationWarning={true}>
       {/* Left Panel - Image Section */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+      <div
+        className="hidden lg:flex lg:w-1/2 relative overflow-hidden"
+        suppressHydrationWarning={true}
+      >
         <Image
           src="/signin-image.svg"
           alt="DSR Authentication Illustration"
@@ -25,8 +28,13 @@ export default function AuthLayout({
       </div>
 
       {/* Right Panel - Form Section */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-white p-8">
-        <div className="max-w-md w-full">{children}</div>
+      <div
+        className="w-full lg:w-1/2 flex items-center justify-center bg-white p-8"
+        suppressHydrationWarning={true}
+      >
+        <div className="max-w-md w-full" suppressHydrationWarning={true}>
+          {children}
+        </div>
       </div>
     </div>
   );

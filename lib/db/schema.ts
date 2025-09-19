@@ -16,9 +16,16 @@ export const users = pgTable("users", {
   firstName: varchar("first_name", { length: 100 }),
   lastName: varchar("last_name", { length: 100 }),
   email: varchar("email", { length: 255 }).unique().notNull(),
-  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  passwordHash: varchar("password_hash", { length: 255 }),
   role: varchar("role", { length: 50 }).default("admin").notNull(), // e.g., admin, user
   isActive: boolean("is_active").default(true).notNull(),
+
+  // Password setup fields
+  setupToken: varchar("setup_token", { length: 255 }), // Setup token for new users
+  setupTokenExpiry: timestamp("setup_token_expiry"), // Token expiration time
+  isPasswordSet: boolean("is_password_set").default(false).notNull(), // Has user set their password
+  mustChangePassword: boolean("must_change_password").default(false).notNull(), // Force password change
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -239,7 +246,7 @@ export const auditLogs = pgTable(
     id: bigserial("id", { mode: "number" }).primaryKey(),
     userId: uuid("user_id")
       .notNull()
-      .references(() => users.id), // Fixed: Changed from varchar to uuid
+      .references(() => users.id, { onDelete: "cascade" }), // Fixed: Changed from varchar to uuid
     action: varchar("action", { length: 32 }).notNull(), // e.g. create, update, delete, status_change
     entityType: varchar("entity_type", { length: 32 }).notNull(), // e.g. employee, detainee, report, statement, incident, seizure
     entityId: varchar("entity_id", { length: 50 }).notNull(), // ID of the record in the entity table (keeping as varchar for flexibility)

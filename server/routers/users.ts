@@ -5,11 +5,21 @@ import {
   getAllUsersSchema,
   getUserByIdSchema,
   createUserSchema,
+  createFirstAdminSchema,
+  setupPasswordSchema,
+  validateSetupTokenSchema,
   updateUserSchema,
   updateUserPasswordSchema,
 } from "../schemas/users";
 import bcrypt from "bcrypt";
 import { logUserAction, captureChanges } from "@/lib/audit-logger";
+import { sendUserInvitationEmail } from "@/lib/email";
+import {
+  generateSetupTokenData,
+  hashPassword,
+  validatePassword,
+  isSetupTokenValid,
+} from "@/lib/password-utils";
 
 export const usersRouter = router({
   // Fetch all users with optional filters
@@ -131,7 +141,7 @@ export const usersRouter = router({
 
   // Create the first admin user (no authentication required)
   createFirstAdmin: publicProcedure
-    .input(createUserSchema)
+    .input(createFirstAdminSchema)
     .mutation(async ({ ctx, input }) => {
       // Check if any users exist
       const existingUsers = await ctx.db.select({ count: count() }).from(users);
@@ -154,7 +164,7 @@ export const usersRouter = router({
       }
 
       // Hash the password
-      const hashedPassword = await bcrypt.hash(input.password, 12);
+      const hashedPassword = await hashPassword(input.password);
 
       const newUser = await ctx.db
         .insert(users)
@@ -163,8 +173,9 @@ export const usersRouter = router({
           lastName: input.lastName,
           email: input.email,
           passwordHash: hashedPassword,
-          role: "admin", // First user is always admin
+          role: input.role,
           isActive: true,
+          isPasswordSet: true, // Admin sets password immediately
         })
         .returning({
           id: users.id,
@@ -173,6 +184,7 @@ export const usersRouter = router({
           email: users.email,
           role: users.role,
           isActive: users.isActive,
+          isPasswordSet: users.isPasswordSet,
           createdAt: users.createdAt,
           updatedAt: users.updatedAt,
         });
@@ -180,7 +192,7 @@ export const usersRouter = router({
       return newUser[0];
     }),
 
-  // Create a new user (requires authentication)
+  // Create a new user (requires authentication) - uses setup token flow
   create: protectedProcedure
     .input(createUserSchema)
     .mutation(async ({ ctx, input }) => {
@@ -195,8 +207,8 @@ export const usersRouter = router({
         throw new Error("Un utilisateur avec cet email existe déjà");
       }
 
-      // Hash the password
-      const hashedPassword = await bcrypt.hash(input.password, 12);
+      // Generate setup token data
+      const { setupToken, setupTokenExpiry } = generateSetupTokenData();
 
       const newUser = await ctx.db
         .insert(users)
@@ -204,9 +216,11 @@ export const usersRouter = router({
           firstName: input.firstName,
           lastName: input.lastName,
           email: input.email,
-          passwordHash: hashedPassword,
           role: input.role,
           isActive: true,
+          isPasswordSet: false, // User needs to set password
+          setupToken,
+          setupTokenExpiry,
         })
         .returning({
           id: users.id,
@@ -215,6 +229,7 @@ export const usersRouter = router({
           email: users.email,
           role: users.role,
           isActive: users.isActive,
+          isPasswordSet: users.isPasswordSet,
           createdAt: users.createdAt,
           updatedAt: users.updatedAt,
         });
@@ -226,7 +241,162 @@ export const usersRouter = router({
         role: input.role,
       });
 
+      // Send invitation email to the new user
+      try {
+        const userName = `${input.firstName} ${input.lastName}`;
+
+        const emailResult = await sendUserInvitationEmail(
+          input.email,
+          userName,
+          setupToken
+        );
+
+        if (emailResult.success) {
+          console.log(`Setup invitation email sent to ${input.email}`);
+
+          // Log the email sending action
+          await logUserAction(ctx.user, "create", newUser[0].id, {
+            description: `Email d'invitation de configuration envoyé à: ${input.email}`,
+            action: "setup_email_sent",
+            messageId: emailResult.messageId,
+          });
+        } else {
+          console.error(
+            `Failed to send setup email to ${input.email}:`,
+            emailResult.error
+          );
+        }
+      } catch (error) {
+        console.error("Error sending setup email:", error);
+
+        // Log the email error but don't fail the user creation
+        await logUserAction(ctx.user, "create", newUser[0].id, {
+          description: `Erreur lors de l'envoi de l'email de configuration à: ${input.email}`,
+          action: "setup_email_error",
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+      }
+
       return newUser[0];
+    }),
+
+  // Validate setup token
+  validateSetupToken: publicProcedure
+    .input(validateSetupTokenSchema)
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          setupToken: users.setupToken,
+          setupTokenExpiry: users.setupTokenExpiry,
+          isPasswordSet: users.isPasswordSet,
+        })
+        .from(users)
+        .where(eq(users.setupToken, input.token))
+        .limit(1);
+
+      if (!user || user.length === 0) {
+        throw new Error("Invalid setup token");
+      }
+
+      const foundUser = user[0];
+
+      // Check if user already has password set
+      if (foundUser.isPasswordSet) {
+        throw new Error("User has already completed setup");
+      }
+
+      // Check if token is expired
+      const tokenValid = isSetupTokenValid(foundUser.setupTokenExpiry);
+
+      if (!tokenValid) {
+        throw new Error("Setup token has expired");
+      }
+
+      const response = {
+        valid: true,
+        user: {
+          firstName: foundUser.firstName,
+          lastName: foundUser.lastName,
+          email: foundUser.email,
+        },
+      };
+
+      return response;
+    }),
+
+  // Setup password for new user
+  setupPassword: publicProcedure
+    .input(setupPasswordSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Validate password
+      const passwordValidation = validatePassword(input.password);
+      if (!passwordValidation.isValid) {
+        throw new Error(passwordValidation.errors.join(", "));
+      }
+
+      // Find user with the setup token
+      const user = await ctx.db
+        .select()
+        .from(users)
+        .where(eq(users.setupToken, input.token))
+        .limit(1);
+
+      if (!user || user.length === 0) {
+        throw new Error("Invalid setup token");
+      }
+
+      const foundUser = user[0];
+
+      // Check if user already has password set
+      if (foundUser.isPasswordSet) {
+        throw new Error("User has already completed setup");
+      }
+
+      // Check if token is expired
+      if (!isSetupTokenValid(foundUser.setupTokenExpiry)) {
+        throw new Error("Setup token has expired");
+      }
+
+      // Hash the new password
+      const hashedPassword = await hashPassword(input.password);
+
+      // Update user with password and clear setup token
+      const updatedUser = await ctx.db
+        .update(users)
+        .set({
+          passwordHash: hashedPassword,
+          isPasswordSet: true,
+          setupToken: null,
+          setupTokenExpiry: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, foundUser.id))
+        .returning({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          role: users.role,
+        });
+
+      if (!updatedUser || updatedUser.length === 0) {
+        throw new Error("Failed to complete setup");
+      }
+
+      // Log the password setup
+      await logUserAction(foundUser, "update", foundUser.id, {
+        description: `Configuration du mot de passe complétée pour: ${foundUser.firstName} ${foundUser.lastName}`,
+        action: "password_setup_completed",
+      });
+
+      return {
+        success: true,
+        user: updatedUser[0],
+      };
     }),
 
   // Update a user
@@ -311,6 +481,10 @@ export const usersRouter = router({
       }
 
       // Verify current password
+      if (!user[0].passwordHash) {
+        throw new Error("Utilisateur n'a pas de mot de passe configuré");
+      }
+
       const isCurrentPasswordValid = await bcrypt.compare(
         currentPassword,
         user[0].passwordHash

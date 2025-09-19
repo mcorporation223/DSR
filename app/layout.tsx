@@ -21,11 +21,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} antialiased font-sans`}>
+    <html lang="en" suppressHydrationWarning={true}>
+      <body
+        className={`${inter.variable} antialiased font-sans`}
+        suppressHydrationWarning={true}
+      >
         <SessionProvider>
           <TRPCProvider>
-            {children}
+            <div suppressHydrationWarning={true}>{children}</div>
             <Toaster />
           </TRPCProvider>
         </SessionProvider>
