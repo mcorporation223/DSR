@@ -1,5 +1,4 @@
 import { router, publicProcedure } from "../trpc";
-import { db } from "@/lib/db";
 import {
   detainees,
   employees,

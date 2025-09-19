@@ -89,6 +89,7 @@ export const usersRouter = router({
           email: users.email,
           role: users.role,
           isActive: users.isActive,
+          isPasswordSet: users.isPasswordSet,
           createdAt: users.createdAt,
           updatedAt: users.updatedAt,
         })
@@ -125,6 +126,7 @@ export const usersRouter = router({
           email: users.email,
           role: users.role,
           isActive: users.isActive,
+          isPasswordSet: users.isPasswordSet,
           createdAt: users.createdAt,
           updatedAt: users.updatedAt,
         })
@@ -445,6 +447,7 @@ export const usersRouter = router({
           email: users.email,
           role: users.role,
           isActive: users.isActive,
+          isPasswordSet: users.isPasswordSet,
           createdAt: users.createdAt,
           updatedAt: users.updatedAt,
         });
@@ -544,6 +547,7 @@ export const usersRouter = router({
           email: users.email,
           role: users.role,
           isActive: users.isActive,
+          isPasswordSet: users.isPasswordSet,
           createdAt: users.createdAt,
           updatedAt: users.updatedAt,
         });

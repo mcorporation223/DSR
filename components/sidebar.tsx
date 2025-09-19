@@ -54,10 +54,7 @@ export function Sidebar() {
         <div className="space-y-6 flex flex-col justify-between">
           <div>
             <nav className="space-y-2">
-              <Link
-                href="/dashboard"
-                className={getLinkClassName("/dashboard")}
-              >
+              <Link href="/" className={getLinkClassName("/dashboard")}>
                 <Home className="w-4 h-4" />
                 <span className="text-sm font-medium">Home</span>
               </Link>

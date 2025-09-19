@@ -1,17 +1,6 @@
 import { router, protectedProcedure } from "../trpc";
 import { auditLogs, users } from "@/lib/db/schema";
-import {
-  and,
-  count,
-  desc,
-  asc,
-  eq,
-  or,
-  ilike,
-  sql,
-  gte,
-  lte,
-} from "drizzle-orm";
+import { and, count, desc, asc, eq, or, ilike, gte, lte } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
 import { auditLogQuerySchema, auditLogByIdSchema } from "../schemas/audit-logs";
@@ -38,7 +27,7 @@ export const auditLogsRouter = router({
 
       const offset = (page - 1) * limit;
 
-      let whereConditions: SQL[] = [];
+      const whereConditions: SQL[] = [];
 
       // Search functionality
       if (search) {
