@@ -1,6 +1,16 @@
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { users } from "@/lib/db/schema";
-import { desc, asc, like, and, eq, or, count, not } from "drizzle-orm";
+import {
+  desc,
+  asc,
+  like,
+  and,
+  eq,
+  or,
+  count,
+  not,
+  isNotNull,
+} from "drizzle-orm";
 import {
   getAllUsersSchema,
   getUserByIdSchema,
@@ -10,15 +20,20 @@ import {
   validateSetupTokenSchema,
   updateUserSchema,
   updateUserPasswordSchema,
+  initiatePasswordResetSchema,
+  resetPasswordSchema,
+  validateResetTokenSchema,
 } from "../schemas/users";
 import bcrypt from "bcrypt";
 import { logUserAction, captureChanges } from "@/lib/audit-logger";
-import { sendUserInvitationEmail } from "@/lib/email";
+import { sendUserInvitationEmail, sendPasswordResetEmail } from "@/lib/email";
 import {
   generateSetupTokenData,
   hashPassword,
   validatePassword,
   isSetupTokenValid,
+  generateResetTokenData,
+  validateToken,
 } from "@/lib/password-utils";
 
 export const usersRouter = router({
@@ -564,5 +579,204 @@ export const usersRouter = router({
       });
 
       return deletedUser[0];
+    }),
+
+  // Initiate password reset (admin action)
+  initiatePasswordReset: protectedProcedure
+    .input(initiatePasswordResetSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Check if the requesting user is admin
+      if (ctx.user.role !== "admin") {
+        throw new Error(
+          "Seuls les administrateurs peuvent réinitialiser les mots de passe"
+        );
+      }
+
+      // Find the user to reset password for
+      const userToReset = await ctx.db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          isActive: users.isActive,
+        })
+        .from(users)
+        .where(eq(users.id, input.userId))
+        .limit(1);
+
+      if (!userToReset || userToReset.length === 0) {
+        throw new Error("Utilisateur non trouvé");
+      }
+
+      if (!userToReset[0].isActive) {
+        throw new Error(
+          "Impossible de réinitialiser le mot de passe d'un utilisateur désactivé"
+        );
+      }
+
+      // Generate reset token
+      const { token, hashedToken, expiryDate } = await generateResetTokenData();
+
+      // Update user with reset token
+      await ctx.db
+        .update(users)
+        .set({
+          resetToken: hashedToken,
+          resetTokenExpiry: expiryDate,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, input.userId));
+
+      // Send reset email
+      await sendPasswordResetEmail(userToReset[0].email, {
+        firstName: userToReset[0].firstName,
+        lastName: userToReset[0].lastName,
+        resetToken: token,
+      });
+
+      // Log the password reset initiation
+      await logUserAction(ctx.user, "password_reset_initiated", input.userId, {
+        description: `Réinitialisation du mot de passe initiée pour: ${userToReset[0].firstName} ${userToReset[0].lastName}`,
+        email: userToReset[0].email,
+      });
+
+      return {
+        success: true,
+        message: "Un email de réinitialisation a été envoyé à l'utilisateur",
+      };
+    }),
+
+  // Validate password reset token
+  validateResetToken: publicProcedure
+    .input(validateResetTokenSchema)
+    .query(async ({ ctx, input }) => {
+      const user = await ctx.db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          resetToken: users.resetToken,
+          resetTokenExpiry: users.resetTokenExpiry,
+        })
+        .from(users)
+        .where(and(eq(users.isActive, true), isNotNull(users.resetToken)))
+        .limit(100);
+
+      // Find user with matching token
+      for (const u of user) {
+        if (
+          u.resetToken &&
+          u.resetTokenExpiry &&
+          (await validateToken(input.token, u.resetToken, u.resetTokenExpiry))
+        ) {
+          return {
+            valid: true,
+            user: {
+              id: u.id,
+              firstName: u.firstName,
+              lastName: u.lastName,
+              email: u.email,
+            },
+          };
+        }
+      }
+
+      return { valid: false };
+    }),
+
+  // Reset password with token
+  resetPassword: publicProcedure
+    .input(resetPasswordSchema)
+    .mutation(async ({ ctx, input }) => {
+      // First validate the token
+      const user = await ctx.db
+        .select({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+          resetToken: users.resetToken,
+          resetTokenExpiry: users.resetTokenExpiry,
+        })
+        .from(users)
+        .where(and(eq(users.isActive, true), isNotNull(users.resetToken)))
+        .limit(100);
+
+      let validUser = null;
+      for (const u of user) {
+        if (
+          u.resetToken &&
+          u.resetTokenExpiry &&
+          (await validateToken(input.token, u.resetToken, u.resetTokenExpiry))
+        ) {
+          validUser = u;
+          break;
+        }
+      }
+
+      if (!validUser) {
+        throw new Error("Token invalide ou expiré");
+      }
+
+      // Hash the new password
+      const hashedPassword = await hashPassword(input.password);
+
+      // Update user password and clear reset token
+      const updatedUser = await ctx.db
+        .update(users)
+        .set({
+          passwordHash: hashedPassword,
+          isPasswordSet: true,
+          mustChangePassword: false,
+          resetToken: null,
+          resetTokenExpiry: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, validUser.id))
+        .returning({
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          email: users.email,
+        });
+
+      if (!updatedUser || updatedUser.length === 0) {
+        throw new Error("Erreur lors de la réinitialisation du mot de passe");
+      }
+
+      // Log the password reset completion
+      await logUserAction(
+        {
+          id: validUser.id,
+          firstName: validUser.firstName,
+          lastName: validUser.lastName,
+          email: validUser.email,
+          passwordHash: null,
+          role: "user",
+          isActive: true,
+          setupToken: null,
+          setupTokenExpiry: null,
+          isPasswordSet: true,
+          mustChangePassword: false,
+          resetToken: null,
+          resetTokenExpiry: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        "password_reset_completed",
+        validUser.id,
+        {
+          description: `Mot de passe réinitialisé avec succès pour: ${validUser.firstName} ${validUser.lastName}`,
+          email: validUser.email,
+        }
+      );
+
+      return {
+        success: true,
+        user: updatedUser[0],
+        message: "Mot de passe réinitialisé avec succès",
+      };
     }),
 });

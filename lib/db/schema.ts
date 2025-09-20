@@ -26,6 +26,10 @@ export const users = pgTable("users", {
   isPasswordSet: boolean("is_password_set").default(false).notNull(), // Has user set their password
   mustChangePassword: boolean("must_change_password").default(false).notNull(), // Force password change
 
+  // Password reset fields
+  resetToken: varchar("reset_token", { length: 255 }), // Reset token for password reset
+  resetTokenExpiry: timestamp("reset_token_expiry"), // Reset token expiration time
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

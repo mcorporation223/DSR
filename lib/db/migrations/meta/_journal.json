@@ -43,6 +43,13 @@
       "when": 1758294740890,
       "tag": "0005_married_sprite",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1758302664258,
+      "tag": "0006_graceful_scrambler",
+      "breakpoints": true
     }
   ]
 }

@@ -79,6 +79,28 @@ export const updateUserPasswordSchema = z.object({
     .min(8, "Le nouveau mot de passe doit contenir au moins 8 caractères"),
 });
 
+// Input schema for initiating password reset (admin action)
+export const initiatePasswordResetSchema = z.object({
+  userId: z.uuid(),
+});
+
+// Input schema for password reset
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, "Token is required"),
+    password: z.string().min(8, "Password must be at least 8 characters long"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
+// Input schema for validating reset token
+export const validateResetTokenSchema = z.object({
+  token: z.string().min(1, "Token is required"),
+});
+
 // Type exports for use in components
 export type GetAllUsersInput = z.infer<typeof getAllUsersSchema>;
 export type GetUserByIdInput = z.infer<typeof getUserByIdSchema>;
@@ -88,3 +110,8 @@ export type SetupPasswordInput = z.infer<typeof setupPasswordSchema>;
 export type ValidateSetupTokenInput = z.infer<typeof validateSetupTokenSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type UpdateUserPasswordInput = z.infer<typeof updateUserPasswordSchema>;
+export type InitiatePasswordResetInput = z.infer<
+  typeof initiatePasswordResetSchema
+>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type ValidateResetTokenInput = z.infer<typeof validateResetTokenSchema>;

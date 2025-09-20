@@ -35,23 +35,14 @@ import { trpc } from "@/components/trpc-provider";
 import { toastNotification } from "@/components/toast-notification";
 
 // Form validation schema
-const userFormSchema = z
-  .object({
-    firstName: z
-      .string()
-      .min(2, "Le prénom doit contenir au moins 2 caractères"),
-    lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
-    email: z.string().email("Veuillez entrer une adresse email valide"),
-    password: z.string().min(1, "Le mot de passe est requis"),
-    confirmPassword: z.string().min(1, "Veuillez confirmer le mot de passe"),
-    role: z.enum(["admin", "user"], {
-      message: "Veuillez sélectionner un rôle valide",
-    }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Les mots de passe ne correspondent pas",
-    path: ["confirmPassword"],
-  });
+const userFormSchema = z.object({
+  firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
+  lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  email: z.string().email("Veuillez entrer une adresse email valide"),
+  role: z.enum(["admin", "user"], {
+    message: "Veuillez sélectionner un rôle valide",
+  }),
+});
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
@@ -77,8 +68,6 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
         firstName: "",
         lastName: "",
         email: "",
-        password: "",
-        confirmPassword: "",
         role: "user",
       },
     });
@@ -100,10 +89,7 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
 
     const handleSubmit = async (data: UserFormValues) => {
       try {
-        // Remove confirmPassword from the data sent to the server
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { confirmPassword, ...userData } = data;
-        await createUserMutation.mutateAsync(userData);
+        await createUserMutation.mutateAsync(data);
       } catch {
         // Error is handled by the mutation
       }

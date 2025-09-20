@@ -77,11 +77,40 @@ export const isSetupTokenValid = (tokenExpiry: Date | null): boolean => {
 };
 
 /**
+ * Validate a token against stored hash and expiry
+ */
+export const validateToken = async (
+  providedToken: string,
+  storedHashedToken: string,
+  tokenExpiry: Date | null
+): Promise<boolean> => {
+  if (!tokenExpiry || new Date() > tokenExpiry) {
+    return false;
+  }
+  return await bcrypt.compare(providedToken, storedHashedToken);
+};
+
+/**
  * Generate a complete setup token data object
  */
 export const generateSetupTokenData = () => {
   return {
     setupToken: generateSetupToken(),
     setupTokenExpiry: generateSetupTokenExpiry(),
+  };
+};
+
+/**
+ * Generate a complete reset token data object
+ */
+export const generateResetTokenData = async () => {
+  const token = generateSetupToken();
+  const hashedToken = await hashPassword(token);
+  const expiryDate = generateSetupTokenExpiry();
+
+  return {
+    token,
+    hashedToken,
+    expiryDate,
   };
 };

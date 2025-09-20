@@ -9,6 +9,7 @@ import {
   Edit,
   Trash2,
   Eye,
+  Key,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -32,6 +33,7 @@ import { UserForm } from "./user-form";
 import { EditUserForm } from "./edit-user-form";
 import { DeleteUserDialog } from "./delete-user-dialog";
 import { UserDetailsDialog } from "./user-details-dialog";
+import { ResetPasswordDialog } from "./reset-password-dialog";
 
 // Types for user data - Based on database schema
 interface User extends Record<string, unknown> {
@@ -67,6 +69,10 @@ export function UsersTable() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [resettingPasswordUser, setResettingPasswordUser] =
+    useState<User | null>(null);
+  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] =
+    useState(false);
 
   const itemsPerPage = 10;
 
@@ -218,6 +224,12 @@ export function UsersTable() {
   const handleDeleteUser = useCallback((user: User) => {
     setDeletingUser(user);
     setIsDeleteDialogOpen(true);
+  }, []);
+
+  // Handle reset password
+  const handleResetPassword = useCallback((user: User) => {
+    setResettingPasswordUser(user);
+    setIsResetPasswordDialogOpen(true);
   }, []);
 
   // Handle row click
@@ -383,6 +395,10 @@ export function UsersTable() {
               <DropdownMenuItem onSelect={() => handleEditUser(user)}>
                 <Edit className="w-4 h-4 mr-2" />
                 Modifier
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleResetPassword(user)}>
+                <Key className="w-4 h-4 mr-2" />
+                Réinitialiser mot de passe
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
@@ -660,6 +676,20 @@ export function UsersTable() {
         }}
         user={viewingUser}
         onEdit={handleEditFromDetails}
+      />
+
+      {/* Reset Password Dialog */}
+      <ResetPasswordDialog
+        isOpen={isResetPasswordDialogOpen}
+        onClose={() => {
+          setIsResetPasswordDialogOpen(false);
+          setResettingPasswordUser(null);
+        }}
+        user={resettingPasswordUser}
+        onSuccess={() => {
+          // Optionally refresh data or show confirmation
+          refetch();
+        }}
       />
     </div>
   );

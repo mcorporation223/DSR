@@ -2,7 +2,13 @@ import { db } from "@/lib/db";
 import { auditLogs, type NewAuditLog } from "@/lib/db/schema";
 import type { User } from "@/lib/db/schema";
 
-export type AuditAction = "create" | "update" | "delete" | "status_change";
+export type AuditAction =
+  | "create"
+  | "update"
+  | "delete"
+  | "status_change"
+  | "password_reset_initiated"
+  | "password_reset_completed";
 
 export type AuditEntityType =
   | "user"
@@ -260,6 +266,8 @@ function getDefaultDescription(
     update: "Modification",
     delete: "Suppression",
     status_change: "Changement de statut",
+    password_reset_initiated: "Réinitialisation de mot de passe initiée",
+    password_reset_completed: "Réinitialisation de mot de passe terminée",
   };
 
   const entityMap = {
