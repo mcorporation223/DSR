@@ -1,4 +1,4 @@
-import { router, protectedProcedure, publicProcedure } from "../trpc";
+import { router, protectedProcedure } from "../trpc";
 import { db } from "@/lib/db";
 import { reports, users } from "@/lib/db/schema";
 import { and, count, desc, asc, eq, or, ilike, sql } from "drizzle-orm";
@@ -16,11 +16,11 @@ import { logReportAction, captureChanges } from "@/lib/audit-logger";
 export const reportsRouter = router({
   getAll: protectedProcedure
     .input(reportQuerySchema)
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input }) => {
       const { page, limit, search, sortBy, sortOrder } = input;
       const offset = (page - 1) * limit;
 
-      let whereConditions: SQL[] = [];
+      const whereConditions: SQL[] = [];
 
       // Search functionality
       if (search) {
@@ -143,7 +143,7 @@ export const reportsRouter = router({
       }
 
       // Prepare update data with proper date conversion
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         ...reportData,
         updatedBy: ctx.user.id,
         updatedAt: new Date(),

@@ -18,90 +18,88 @@ const createdByUser = alias(users, "createdByUser");
 const updatedByUser = alias(users, "updatedByUser");
 
 export const seizuresRouter = router({
-  getAll: publicProcedure
-    .input(seizureQuerySchema)
-    .query(async ({ input, ctx }) => {
-      const { page, limit, search, sortBy, sortOrder, type, status } = input;
-      const offset = (page - 1) * limit;
+  getAll: publicProcedure.input(seizureQuerySchema).query(async ({ input }) => {
+    const { page, limit, search, sortBy, sortOrder, type, status } = input;
+    const offset = (page - 1) * limit;
 
-      let whereConditions: SQL[] = [];
+    const whereConditions: SQL[] = [];
 
-      // Search functionality
-      if (search) {
-        whereConditions.push(
-          or(
-            ilike(seizures.itemName, `%${search}%`),
-            ilike(seizures.type, `%${search}%`),
-            ilike(seizures.ownerName, `%${search}%`),
-            ilike(seizures.seizureLocation, `%${search}%`)
-          )!
-        );
-      }
+    // Search functionality
+    if (search) {
+      whereConditions.push(
+        or(
+          ilike(seizures.itemName, `%${search}%`),
+          ilike(seizures.type, `%${search}%`),
+          ilike(seizures.ownerName, `%${search}%`),
+          ilike(seizures.seizureLocation, `%${search}%`)
+        )!
+      );
+    }
 
-      // Filter by type
-      if (type) {
-        whereConditions.push(eq(seizures.type, type));
-      }
+    // Filter by type
+    if (type) {
+      whereConditions.push(eq(seizures.type, type));
+    }
 
-      // Filter by status
-      if (status) {
-        whereConditions.push(eq(seizures.status, status));
-      }
+    // Filter by status
+    if (status) {
+      whereConditions.push(eq(seizures.status, status));
+    }
 
-      const whereClause =
-        whereConditions.length > 0 ? and(...whereConditions) : undefined;
+    const whereClause =
+      whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
-      // Get total count
-      const totalResult = await db
-        .select({ count: count() })
-        .from(seizures)
-        .where(whereClause);
+    // Get total count
+    const totalResult = await db
+      .select({ count: count() })
+      .from(seizures)
+      .where(whereClause);
 
-      const totalItems = totalResult[0]?.count || 0;
+    const totalItems = totalResult[0]?.count || 0;
 
-      // Get seizures with sorting and user names
-      const orderBy =
-        sortOrder === "asc" ? asc(seizures[sortBy]) : desc(seizures[sortBy]);
+    // Get seizures with sorting and user names
+    const orderBy =
+      sortOrder === "asc" ? asc(seizures[sortBy]) : desc(seizures[sortBy]);
 
-      const seizuresResult = await db
-        .select({
-          id: seizures.id,
-          itemName: seizures.itemName,
-          type: seizures.type,
-          seizureLocation: seizures.seizureLocation,
-          chassisNumber: seizures.chassisNumber,
-          plateNumber: seizures.plateNumber,
-          ownerName: seizures.ownerName,
-          ownerResidence: seizures.ownerResidence,
-          seizureDate: seizures.seizureDate,
-          status: seizures.status,
-          releaseDate: seizures.releaseDate,
-          createdBy: seizures.createdBy,
-          updatedBy: seizures.updatedBy,
-          createdAt: seizures.createdAt,
-          updatedAt: seizures.updatedAt,
-          // User names
-          createdByName: sql<string>`CONCAT(${createdByUser.firstName}, ' ', ${createdByUser.lastName})`,
-          updatedByName: sql<string>`CONCAT(${updatedByUser.firstName}, ' ', ${updatedByUser.lastName})`,
-        })
-        .from(seizures)
-        .leftJoin(createdByUser, eq(seizures.createdBy, createdByUser.id))
-        .leftJoin(updatedByUser, eq(seizures.updatedBy, updatedByUser.id))
-        .where(whereClause)
-        .orderBy(orderBy)
-        .limit(limit)
-        .offset(offset);
+    const seizuresResult = await db
+      .select({
+        id: seizures.id,
+        itemName: seizures.itemName,
+        type: seizures.type,
+        seizureLocation: seizures.seizureLocation,
+        chassisNumber: seizures.chassisNumber,
+        plateNumber: seizures.plateNumber,
+        ownerName: seizures.ownerName,
+        ownerResidence: seizures.ownerResidence,
+        seizureDate: seizures.seizureDate,
+        status: seizures.status,
+        releaseDate: seizures.releaseDate,
+        createdBy: seizures.createdBy,
+        updatedBy: seizures.updatedBy,
+        createdAt: seizures.createdAt,
+        updatedAt: seizures.updatedAt,
+        // User names
+        createdByName: sql<string>`CONCAT(${createdByUser.firstName}, ' ', ${createdByUser.lastName})`,
+        updatedByName: sql<string>`CONCAT(${updatedByUser.firstName}, ' ', ${updatedByUser.lastName})`,
+      })
+      .from(seizures)
+      .leftJoin(createdByUser, eq(seizures.createdBy, createdByUser.id))
+      .leftJoin(updatedByUser, eq(seizures.updatedBy, updatedByUser.id))
+      .where(whereClause)
+      .orderBy(orderBy)
+      .limit(limit)
+      .offset(offset);
 
-      return {
-        seizures: seizuresResult,
-        pagination: {
-          page,
-          limit,
-          totalItems,
-          totalPages: Math.ceil(totalItems / limit),
-        },
-      };
-    }),
+    return {
+      seizures: seizuresResult,
+      pagination: {
+        page,
+        limit,
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+      },
+    };
+  }),
 
   getById: protectedProcedure
     .input(seizureByIdSchema)
@@ -186,7 +184,7 @@ export const seizuresRouter = router({
       }
 
       // Prepare update data with proper date conversion
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         ...seizureData,
         updatedBy: ctx.user.id,
         updatedAt: new Date(),

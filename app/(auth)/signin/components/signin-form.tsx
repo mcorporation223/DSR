@@ -6,17 +6,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Eye, EyeOff } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Eye, EyeOff, Mail, Lock, AlertCircle, LogIn } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { toastNotification } from "@/components/toast-notification";
 
 const signInSchema = z.object({
   email: z.string().email("Adresse email invalide"),
@@ -53,131 +48,197 @@ export function SignInForm() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        setError("Email ou mot de passe invalide");
+        toastNotification.error(
+          "Échec de Connexion",
+          "Email ou mot de passe invalide"
+        );
       } else if (result?.ok) {
+        toastNotification.success(
+          "Succès!",
+          "Connexion réussie! Redirection..."
+        );
         // Redirect to dashboard on successful login
-        router.push("/");
+        setTimeout(() => {
+          router.push("/");
+        }, 1000);
       }
     } catch (error) {
       console.error("Sign in error:", error);
-      setError("An error occurred during sign in");
+      setError("Une erreur s'est produite lors de la connexion");
+      toastNotification.error(
+        "Erreur de Connexion",
+        "Une erreur s'est produite lors de la connexion"
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      {/* <div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign in</h2>
-      </div> */}
-
-      <Form {...form}>
-        <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-5">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Address</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      autoComplete="email"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
-                      placeholder="Email Address"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        autoComplete="current-password"
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
-                        placeholder="Password"
-                        {...field}
-                      />
-                      <button
-                        type="button"
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                        ) : (
-                          <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                        )}
-                      </button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Terms and Privacy - adapted for sign in */}
-          {/* <div className="text-sm text-gray-600">
-            By signing in, you agree to our{" "}
-            <a href="#" className="text-blue-600 hover:underline">
-              Terms of Service
-            </a>{" "}
-            and{" "}
-            <a href="#" className="text-blue-600 hover:underline">
-              Privacy Policy
-            </a>
+    <div className="w-full" suppressHydrationWarning={true}>
+      <div className="space-y-6" suppressHydrationWarning={true}>
+        {/* Header */}
+        <div className="text-center" suppressHydrationWarning={true}>
+          {/* <div
+            className="mx-auto h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mb-4"
+            suppressHydrationWarning={true}
+          >
+            <Shield className="h-8 w-8 text-blue-600" />
           </div> */}
+          <h1 className="text-3xl font-bold text-gray-900">Connexion</h1>
+          <p className="mt-2 text-gray-600">
+            Connectez-vous à votre compte DSR
+          </p>
+        </div>
 
-          <div>
-            <Button
-              type="submit"
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Signing in...
+        <Card className="shadow-xl border-0" suppressHydrationWarning={true}>
+          <CardHeader className="space-y-4">
+            <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
+              <LogIn className="h-5 w-5 text-blue-600" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-900">
+                  Système de Gestion DSR
+                </p>
+                <p className="text-xs text-blue-600">
+                  Accédez à votre espace de travail sécurisé
+                </p>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              {/* Error Message */}
+              {error && (
+                <div className="flex items-center space-x-2 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  <span className="text-sm text-red-700">{error}</span>
                 </div>
-              ) : (
-                "Sign in"
               )}
-            </Button>
-          </div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Forgot your password?{" "}
-              <a
-                href="#"
-                className="font-medium text-blue-600 hover:text-blue-500"
+              {/* Email Field */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Mail className="h-4 w-4 text-gray-500" />
+                  <Label htmlFor="email" className="text-sm font-medium">
+                    Adresse Email
+                  </Label>
+                </div>
+
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="Entrez votre adresse email"
+                    className="transition-all duration-200 focus:ring-2 focus:ring-blue-500"
+                    {...form.register("email")}
+                  />
+                </div>
+
+                {form.formState.errors.email && (
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="h-3 w-3 text-red-500" />
+                    <span className="text-xs text-red-600">
+                      {form.formState.errors.email.message}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Lock className="h-4 w-4 text-gray-500" />
+                  <Label htmlFor="password" className="text-sm font-medium">
+                    Mot de Passe
+                  </Label>
+                </div>
+
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="Entrez votre mot de passe"
+                    className="pr-10 transition-all duration-200 focus:ring-2 focus:ring-blue-500"
+                    {...form.register("password")}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-auto p-1 hover:bg-gray-100"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-500" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-500" />
+                    )}
+                  </Button>
+                </div>
+
+                {form.formState.errors.password && (
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="h-3 w-3 text-red-500" />
+                    <span className="text-xs text-red-600">
+                      {form.formState.errors.password.message}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Forgot Password Link */}
+              <div className="text-right">
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="text-xs text-blue-600 hover:text-blue-800 p-0 h-auto"
+                  onClick={() =>
+                    toastNotification.success(
+                      "Information",
+                      "Fonctionnalité bientôt disponible"
+                    )
+                  }
+                >
+                  Mot de passe oublié ?
+                </Button>
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                className="w-full h-11 text-base font-medium transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading}
               >
-                Reset it here
-              </a>
-            </p>
-          </div>
-        </form>
-      </Form>
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Connexion en cours...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Se connecter
+                  </>
+                )}
+              </Button>
+            </form>
+
+            {/* Footer */}
+            <div className="pt-4 border-t border-gray-100">
+              <div className="text-center">
+                <p className="text-xs text-gray-500">
+                  Problème de connexion ? Contactez votre administrateur système
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

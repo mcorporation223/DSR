@@ -52,7 +52,13 @@ export function UserDetailsDialog({
   };
 
   // Get status display info
-  const getStatusInfo = (isActive: boolean) => {
+  const getStatusInfo = (isActive: boolean, isPasswordSet: boolean) => {
+    if (!isPasswordSet && isActive) {
+      return {
+        text: "En attente",
+        color: "bg-yellow-500",
+      };
+    }
     return isActive
       ? {
           text: "Actif",
@@ -65,7 +71,7 @@ export function UserDetailsDialog({
   };
 
   const roleInfo = getRoleInfo(user.role);
-  const statusInfo = getStatusInfo(user.isActive);
+  const statusInfo = getStatusInfo(user.isActive, user.isPasswordSet);
 
   const handleEdit = () => {
     onEdit?.(user);
@@ -149,6 +155,23 @@ export function UserDetailsDialog({
                   <p className="text-sm text-gray-900 bg-gray-50 rounded-md px-3 py-2">
                     {user.email}
                   </p>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Statut du mot de passe
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-3 h-3 rounded-full ${
+                        user.isPasswordSet ? "bg-green-500" : "bg-yellow-500"
+                      }`}
+                    ></div>
+                    <p className="text-sm text-gray-900">
+                      {user.isPasswordSet
+                        ? "Mot de passe configuré"
+                        : "Configuration en attente"}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

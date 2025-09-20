@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Loader2, Eye, EyeOff } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -35,23 +35,14 @@ import { trpc } from "@/components/trpc-provider";
 import { toastNotification } from "@/components/toast-notification";
 
 // Form validation schema
-const userFormSchema = z
-  .object({
-    firstName: z
-      .string()
-      .min(2, "Le prénom doit contenir au moins 2 caractères"),
-    lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
-    email: z.string().email("Veuillez entrer une adresse email valide"),
-    password: z.string().min(1, "Le mot de passe est requis"),
-    confirmPassword: z.string().min(1, "Veuillez confirmer le mot de passe"),
-    role: z.enum(["admin", "user"], {
-      message: "Veuillez sélectionner un rôle valide",
-    }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Les mots de passe ne correspondent pas",
-    path: ["confirmPassword"],
-  });
+const userFormSchema = z.object({
+  firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
+  lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  email: z.string().email("Veuillez entrer une adresse email valide"),
+  role: z.enum(["admin", "user"], {
+    message: "Veuillez sélectionner un rôle valide",
+  }),
+});
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
@@ -66,8 +57,6 @@ interface UserFormRef {
 export const UserForm = forwardRef<UserFormRef, UserFormProps>(
   ({ onSuccess }, ref) => {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     useImperativeHandle(ref, () => ({
       openDialog: () => setIsDialogOpen(true),
@@ -79,8 +68,6 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
         firstName: "",
         lastName: "",
         email: "",
-        password: "",
-        confirmPassword: "",
         role: "user",
       },
     });
@@ -102,10 +89,7 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
 
     const handleSubmit = async (data: UserFormValues) => {
       try {
-        // Remove confirmPassword from the data sent to the server
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { confirmPassword, ...userData } = data;
-        await createUserMutation.mutateAsync(userData);
+        await createUserMutation.mutateAsync(data);
       } catch {
         // Error is handled by the mutation
       }
@@ -115,8 +99,6 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
       setIsDialogOpen(open);
       if (!open) {
         form.reset();
-        setShowPassword(false);
-        setShowConfirmPassword(false);
       }
     };
 
@@ -221,113 +203,6 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
                         </FormItem>
                       )}
                     />
-                  </div>
-                </div>
-
-                {/* Security Information Section */}
-                <div className="space-y-4">
-                  <div className="border-b border-gray-200"></div>
-                  <div className="px-4">
-                    <h3 className="text-sm font-medium text-gray-900 mb-2">
-                      Informations de sécurité
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">
-                            Mot de passe
-                          </FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Input
-                                type={showPassword ? "text" : "password"}
-                                placeholder="password (temporaire)"
-                                {...field}
-                                className="pr-10"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                onClick={() => setShowPassword(!showPassword)}
-                              >
-                                {showPassword ? (
-                                  <EyeOff className="h-4 w-4 text-gray-400" />
-                                ) : (
-                                  <Eye className="h-4 w-4 text-gray-400" />
-                                )}
-                              </Button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">
-                            Confirmer le mot de passe
-                          </FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Input
-                                type={showConfirmPassword ? "text" : "password"}
-                                placeholder="confirmer le mot de passe"
-                                {...field}
-                                className="pr-10"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                onClick={() =>
-                                  setShowConfirmPassword(!showConfirmPassword)
-                                }
-                              >
-                                {showConfirmPassword ? (
-                                  <EyeOff className="h-4 w-4 text-gray-400" />
-                                ) : (
-                                  <Eye className="h-4 w-4 text-gray-400" />
-                                )}
-                              </Button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="px-4 pb-2">
-                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                      <p className="text-xs text-blue-700">
-                        <strong>Mot de passe temporaire:</strong>
-                      </p>
-                      <ul className="text-xs text-blue-600 mt-1 list-disc list-inside">
-                        <li>
-                          Peut être aussi simple qu&apos;un seul caractère
-                        </li>
-                        <li>
-                          L&apos;utilisateur devra le changer lors de sa
-                          première connexion
-                        </li>
-                        <li>
-                          Recommandé: utiliser &quot;password&quot; ou
-                          &quot;123456&quot; temporairement
-                        </li>
-                      </ul>
-                    </div>
                   </div>
                 </div>
 

@@ -9,6 +9,7 @@ import {
   Edit,
   Trash2,
   Eye,
+  Key,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -32,6 +33,7 @@ import { UserForm } from "./user-form";
 import { EditUserForm } from "./edit-user-form";
 import { DeleteUserDialog } from "./delete-user-dialog";
 import { UserDetailsDialog } from "./user-details-dialog";
+import { ResetPasswordDialog } from "./reset-password-dialog";
 
 // Types for user data - Based on database schema
 interface User extends Record<string, unknown> {
@@ -41,6 +43,7 @@ interface User extends Record<string, unknown> {
   email: string;
   role: string;
   isActive: boolean;
+  isPasswordSet: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,9 +57,9 @@ export function UsersTable() {
   >("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [roleFilter, setRoleFilter] = useState<string | undefined>(undefined);
-  const [statusFilter, setStatusFilter] = useState<boolean | undefined>(
-    undefined
-  );
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive" | "pending" | undefined
+  >(undefined);
   const [columnVisibility, setColumnVisibility] = useState<
     ColumnVisibilityOption[]
   >(userColumnConfig.map((col) => ({ ...col, visible: true })));
@@ -66,8 +69,26 @@ export function UsersTable() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [resettingPasswordUser, setResettingPasswordUser] =
+    useState<User | null>(null);
+  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] =
+    useState(false);
 
   const itemsPerPage = 10;
+
+  // Convert statusFilter to boolean for backend
+  const getBackendStatusFilter = (): boolean | undefined => {
+    switch (statusFilter) {
+      case "active":
+        return true;
+      case "inactive":
+        return false;
+      case "pending":
+        return true; // Pending users are technically active but without password
+      default:
+        return undefined;
+    }
+  };
 
   // TRPC query for users
   const {
@@ -83,11 +104,19 @@ export function UsersTable() {
     sortBy,
     sortOrder,
     role: roleFilter,
-    isActive: statusFilter,
+    isActive: getBackendStatusFilter(),
   });
 
-  const users = usersData?.users || [];
+  const users = useMemo(() => usersData?.users || [], [usersData?.users]);
   const pagination = usersData?.pagination;
+
+  // Apply client-side filtering for pending status
+  const filteredUsers = useMemo(() => {
+    if (statusFilter === "pending") {
+      return users.filter((user) => user.isActive && !user.isPasswordSet);
+    }
+    return users;
+  }, [users, statusFilter]);
 
   // Handlers
   const handleColumnVisibilityChange = useCallback(
@@ -108,7 +137,7 @@ export function UsersTable() {
   }, []);
 
   const handleStatusFilterChange = useCallback(
-    (status: boolean | undefined) => {
+    (status: "all" | "active" | "inactive" | "pending" | undefined) => {
       setStatusFilter(status);
       setCurrentPage(1);
     },
@@ -197,6 +226,12 @@ export function UsersTable() {
     setIsDeleteDialogOpen(true);
   }, []);
 
+  // Handle reset password
+  const handleResetPassword = useCallback((user: User) => {
+    setResettingPasswordUser(user);
+    setIsResetPasswordDialogOpen(true);
+  }, []);
+
   // Handle row click
   const handleRowClick = useCallback(
     (user: User) => {
@@ -218,7 +253,10 @@ export function UsersTable() {
   };
 
   // Get status display text
-  const getStatusDisplay = (isActive: boolean) => {
+  const getStatusDisplay = (isActive: boolean, isPasswordSet: boolean) => {
+    if (!isPasswordSet && isActive) {
+      return { text: "En attente", color: "bg-yellow-500" };
+    }
     return isActive
       ? { text: "Actif", color: "bg-green-500" }
       : { text: "Inactif", color: "bg-red-500" };
@@ -285,8 +323,11 @@ export function UsersTable() {
       key: "isActive",
       label: "Statut",
       className: "w-32",
-      render: (value) => {
-        const statusInfo = getStatusDisplay(value as boolean);
+      render: (value, user) => {
+        const statusInfo = getStatusDisplay(
+          value as boolean,
+          user.isPasswordSet
+        );
         return (
           <div className="flex items-center gap-2 border px-2 py-1 rounded-md w-max">
             <div
@@ -354,6 +395,10 @@ export function UsersTable() {
               <DropdownMenuItem onSelect={() => handleEditUser(user)}>
                 <Edit className="w-4 h-4 mr-2" />
                 Modifier
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleResetPassword(user)}>
+                <Key className="w-4 h-4 mr-2" />
+                Réinitialiser mot de passe
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
@@ -495,12 +540,14 @@ export function UsersTable() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className={`cursor-pointer ${
-                      statusFilter === true ? "bg-blue-50 text-blue-700" : ""
+                      statusFilter === "active"
+                        ? "bg-blue-50 text-blue-700"
+                        : ""
                     }`}
-                    onSelect={() => handleStatusFilterChange(true)}
+                    onSelect={() => handleStatusFilterChange("active")}
                   >
                     <div className="flex items-center">
-                      {statusFilter === true && (
+                      {statusFilter === "active" && (
                         <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
                       )}
                       <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
@@ -509,12 +556,30 @@ export function UsersTable() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className={`cursor-pointer ${
-                      statusFilter === false ? "bg-blue-50 text-blue-700" : ""
+                      statusFilter === "pending"
+                        ? "bg-blue-50 text-blue-700"
+                        : ""
                     }`}
-                    onSelect={() => handleStatusFilterChange(false)}
+                    onSelect={() => handleStatusFilterChange("pending")}
                   >
                     <div className="flex items-center">
-                      {statusFilter === false && (
+                      {statusFilter === "pending" && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                      )}
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+                      En attente
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className={`cursor-pointer ${
+                      statusFilter === "inactive"
+                        ? "bg-blue-50 text-blue-700"
+                        : ""
+                    }`}
+                    onSelect={() => handleStatusFilterChange("inactive")}
+                  >
+                    <div className="flex items-center">
+                      {statusFilter === "inactive" && (
                         <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
                       )}
                       <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
@@ -570,7 +635,7 @@ export function UsersTable() {
       {!isLoading && (
         <DataTable<User>
           columns={columns}
-          data={users}
+          data={filteredUsers}
           keyField="id"
           emptyMessage="Aucun utilisateur trouvé"
           pagination={paginationConfig}
@@ -580,7 +645,6 @@ export function UsersTable() {
         />
       )}
 
-      {/* TODO: Add Edit User Dialog */}
       {/* Edit User Dialog */}
       <EditUserForm
         isOpen={isEditDialogOpen}
@@ -612,6 +676,20 @@ export function UsersTable() {
         }}
         user={viewingUser}
         onEdit={handleEditFromDetails}
+      />
+
+      {/* Reset Password Dialog */}
+      <ResetPasswordDialog
+        isOpen={isResetPasswordDialogOpen}
+        onClose={() => {
+          setIsResetPasswordDialogOpen(false);
+          setResettingPasswordUser(null);
+        }}
+        user={resettingPasswordUser}
+        onSuccess={() => {
+          // Optionally refresh data or show confirmation
+          refetch();
+        }}
       />
     </div>
   );

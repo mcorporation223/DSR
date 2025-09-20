@@ -48,8 +48,10 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        {children}
-        <ReactQueryDevtools initialIsOpen={false} />
+        <div suppressHydrationWarning={true}>{children}</div>
+        <div suppressHydrationWarning={true}>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </div>
       </QueryClientProvider>
     </trpc.Provider>
   );

@@ -40,6 +40,11 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
+          // Check if user has set their password
+          if (!foundUser.isPasswordSet || !foundUser.passwordHash) {
+            throw new Error("Please complete your account setup first");
+          }
+
           // Verify password
           const isPasswordValid = await bcrypt.compare(
             credentials.password,

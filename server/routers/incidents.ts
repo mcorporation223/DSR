@@ -5,7 +5,7 @@ import { incidents, victims, users } from "@/lib/db/schema";
 import { and, count, desc, asc, eq, or, ilike, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
-import { logIncidentAction, captureChanges } from "@/lib/audit-logger";
+import { logIncidentAction } from "@/lib/audit-logger";
 
 const incidentInputSchema = z.object({
   incidentDate: z.string().datetime(),
@@ -42,11 +42,11 @@ export const incidentsRouter = router({
         eventType: z.string().optional(),
       })
     )
-    .query(async ({ input, ctx }) => {
+    .query(async ({ input }) => {
       const { page, limit, search, sortBy, sortOrder, eventType } = input;
       const offset = (page - 1) * limit;
 
-      let whereConditions: SQL[] = [];
+      const whereConditions: SQL[] = [];
 
       // Search functionality
       if (search) {
@@ -207,7 +207,7 @@ export const incidentsRouter = router({
       const { id, victims: inputVictims, ...incidentData } = input;
 
       // Prepare update data with proper date conversion
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         ...incidentData,
         updatedBy: ctx.user.id,
         updatedAt: new Date(),
