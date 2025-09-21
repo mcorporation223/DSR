@@ -18,7 +18,7 @@ const updatedByUser = alias(users, "updatedByUser");
 
 export const detaineesRouter = router({
   // Fetch all detainees with optional filters
-  getAll: publicProcedure
+  getAll: protectedProcedure
     .input(getAllDetaineesSchema)
     .query(async ({ ctx, input }) => {
       const { page, limit, search, sortBy, sortOrder, status } = input;
@@ -137,7 +137,7 @@ export const detaineesRouter = router({
     }),
 
   // Fetch a single detainee by ID with user names
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(getDetaineeByIdSchema)
     .query(async ({ ctx, input }) => {
       const detainee = await ctx.db

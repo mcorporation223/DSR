@@ -38,7 +38,7 @@ import {
 
 export const usersRouter = router({
   // Fetch all users with optional filters
-  getAll: publicProcedure
+  getAll: protectedProcedure
     .input(getAllUsersSchema)
     .query(async ({ ctx, input }) => {
       const { page, limit, search, sortBy, sortOrder, role, isActive } = input;
@@ -130,7 +130,7 @@ export const usersRouter = router({
     }),
 
   // Fetch a single user by ID
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(getUserByIdSchema)
     .query(async ({ ctx, input }) => {
       const user = await ctx.db

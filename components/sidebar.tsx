@@ -45,7 +45,7 @@ export function Sidebar() {
   };
 
   return (
-    <div className="w-64 bg-white">
+    <div className="bg-white">
       <div className="flex h-14 items-center gap-2 px-8 border-b">
         <span className="font-bold text-primary">DSR</span>
       </div>
@@ -56,54 +56,56 @@ export function Sidebar() {
             <nav className="space-y-2">
               <Link href="/" className={getLinkClassName("/dashboard")}>
                 <Home className="w-4 h-4" />
-                <span className="text-sm font-medium">Home</span>
+                <span className="text-sm font-medium">Accueil</span>
               </Link>
               <Link
                 href="/employees"
                 className={getLinkClassName("/employees")}
               >
                 <Users className="w-4 h-4" />
-                <span className="text-sm font-medium">Employees</span>
+                <span className="text-sm font-medium">Employés</span>
               </Link>
               <Link href="/users" className={getLinkClassName("/users")}>
                 <UserCog className="w-4 h-4" />
-                <span className="text-sm font-medium">Users</span>
+                <span className="text-sm font-medium">Utilisateurs</span>
               </Link>
               <Link href="/reports" className={getLinkClassName("/reports")}>
                 <FileBarChart className="w-4 h-4" />
-                Reports
+                <span className="text-sm font-medium">Rapports</span>
               </Link>
               <Link
                 href="/statements"
                 className={getLinkClassName("/statements")}
               >
                 <FileText className="w-4 h-4" />
-                Statements
+                <span className="text-sm font-medium">Déclarations</span>
               </Link>
               <Link
                 href="/detainees"
                 className={getLinkClassName("/detainees")}
               >
                 <UserX className="w-4 h-4" />
-                Detainees
+                <span className="text-sm font-medium">Détenus</span>
               </Link>
               <Link
                 href="/incidents"
                 className={getLinkClassName("/incidents")}
               >
                 <AlertTriangle className="w-4 h-4" />
-                Incidents
+                <span className="text-sm font-medium">Incidents</span>
               </Link>
               <Link href="/seizure" className={getLinkClassName("/seizure")}>
                 <Gavel className="w-4 h-4" />
-                Saisie
+                <span className="text-sm font-medium">Saisies</span>
               </Link>
               <Link
                 href="/audit-logs"
                 className={getLinkClassName("/audit-logs")}
               >
                 <ScrollText className="w-4 h-4" />
-                <span className="text-sm font-medium">Audit Logs</span>
+                <span className="text-sm font-medium">
+                  Journaux d&apos;audit
+                </span>
               </Link>
               {/* <Link href="/settings" className={getLinkClassName("/settings")}>
                 <Settings className="w-4 h-4" />
@@ -118,7 +120,7 @@ export function Sidebar() {
             className="cursor-pointer flex justify-center items-center gap-3 text-black hover:bg-primary hover:text-white font-medium text-sm rounded-lg px-4 py-2"
           >
             <LogOut className="w-4 h-4" />
-            Logout
+            Déconnexion
           </button>
           <div className="flex items-center gap-4">
             <DropdownMenu>
@@ -128,7 +130,10 @@ export function Sidebar() {
                   className="relative h-8 w-8 rounded-full cursor-pointer hover:bg-gray-100"
                 >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="" alt={session?.user?.name || "User"} />
+                    <AvatarImage
+                      src=""
+                      alt={session?.user?.name || "Utilisateur"}
+                    />
                     <AvatarFallback className="bg-gray-200">
                       {session?.user?.name
                         ? session.user.name
@@ -145,13 +150,13 @@ export function Sidebar() {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium">
-                      {session?.user?.name || "User"}
+                      {session?.user?.name || "Utilisateur"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {session?.user?.email || "No email"}
+                      {session?.user?.email || "Aucun email"}
                     </p>
                     <p className="text-xs text-blue-600 capitalize">
-                      {session?.user?.role || "No role"}
+                      {session?.user?.role || "Aucun rôle"}
                     </p>
                   </div>
                 </DropdownMenuLabel>

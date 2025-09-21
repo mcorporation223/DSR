@@ -205,7 +205,7 @@ export function DataTable<T extends Record<string, unknown>>({
 
   return (
     <div className={`bg-white overflow-hidden ${className}`}>
-      <ScrollArea className="w-[calc(80vw)]">
+      <ScrollArea className="w-[calc(100vw-350px)]">
         <Table>
           <TableHeader>
             <TableRow

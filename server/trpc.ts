@@ -7,6 +7,7 @@ import { type User, users } from "@/lib/db/schema";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth";
 import { eq } from "drizzle-orm";
+import { headers, cookies } from "next/headers";
 
 /**
  * Context creation for tRPC (Next.js API Routes)
@@ -42,35 +43,19 @@ export async function createTRPCContext(opts: CreateNextContextOptions) {
 export async function createTRPCFetchContext(
   opts: FetchCreateContextFnOptions
 ) {
-  // Extract headers from the request
-  const { req } = opts;
-
-  // Get the cookie header from the request
-  const cookieHeader = req.headers.get("cookie") || "";
-
-  // Debug logging
-  console.log(
-    "TRPC Context - Cookie header:",
-    cookieHeader ? "Present" : "Missing"
-  );
-
-  // Get user from NextAuth session with proper request context
+  // Get user from NextAuth session for App Router
+  // We need to pass headers and cookies to getServerSession for it to work properly
   const session = await getServerSession(authOptions);
 
   let user: User | null = null;
   if (session?.user?.id) {
-    try {
-      // Fetch full user details from database
-      const userResult = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, session.user.id))
-        .limit(1);
-      user = userResult[0] || null;
-    } catch (error) {
-      console.error("Error fetching user from database:", error);
-      user = null;
-    }
+    // Fetch full user details from database
+    const userResult = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
+    user = userResult[0] || null;
   }
 
   return {
@@ -80,7 +65,10 @@ export async function createTRPCFetchContext(
 }
 
 export type Context = Awaited<ReturnType<typeof createTRPCContext>>;
-export type FetchContext = Awaited<ReturnType<typeof createTRPCFetchContext>>;
+export type FetchContext = {
+  db: typeof db;
+  user: User | null;
+};
 
 /**
  * Initialize tRPC instance
