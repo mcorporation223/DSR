@@ -38,10 +38,15 @@ services:
       DB_POOL_MIN: 2
       DB_POOL_MAX: 10
       UPLOADS_PATH: "/app/uploads"
+      # Database initialization flags (for testing only)
+      INIT_DATABASE: "true"
+      SEED_DATABASE: "true"
     ports:
       - "3000:3000"
     volumes:
       - ../dsr-data/uploads:/app/uploads
+      # Mount drizzle migrations directory for persistence
+      - ./drizzle:/app/drizzle
     depends_on:
       db:
         condition: service_healthy

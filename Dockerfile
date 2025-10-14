@@ -46,6 +46,23 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copy database scripts and dependencies for testing purposes
+# WARNING: This is for development/testing only - remove for production!
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/lib ./lib
+COPY --from=builder /app/drizzle.config.ts ./
+COPY --from=builder /app/drizzle ./drizzle
+COPY docker/init-db.sh /usr/local/bin/init-db.sh
+COPY docker/wait-for-db.sh /usr/local/bin/wait-for-db.sh
+
+# Make scripts executable
+RUN chmod +x /usr/local/bin/init-db.sh /usr/local/bin/wait-for-db.sh
+
+# Install development dependencies needed for database operations (testing only)
+RUN apk add --no-cache bash postgresql-client && \
+    corepack enable pnpm
+
 USER nextjs
 
 EXPOSE 3000
@@ -53,6 +70,6 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-# server.js is created by next build from the standalone output
-# https://nextjs.org/docs/pages/api-reference/next-config-js/output
-CMD ["node", "server.js"]
+# Start with database initialization then the app
+# WARNING: This approach is for development/testing only!
+CMD ["/bin/sh", "-c", "init-db.sh && node server.js"]
