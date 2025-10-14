@@ -42,6 +42,8 @@ async function seed() {
           email: "admin@dsr.gov.cd",
           passwordHash,
           role: "admin",
+          isActive: true,
+          isPasswordSet: true,
         },
         {
           firstName: "Marie",
@@ -49,6 +51,8 @@ async function seed() {
           email: "marie.kabila@dsr.gov.cd",
           passwordHash,
           role: "user",
+          isActive: true,
+          isPasswordSet: true,
         },
         {
           firstName: "Patrick",
@@ -56,6 +60,8 @@ async function seed() {
           email: "patrick.lubumbashi@dsr.gov.cd",
           passwordHash,
           role: "admin",
+          isActive: true,
+          isPasswordSet: true,
         },
       ])
       .returning();
