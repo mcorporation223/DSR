@@ -51,8 +51,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/lib ./lib
+COPY --from=builder /app/server ./server
 COPY --from=builder /app/drizzle.config.ts ./
-COPY --from=builder /app/drizzle ./drizzle
+COPY --from=builder /app/tsconfig.json ./
+# Create drizzle directory - migrations will be generated at runtime
+RUN mkdir -p ./drizzle
 COPY docker/init-db.sh /usr/local/bin/init-db.sh
 COPY docker/wait-for-db.sh /usr/local/bin/wait-for-db.sh
 
@@ -67,8 +70,8 @@ USER nextjs
 
 EXPOSE 3000
 
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
 # Start with database initialization then the app
 # WARNING: This approach is for development/testing only!

@@ -50,7 +50,11 @@ Thumbs.db
 Dockerfile
 docker-compose.yml
 .dockerignore
+# But allow docker/ directory for our scripts
+!docker/
 
 # Other
 README.md
 *.md
+# But allow our database setup documentation
+!DOCKER_DATABASE_SETUP.md

@@ -32,8 +32,15 @@ wait_for_db() {
 check_tables_exist() {
     echo "🔍 Checking if database tables exist..."
     
+    # Extract connection details from DATABASE_URL
+    DB_HOST=$(echo $DATABASE_URL | sed 's/.*@\([^:]*\):.*/\1/')
+    DB_PORT=$(echo $DATABASE_URL | sed 's/.*:\([0-9]*\)\/.*/\1/')
+    DB_USER=$(echo $DATABASE_URL | sed 's/.*\/\/\([^:]*\):.*/\1/')
+    DB_NAME=$(echo $DATABASE_URL | sed 's/.*\/\([^?]*\).*/\1/')
+    DB_PASS=$(echo $DATABASE_URL | sed 's/.*\/\/[^:]*:\([^@]*\)@.*/\1/')
+    
     # Use pg_isready and a simple query to check if our main tables exist
-    TABLE_COUNT=$(PGPASSWORD="password" psql -h db -p 5432 -U postgres -d dsr -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('users', 'employees', 'detainees');" 2>/dev/null || echo "0")
+    TABLE_COUNT=$(PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('users', 'employees', 'detainees');" 2>/dev/null | tr -d ' ' || echo "0")
     
     if [ "$TABLE_COUNT" -ge 3 ]; then
         echo "✅ Database tables already exist, skipping initialization"
@@ -57,11 +64,7 @@ main() {
         return 0
     fi
     
-    echo "📦 Installing additional dependencies for database operations..."
-    # Install postgresql-client for database operations
-    apk add --no-cache postgresql-client
-    
-    echo "🔧 Generating database schema..."
+    echo " Generating database schema..."
     # Generate Drizzle schema files
     npm run db:generate || {
         echo "⚠️ Schema generation failed, but continuing..."
