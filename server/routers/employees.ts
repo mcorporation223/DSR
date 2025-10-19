@@ -11,7 +11,7 @@ import { logEmployeeAction, captureChanges } from "@/lib/audit-logger";
 
 export const employeesRouter = router({
   // Fetch all employees with optional filters
-  getAll: publicProcedure
+  getAll: protectedProcedure
     .input(getAllEmployeesSchema)
     .query(async ({ ctx, input }) => {
       const { page, limit, search, sortBy, sortOrder, isActive } = input;
@@ -91,7 +91,7 @@ export const employeesRouter = router({
     }),
 
   // Fetch a single employee by ID
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(getEmployeeByIdSchema)
     .query(async ({ ctx, input }) => {
       const employee = await ctx.db
@@ -185,25 +185,41 @@ export const employeesRouter = router({
     }),
 
   // Delete an employee (soft delete)
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(getEmployeeByIdSchema)
     .mutation(async ({ ctx, input }) => {
-      // TODO: Get current user ID from session - for now use null
-      // const currentUserId = ctx.session?.user?.id;
+      // Get employee data before deletion for logging
+      const employeeToDelete = await ctx.db
+        .select()
+        .from(employees)
+        .where(eq(employees.id, input.id))
+        .limit(1);
+
+      if (!employeeToDelete || employeeToDelete.length === 0) {
+        throw new Error("Employé non trouvé");
+      }
 
       const deletedEmployee = await ctx.db
         .update(employees)
         .set({
           isActive: false,
-          // updatedBy: currentUserId,
+          updatedBy: ctx.user.id,
           updatedAt: new Date(),
         })
         .where(eq(employees.id, input.id))
         .returning();
 
       if (!deletedEmployee || deletedEmployee.length === 0) {
-        throw new Error("Employee not found");
+        throw new Error("Employé non trouvé");
       }
+
+      // Log the employee deletion
+      await logEmployeeAction(ctx.user, "delete", input.id, {
+        description: `Suppression (désactivation) de l'employé: ${employeeToDelete[0].firstName} ${employeeToDelete[0].lastName}`,
+        function: employeeToDelete[0].function,
+        deploymentLocation: employeeToDelete[0].deploymentLocation,
+        email: employeeToDelete[0].email,
+      });
 
       return deletedEmployee[0];
     }),

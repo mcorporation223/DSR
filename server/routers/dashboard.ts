@@ -1,4 +1,4 @@
-import { router, publicProcedure } from "../trpc";
+import { router, protectedProcedure } from "../trpc";
 import {
   detainees,
   employees,
@@ -16,7 +16,7 @@ const createdByUser = alias(users, "createdByUser");
 
 export const dashboardRouter = router({
   // Get overall statistics for the dashboard
-  getStats: publicProcedure.query(async ({ ctx }) => {
+  getStats: protectedProcedure.query(async ({ ctx }) => {
     // Get counts for each entity
     const [
       detaineesCount,
@@ -102,7 +102,7 @@ export const dashboardRouter = router({
   }),
 
   // Get recent activities across all entities
-  getRecentActivities: publicProcedure.query(async ({ ctx }) => {
+  getRecentActivities: protectedProcedure.query(async ({ ctx }) => {
     // Get recent detainees
     const recentDetainees = await ctx.db
       .select({
@@ -180,7 +180,7 @@ export const dashboardRouter = router({
   }),
 
   // Get weekly statistics for charts
-  getWeeklyStats: publicProcedure.query(async ({ ctx }) => {
+  getWeeklyStats: protectedProcedure.query(async ({ ctx }) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 

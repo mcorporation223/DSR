@@ -29,7 +29,7 @@ const incidentUpdateSchema = incidentInputSchema.partial().extend({
 });
 
 export const incidentsRouter = router({
-  getAll: publicProcedure
+  getAll: protectedProcedure
     .input(
       z.object({
         page: z.number().min(1).default(1),
