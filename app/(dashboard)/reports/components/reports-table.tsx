@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import {
   MoreHorizontal,
-  Download,
   Search,
   Filter,
   Loader2,
@@ -360,10 +359,6 @@ export function ReportsTable() {
               >
                 <Edit className="w-4 h-4 mr-2" />
                 Modifier
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Download className="w-4 h-4 mr-2" />
-                Télécharger
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-red-600"

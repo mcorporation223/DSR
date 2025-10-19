@@ -10,10 +10,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MobileMenuButton } from "@/components/mobile-menu-button";
 import { useSession, signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
 
-export function Header() {
+interface HeaderProps {
+  onMobileMenuClick?: () => void;
+}
+
+export function Header({ onMobileMenuClick }: HeaderProps) {
   const { data: session, status } = useSession();
 
   const handleLogout = async () => {
@@ -22,7 +27,7 @@ export function Header() {
 
   if (status === "loading") {
     return (
-      <header className="h-14 px-6 flex items-center justify-end">
+      <header className="h-14 px-6 lg flex items-center justify-end">
         <div className="animate-pulse">
           <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
         </div>
@@ -31,7 +36,12 @@ export function Header() {
   }
 
   return (
-    <header className="h-14 px-6 flex items-center justify-end">
+    <header className="h-14 px-2 lg:px-6 flex items-center justify-between">
+      {/* Mobile menu button */}
+      {onMobileMenuClick && <MobileMenuButton onClick={onMobileMenuClick} />}
+
+      {/* Spacer for desktop when no mobile menu */}
+      <div className="flex-1 lg:block hidden"></div>
       {/* Search functionality can be added here in the future */}
       {/* <div className="flex-1 max-w-xl ">
         <div className="relative ">
@@ -80,10 +90,6 @@ export function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {/* <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </DropdownMenuItem> */}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />

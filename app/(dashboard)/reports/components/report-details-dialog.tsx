@@ -50,12 +50,12 @@ export function ReportDetailsDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-2 lg:p-4">
         <DialogHeader className="flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div>
-                <DialogTitle className="text-xl font-semibold text-gray-900">
+                <DialogTitle className="flex text-xl font-semibold text-gray-900">
                   {report.title}
                 </DialogTitle>
                 <p className="text-sm text-gray-500 mt-1">
