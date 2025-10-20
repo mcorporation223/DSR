@@ -120,7 +120,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Status Breakdowns */}
-        <Card className="border-none hover:shadow-lg transition-all duration-300">
+        <Card className="mt-4 lg:mt-0 w-full hover:shadow-lg transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />

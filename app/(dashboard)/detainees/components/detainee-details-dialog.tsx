@@ -79,7 +79,7 @@ export function DetaineeDetailsDialog({
               </AvatarFallback>
             </Avatar> */}
             <div className="flex-1">
-              <DialogTitle className="text-xl font-semibold text-gray-900">
+              <DialogTitle className="text-xl flex font-semibold text-gray-900">
                 {fullName}
               </DialogTitle>
               <div className="flex items-center gap-2 mt-2">

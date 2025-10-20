@@ -53,7 +53,7 @@ export function IncidentDetailsDialog({
         <DialogHeader>
           <div className="flex items-center gap-4 mb-4">
             <div className="flex-1">
-              <DialogTitle className="text-xl font-semibold text-gray-900">
+              <DialogTitle className="flex text-xl font-semibold text-gray-900">
                 Incident - {incident.eventType}
               </DialogTitle>
               <div className="flex items-center gap-2 mt-2">

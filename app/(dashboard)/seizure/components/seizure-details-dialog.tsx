@@ -84,7 +84,7 @@ export function SeizureDetailsDialog({
                 <DialogTitle className="text-xl font-semibold text-gray-900">
                   {seizure.itemName}
                 </DialogTitle>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="flex text-sm text-gray-500 mt-1">
                   Type: {seizure.type}
                 </p>
                 {seizure.status && (

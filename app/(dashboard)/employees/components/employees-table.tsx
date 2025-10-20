@@ -33,6 +33,7 @@ import { EditEmployeeForm } from "./edit-employee-form";
 import { DeleteEmployeeDialog } from "./delete-employee-dialog";
 import { EmployeeDetailsDialog } from "./employee-details-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { EmployeeStatusBadge } from "@/components/status-badge";
 import { getFileUrl } from "@/lib/upload-utils";
 
 // Types for employee data - Updated to match database schema exactly
@@ -369,44 +370,7 @@ export function EmployeesTable() {
       key: "isActive",
       label: "Statut",
       className: "w-28",
-      render: (value) => (
-        <div className="flex items-center gap-2 border px-2 py-1 rounded-md w-max">
-          <div
-            className={`w-4 h-4 rounded-full flex items-center justify-center ${
-              value ? "bg-green-500" : "bg-red-500"
-            }`}
-          >
-            {value ? (
-              <svg
-                className="w-3 h-3 text-white"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="w-3 h-3 text-white"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            )}
-          </div>
-          <span className="text-sm font-medium text-gray-900">
-            {value ? "Actif" : "Inactif"}
-          </span>
-        </div>
-      ),
+      render: (value) => <EmployeeStatusBadge isActive={value as boolean} />,
     },
     {
       key: "createdAt",
