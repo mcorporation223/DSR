@@ -32,6 +32,7 @@ import { SeizureForm } from "./seizure-form";
 import { EditSeizureForm } from "./edit-seizure-form";
 import { DeleteSeizureDialog } from "./delete-seizure-dialog";
 import { SeizureDetailsDialog } from "./seizure-details-dialog";
+import { formatDate } from "@/lib/formatters";
 
 // Types for seizure data
 interface Seizure extends Record<string, unknown> {
@@ -62,7 +63,9 @@ export function SeizureTable() {
     "seizureDate" | "itemName" | "type" | "status" | "createdAt"
   >("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [typeFilter, setTypeFilter] = useState<string | undefined>(undefined);
+  const [typeFilter, setTypeFilter] = useState<
+    "car" | "motorcycle" | undefined
+  >(undefined);
   const [statusFilter, setStatusFilter] = useState<string | undefined>(
     undefined
   );
@@ -124,10 +127,13 @@ export function SeizureTable() {
     setCurrentPage(1); // Reset to first page when searching
   }, []);
 
-  const handleTypeFilter = useCallback((type: string | undefined) => {
-    setTypeFilter(type);
-    setCurrentPage(1); // Reset to first page when filtering
-  }, []);
+  const handleTypeFilter = useCallback(
+    (type: "car" | "motorcycle" | undefined) => {
+      setTypeFilter(type);
+      setCurrentPage(1); // Reset to first page when filtering
+    },
+    []
+  );
 
   const handleStatusFilter = useCallback((status: string | undefined) => {
     setStatusFilter(status);
@@ -250,7 +256,7 @@ export function SeizureTable() {
       sortable: true,
       render: (value) => (
         <span className="text-sm text-gray-900">
-          {new Date(value as Date).toLocaleDateString("fr-FR")}
+          {formatDate(value as Date)}
         </span>
       ),
     },
@@ -336,7 +342,7 @@ export function SeizureTable() {
       className: "w-36",
       render: (value) => (
         <span className="text-sm text-gray-900">
-          {value ? new Date(value as Date).toLocaleDateString("fr-FR") : "-"}
+          {formatDate(value as Date)}
         </span>
       ),
     },
@@ -347,7 +353,7 @@ export function SeizureTable() {
       sortable: true,
       render: (value) => (
         <span className="text-sm text-gray-600">
-          {new Date(value as Date).toLocaleDateString("fr-FR")}
+          {formatDate(value as Date)}
         </span>
       ),
     },
@@ -450,24 +456,24 @@ export function SeizureTable() {
             Tous
           </Button>
           <Button
-            variant={typeFilter === "Voiture" ? "default" : "outline"}
+            variant={typeFilter === "car" ? "default" : "outline"}
             className={
-              typeFilter === "Voiture"
+              typeFilter === "car"
                 ? ""
                 : "border-gray-300 bg-white text-gray-700"
             }
-            onClick={() => handleTypeFilter("Voiture")}
+            onClick={() => handleTypeFilter("car")}
           >
             Voitures
           </Button>
           <Button
-            variant={typeFilter === "Moto" ? "default" : "outline"}
+            variant={typeFilter === "motorcycle" ? "default" : "outline"}
             className={
-              typeFilter === "Moto"
+              typeFilter === "motorcycle"
                 ? ""
                 : "border-gray-300 bg-white text-gray-700"
             }
-            onClick={() => handleTypeFilter("Moto")}
+            onClick={() => handleTypeFilter("motorcycle")}
           >
             Motos
           </Button>

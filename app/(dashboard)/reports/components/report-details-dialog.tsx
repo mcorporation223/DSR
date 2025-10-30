@@ -149,27 +149,23 @@ export function ReportDetailsDialog({
                   </p>
                 </div>
 
-                {report.createdByName && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Enregistré par
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      {report.createdByName}
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Créé par
+                  </label>
+                  <p className="text-sm text-gray-900">
+                    {report.createdByName || report.createdBy || "N/A"}
+                  </p>
+                </div>
 
-                {report.updatedByName && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Modifié par
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      {report.updatedByName}
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Modifié par
+                  </label>
+                  <p className="text-sm text-gray-900">
+                    {report.updatedByName || report.updatedBy || "N/A"}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

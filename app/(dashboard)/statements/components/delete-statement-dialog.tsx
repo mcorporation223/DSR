@@ -12,6 +12,7 @@ import {
 import { trpc } from "@/components/trpc-provider";
 import { toastNotification } from "@/components/toast-notification";
 import { Loader2 } from "lucide-react";
+import { formatDetailedDateTime } from "@/lib/formatters";
 
 interface Statement {
   id: string;
@@ -85,13 +86,7 @@ export function DeleteStatementDialog({
           </div>
           <div className="text-sm">
             <span className="font-medium">Date de création:</span>{" "}
-            {statement.createdAt.toLocaleDateString("fr-FR", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {formatDetailedDateTime(statement.createdAt)}
           </div>
         </div>
 

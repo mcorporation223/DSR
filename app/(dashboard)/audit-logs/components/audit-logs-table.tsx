@@ -24,6 +24,7 @@ import {
 import { trpc } from "@/components/trpc-provider";
 import { Input } from "@/components/ui/input";
 import { AuditLogDetailsDialog } from "./audit-log-details-dialog";
+import { formatDate } from "@/lib/formatters";
 
 // Types for audit log data
 interface AuditLog extends Record<string, unknown> {
@@ -215,7 +216,7 @@ export function AuditLogsTable() {
       sortable: true,
       render: (value) => (
         <div className="text-sm text-gray-900">
-          <div>{new Date(value as string).toLocaleDateString("fr-FR")}</div>
+          <div>{formatDate(value as string)}</div>
           <div className="text-xs text-gray-500">
             {new Date(value as string).toLocaleTimeString("fr-FR")}
           </div>

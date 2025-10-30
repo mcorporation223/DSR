@@ -45,21 +45,36 @@ import type { Incident } from "./incident-table";
 
 // Form validation schema
 const victimSchema = z.object({
-  nom: z.string().min(2, "Le nom de la victime est requis"),
+  nom: z
+    .string()
+    .min(2, "Le nom de la victime est requis")
+    .max(30, "Le nom de la victime ne peut pas dépasser 30 caractères"),
   sexe: z.enum(["Homme", "Femme"], {
     message: "Sélectionner le sexe",
   }),
-  causeDuDeces: z.string().min(2, "La cause du décès est requise"),
+  causeDuDeces: z
+    .string()
+    .min(2, "La cause du décès est requise")
+    .max(100, "La cause du décès ne peut pas dépasser 100 caractères"),
 });
 
 const editIncidentFormSchema = z.object({
   typeIncident: z.enum(["Assassinats", "Fusillades"], {
     message: "Sélectionner le type d'incident",
   }),
-  dateIncident: z.date({
-    message: "La date de l'incident est requise",
-  }),
-  lieuIncident: z.string().min(2, "Le lieu de l'incident est requis"),
+  dateIncident: z
+    .date({
+      message: "La date de l'incident est requise",
+    })
+    .max(new Date(), "La date de l'incident ne peut pas être dans le futur")
+    .min(
+      new Date("2020-01-01"),
+      "La date de l'incident ne peut pas être avant 2020"
+    ),
+  lieuIncident: z
+    .string()
+    .min(2, "Le lieu de l'incident est requis")
+    .max(20, "Le lieu de l'incident ne peut pas dépasser 20 caractères"),
   // Additional fields for Assassinats
   nombre: z.number().min(1, "Le nombre doit être positif").optional(),
   victimes: z.array(victimSchema).optional(),
@@ -228,7 +243,9 @@ export function EditIncidentForm({
                             </SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -267,15 +284,20 @@ export function EditIncidentForm({
                               selected={field.value}
                               onSelect={field.onChange}
                               captionLayout="dropdown"
+                              startMonth={new Date("2020-01-01")}
+                              endMonth={new Date()}
                               disabled={(date) =>
                                 date > new Date() ||
-                                date < new Date("2000-01-01")
+                                date < new Date("2020-01-01")
                               }
                               initialFocus
+                              defaultMonth={new Date("2024-01-01")}
                             />
                           </PopoverContent>
                         </Popover>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -289,9 +311,15 @@ export function EditIncidentForm({
                           Lieu de l&apos;incident
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Goma Centre" {...field} />
+                          <Input
+                            placeholder="Goma Centre"
+                            maxLength={20}
+                            {...field}
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -320,7 +348,9 @@ export function EditIncidentForm({
                                 }
                               />
                             </FormControl>
-                            <FormMessage />
+                            <div className="h-[24px]">
+                              <FormMessage className="text-xs" />
+                            </div>
                           </FormItem>
                         )}
                       />
@@ -349,11 +379,14 @@ export function EditIncidentForm({
                                       <FormControl>
                                         <Input
                                           placeholder="Nom complet"
+                                          maxLength={30}
                                           value={field.value || ""}
                                           onChange={field.onChange}
                                         />
                                       </FormControl>
-                                      <FormMessage />
+                                      <div className="h-[24px]">
+                                        <FormMessage className="text-xs" />
+                                      </div>
                                     </FormItem>
                                   )}
                                 />
@@ -384,7 +417,9 @@ export function EditIncidentForm({
                                           </SelectItem>
                                         </SelectContent>
                                       </Select>
-                                      <FormMessage />
+                                      <div className="h-[24px]">
+                                        <FormMessage className="text-xs" />
+                                      </div>
                                     </FormItem>
                                   )}
                                 />
@@ -401,11 +436,14 @@ export function EditIncidentForm({
                                     <FormControl>
                                       <Input
                                         placeholder="Ex: Balles, Arme blanche..."
+                                        maxLength={100}
                                         value={field.value || ""}
                                         onChange={field.onChange}
                                       />
                                     </FormControl>
-                                    <FormMessage />
+                                    <div className="h-[24px]">
+                                      <FormMessage className="text-xs" />
+                                    </div>
                                   </FormItem>
                                 )}
                               />

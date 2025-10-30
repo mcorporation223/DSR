@@ -1,6 +1,6 @@
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { db } from "@/lib/db";
-import { detainees, users } from "@/lib/db/schema";
+import { detainees, users, auditLogs } from "@/lib/db/schema";
 import { desc, asc, like, and, eq, or, count, sql, ilike } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
@@ -10,7 +10,8 @@ import {
   updateDetaineeSchema,
 } from "../schemas/detainees";
 import { z } from "zod";
-import { logDetaineeAction, captureChanges } from "@/lib/audit-logger";
+import { captureChanges } from "@/lib/audit-logger";
+import { TRPCError } from "@trpc/server";
 
 // Create aliases for the users table to handle both createdBy and updatedBy
 const createdByUser = alias(users, "createdByUser");
@@ -212,47 +213,59 @@ export const detaineesRouter = router({
         return timestamp;
       };
 
-      const newDetainee = await ctx.db
-        .insert(detainees)
-        .values({
-          firstName: input.firstName,
-          lastName: input.lastName,
-          sex: input.sex,
-          placeOfBirth: input.placeOfBirth,
-          dateOfBirth: input.dateOfBirth,
-          parentNames: input.parentNames,
-          originNeighborhood: input.originNeighborhood,
-          education: input.education,
-          employment: input.employment,
-          maritalStatus: input.maritalStatus,
-          maritalDetails: input.maritalDetails,
-          religion: input.religion,
-          residence: input.residence,
-          phoneNumber: input.phoneNumber,
-          crimeReason: input.crimeReason,
-          arrestDate: input.arrestDate,
-          arrestLocation: input.arrestLocation,
-          arrestedBy: input.arrestedBy,
-          arrestTime: timeStringToTimestamp(input.arrestTime), // Convert string to timestamp
-          arrivalDate: input.arrivalDate, // Added missing arrivalDate
-          arrivalTime: timeStringToTimestamp(input.arrivalTime), // Convert string to timestamp
-          cellNumber: input.cellNumber,
-          location: input.location,
-          status: "in_custody", // Automatically set status for new detainees
-          createdBy: ctx.user.id,
-          updatedBy: ctx.user.id,
-        })
-        .returning();
+      // Wrap detainee creation and audit log in a transaction
+      const result = await ctx.db.transaction(async (tx) => {
+        // 1. Insert detainee
+        const newDetainee = await tx
+          .insert(detainees)
+          .values({
+            firstName: input.firstName,
+            lastName: input.lastName,
+            sex: input.sex,
+            placeOfBirth: input.placeOfBirth,
+            dateOfBirth: input.dateOfBirth,
+            parentNames: input.parentNames,
+            originNeighborhood: input.originNeighborhood,
+            education: input.education,
+            employment: input.employment,
+            maritalStatus: input.maritalStatus,
+            maritalDetails: input.maritalDetails,
+            religion: input.religion,
+            residence: input.residence,
+            phoneNumber: input.phoneNumber?.replace(/\s/g, ""), // Strip spaces from phone
+            crimeReason: input.crimeReason,
+            arrestDate: input.arrestDate,
+            arrestLocation: input.arrestLocation,
+            arrestedBy: input.arrestedBy,
+            arrestTime: timeStringToTimestamp(input.arrestTime),
+            arrivalDate: input.arrivalDate,
+            arrivalTime: timeStringToTimestamp(input.arrivalTime),
+            cellNumber: input.cellNumber,
+            location: input.location,
+            status: "in_custody",
+            createdBy: ctx.user.id,
+            updatedBy: ctx.user.id,
+          })
+          .returning();
 
-      // Log the detainee creation
-      await logDetaineeAction(ctx.user, "create", newDetainee[0].id, {
-        description: `Nouveau détenu enregistré: ${input.firstName} ${input.lastName}`,
-        crimeReason: input.crimeReason,
-        arrestLocation: input.arrestLocation,
-        arrestedBy: input.arrestedBy,
+        // 2. Insert audit log within the same transaction
+        await tx.insert(auditLogs).values({
+          userId: ctx.user.id,
+          action: "create",
+          entityType: "detainee",
+          entityId: newDetainee[0].id,
+          details: {
+            description: `Nouveau détenu enregistré: ${input.firstName} ${input.lastName}`,
+            crimeReason: input.crimeReason,
+            arrestLocation: input.arrestLocation,
+            arrestedBy: input.arrestedBy,
+          },
+        });
+
+        return newDetainee[0];
       });
 
-      return newDetainee[0];
+      return result;
     }),
 
   // Update a detainee
@@ -261,7 +274,7 @@ export const detaineesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
 
-      // Get current detainee data for change tracking
+      // Check if detainee exists
       const currentDetainee = await ctx.db
         .select()
         .from(detainees)
@@ -269,7 +282,10 @@ export const detaineesRouter = router({
         .limit(1);
 
       if (!currentDetainee || currentDetainee.length === 0) {
-        throw new Error("Détenu non trouvé");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Détenu non trouvé",
+        });
       }
 
       // Helper function to convert time string (HH:mm) to timestamp
@@ -289,9 +305,10 @@ export const detaineesRouter = router({
         return timestamp;
       };
 
-      // Process time fields if they exist
+      // Process time fields and phone number
       const processedUpdateData = {
         ...updateData,
+        phoneNumber: updateData.phoneNumber?.replace(/\s/g, ""), // Strip spaces from phone
         arrestTime: updateData.arrestTime
           ? timeStringToTimestamp(updateData.arrestTime)
           : undefined,
@@ -300,35 +317,50 @@ export const detaineesRouter = router({
           : undefined,
       };
 
-      const updatedDetainee = await ctx.db
-        .update(detainees)
-        .set({
-          ...processedUpdateData,
-          updatedBy: ctx.user.id,
-          updatedAt: new Date(),
-        })
-        .where(eq(detainees.id, id))
-        .returning();
+      // Wrap detainee update and audit log in a transaction
+      const result = await ctx.db.transaction(async (tx) => {
+        // 1. Update detainee
+        const updatedDetainee = await tx
+          .update(detainees)
+          .set({
+            ...processedUpdateData,
+            updatedBy: ctx.user.id,
+            updatedAt: new Date(),
+          })
+          .where(eq(detainees.id, id))
+          .returning();
 
-      if (!updatedDetainee || updatedDetainee.length === 0) {
-        throw new Error("Détenu non trouvé");
-      }
+        if (!updatedDetainee || updatedDetainee.length === 0) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Détenu non trouvé",
+          });
+        }
 
-      // Capture and log changes
-      const changes = captureChanges(currentDetainee[0], processedUpdateData);
-      await logDetaineeAction(ctx.user, "update", id, {
-        description: `Modification du détenu: ${updatedDetainee[0].firstName} ${updatedDetainee[0].lastName}`,
-        changed: changes,
+        // 2. Capture changes and insert audit log within the same transaction
+        const changes = captureChanges(currentDetainee[0], processedUpdateData);
+        await tx.insert(auditLogs).values({
+          userId: ctx.user.id,
+          action: "update",
+          entityType: "detainee",
+          entityId: id,
+          details: {
+            description: `Modification du détenu: ${updatedDetainee[0].firstName} ${updatedDetainee[0].lastName}`,
+            changed: changes,
+          },
+        });
+
+        return updatedDetainee[0];
       });
 
-      return updatedDetainee[0];
+      return result;
     }),
 
   // Delete a detainee (hard delete since there's no isActive field)
   delete: protectedProcedure
     .input(getDetaineeByIdSchema)
     .mutation(async ({ ctx, input }) => {
-      // Get detainee data before deletion for logging
+      // Get detainee data before deletion for logging (outside transaction)
       const detaineeToDelete = await ctx.db
         .select()
         .from(detainees)
@@ -336,26 +368,44 @@ export const detaineesRouter = router({
         .limit(1);
 
       if (!detaineeToDelete || detaineeToDelete.length === 0) {
-        throw new Error("Détenu non trouvé");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Détenu non trouvé",
+        });
       }
 
-      const deletedDetainee = await ctx.db
-        .delete(detainees)
-        .where(eq(detainees.id, input.id))
-        .returning();
+      // Wrap detainee deletion and audit log in a transaction
+      const result = await ctx.db.transaction(async (tx) => {
+        // 1. Delete detainee
+        const deletedDetainee = await tx
+          .delete(detainees)
+          .where(eq(detainees.id, input.id))
+          .returning();
 
-      if (!deletedDetainee || deletedDetainee.length === 0) {
-        throw new Error("Détenu non trouvé");
-      }
+        if (!deletedDetainee || deletedDetainee.length === 0) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Détenu non trouvé",
+          });
+        }
 
-      // Log the detainee deletion
-      await logDetaineeAction(ctx.user, "delete", input.id, {
-        description: `Suppression du détenu: ${detaineeToDelete[0].firstName} ${detaineeToDelete[0].lastName}`,
-        crimeReason: detaineeToDelete[0].crimeReason,
-        arrestLocation: detaineeToDelete[0].arrestLocation,
+        // 2. Insert audit log within the same transaction
+        await tx.insert(auditLogs).values({
+          userId: ctx.user.id,
+          action: "delete",
+          entityType: "detainee",
+          entityId: input.id,
+          details: {
+            description: `Suppression du détenu: ${detaineeToDelete[0].firstName} ${detaineeToDelete[0].lastName}`,
+            crimeReason: detaineeToDelete[0].crimeReason,
+            arrestLocation: detaineeToDelete[0].arrestLocation,
+          },
+        });
+
+        return deletedDetainee[0];
       });
 
-      return deletedDetainee[0];
+      return result;
     }),
 
   // Search detainees for autocomplete (used in statement forms)

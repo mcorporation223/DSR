@@ -259,27 +259,23 @@ export function SeizureDetailsDialog({
                   </p>
                 </div>
 
-                {seizure.createdByName && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Enregistré par
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      {seizure.createdByName}
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Créé par
+                  </label>
+                  <p className="text-sm text-gray-900">
+                    {seizure.createdByName || seizure.createdBy || "N/A"}
+                  </p>
+                </div>
 
-                {seizure.updatedByName && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Modifié par
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      {seizure.updatedByName}
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Modifié par
+                  </label>
+                  <p className="text-sm text-gray-900">
+                    {seizure.updatedByName || seizure.updatedBy || "N/A"}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

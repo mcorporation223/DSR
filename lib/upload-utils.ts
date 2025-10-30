@@ -96,3 +96,35 @@ export function formatFileSize(bytes: number): string {
 
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 }
+
+export interface DeleteResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
+export async function deleteFile(filePath: string): Promise<DeleteResponse> {
+  try {
+    const response = await fetch("/api/delete-file", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ filePath }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Delete failed");
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Delete error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Delete failed",
+    };
+  }
+}

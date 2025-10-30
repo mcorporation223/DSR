@@ -8,6 +8,8 @@ import bcrypt from "bcrypt";
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
+    maxAge: 24 * 60 * 60,
+    updateAge: 1, 
   },
   providers: [
     CredentialsProvider({

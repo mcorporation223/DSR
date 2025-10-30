@@ -4,6 +4,7 @@ import { reports, users } from "@/lib/db/schema";
 import { and, count, desc, asc, eq, or, ilike, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import {
   reportInputSchema,
   reportUpdateSchema,
@@ -96,7 +97,10 @@ export const reportsRouter = router({
         .limit(1);
 
       if (!report[0]) {
-        throw new Error("Report not found");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Rapport non trouvé",
+        });
       }
 
       return report[0];
@@ -139,7 +143,10 @@ export const reportsRouter = router({
         .limit(1);
 
       if (!currentReport || currentReport.length === 0) {
-        throw new Error("Rapport non trouvé");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Rapport non trouvé",
+        });
       }
 
       // Prepare update data with proper date conversion
@@ -181,7 +188,10 @@ export const reportsRouter = router({
         .limit(1);
 
       if (!reportToDelete || reportToDelete.length === 0) {
-        throw new Error("Rapport non trouvé");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Rapport non trouvé",
+        });
       }
 
       await db.delete(reports).where(eq(reports.id, input.id));

@@ -2,7 +2,9 @@ import { z } from "zod";
 
 export const seizureInputSchema = z.object({
   itemName: z.string().min(1, "Item name is required"),
-  type: z.string().min(1, "Type is required"),
+  type: z.enum(["car", "motorcycle"], {
+    message: "Type must be either 'car' or 'motorcycle'",
+  }),
   seizureLocation: z.string().optional(),
   chassisNumber: z.string().optional(),
   plateNumber: z.string().optional(),
@@ -22,10 +24,19 @@ export const seizureQuerySchema = z.object({
   limit: z.number().min(1).max(100).default(10),
   search: z.string().optional(),
   sortBy: z
-    .enum(["seizureDate", "itemName", "type", "status", "createdAt"])
+    .enum([
+      "seizureDate",
+      "itemName",
+      "type",
+      "status",
+      "createdAt",
+      "updatedAt",
+      "ownerName",
+      "seizureLocation",
+    ])
     .default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
-  type: z.string().optional(),
+  type: z.enum(["car", "motorcycle"]).optional(),
   status: z.string().optional(),
 });
 

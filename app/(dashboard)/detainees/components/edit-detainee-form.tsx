@@ -46,40 +46,112 @@ import { Textarea } from "@/components/ui/textarea";
 
 // Form validation schema matching the database schema
 const editDetaineeFormSchema = z.object({
-  firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
-  lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  firstName: z
+    .string()
+    .min(2, "Le prénom doit contenir au moins 2 caractères")
+    .max(20, "Le prénom ne peut pas dépasser 20 caractères"),
+  lastName: z
+    .string()
+    .min(2, "Le nom doit contenir au moins 2 caractères")
+    .max(20, "Le nom ne peut pas dépasser 20 caractères"),
   sex: z.enum(["Male", "Female"], {
     message: "Veuillez sélectionner le sexe",
   }),
-  placeOfBirth: z.string().min(2, "Le lieu de naissance est requis"),
-  dateOfBirth: z.date({
-    message: "La date de naissance est requise",
-  }),
-  parentNames: z.string().optional(),
-  originNeighborhood: z.string().optional(),
-  education: z.string().optional(),
-  employment: z.string().optional(),
+  placeOfBirth: z
+    .string()
+    .min(2, "Le lieu de naissance est requis")
+    .max(20, "Le lieu de naissance ne peut pas dépasser 20 caractères"),
+  dateOfBirth: z
+    .date({
+      message: "La date de naissance est requise",
+    })
+    .max(new Date(), "La date de naissance ne peut pas être dans le futur")
+    .min(
+      new Date("1940-01-01"),
+      "La date de naissance ne peut pas être avant 1940"
+    ),
+  parentNames: z
+    .string()
+    .max(100, "Les noms des parents ne peuvent pas dépasser 100 caractères")
+    .optional(),
+  originNeighborhood: z
+    .string()
+    .max(25, "Le quartier d'origine ne peut pas dépasser 25 caractères")
+    .optional(),
+  education: z
+    .string()
+    .max(30, "L'éducation ne peut pas dépasser 30 caractères")
+    .optional(),
+  employment: z
+    .string()
+    .max(25, "La profession ne peut pas dépasser 25 caractères")
+    .optional(),
   maritalStatus: z
     .enum(["Single", "Married", "Divorced", "Widowed"])
     .optional(),
-  maritalDetails: z.string().optional(),
-  religion: z.string().optional(),
-  residence: z.string().min(2, "La résidence est requise"),
-  phoneNumber: z.string().optional(),
-  crimeReason: z.string().min(2, "Le motif du crime est requis"),
+  maritalDetails: z
+    .string()
+    .max(100, "Les détails maritaux ne peuvent pas dépasser 100 caractères")
+    .optional(),
+  religion: z
+    .string()
+    .max(25, "La religion ne peut pas dépasser 25 caractères")
+    .optional(),
+  residence: z
+    .string()
+    .min(2, "La résidence est requise")
+    .max(25, "La résidence ne peut pas dépasser 25 caractères"),
+  phoneNumber: z
+    .string()
+    .regex(
+      /^\+243\s?[0-9\s]{8,12}$/,
+      "Format invalide. Le numéro doit commencer par +243 suivi de 8-10 chiffres"
+    )
+    .refine(
+      (val) => {
+        const digitsOnly = val.replace(/\s/g, "").replace("+243", "");
+        return (
+          digitsOnly.length >= 8 &&
+          digitsOnly.length <= 10 &&
+          /^\d+$/.test(digitsOnly)
+        );
+      },
+      { message: "Le numéro doit contenir 8-10 chiffres après +243" }
+    )
+    .optional()
+    .or(z.literal("")),
+  crimeReason: z
+    .string()
+    .min(2, "Le motif du crime est requis")
+    .max(200, "Le motif du crime ne peut pas dépasser 200 caractères"),
   arrestDate: z.date({
     message: "La date d'arrestation est requise",
   }),
-  arrestLocation: z.string().min(2, "Le lieu d'arrestation est requis"),
-  arrestedBy: z.string().optional(),
+  arrestLocation: z
+    .string()
+    .min(2, "Le lieu d'arrestation est requis")
+    .max(100, "Le lieu d'arrestation ne peut pas dépasser 100 caractères"),
+  arrestedBy: z
+    .string()
+    .max(100, "Le nom de l'agent ne peut pas dépasser 100 caractères")
+    .optional(),
   arrestTime: z.string().optional(),
   arrivalDate: z.date().optional(),
   arrivalTime: z.string().optional(),
-  cellNumber: z.string().optional(),
-  location: z.string().optional(),
+  cellNumber: z
+    .string()
+    .max(20, "Le numéro de cellule ne peut pas dépasser 20 caractères")
+    .optional(),
+  location: z
+    .string()
+    .max(50, "L'emplacement ne peut pas dépasser 50 caractères")
+    .optional(),
   status: z.enum(["in_custody", "released", "transferred"]).optional(),
   releaseDate: z.date().optional(),
-  releaseReason: z.string().optional(),
+  releaseReason: z
+    .string()
+    .max(200, "Le motif de libération ne peut pas dépasser 200 caractères")
+    .optional(),
 });
 
 type EditDetaineeFormValues = z.infer<typeof editDetaineeFormSchema>;
@@ -242,9 +314,15 @@ export function EditDetaineeForm({
                       <FormItem>
                         <FormLabel className="text-gray-700">Prénom</FormLabel>
                         <FormControl>
-                          <Input placeholder="Pierre" {...field} />
+                          <Input
+                            placeholder="Pierre"
+                            maxLength={20}
+                            {...field}
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -256,9 +334,15 @@ export function EditDetaineeForm({
                       <FormItem>
                         <FormLabel className="text-gray-700">Nom</FormLabel>
                         <FormControl>
-                          <Input placeholder="Mukamba" {...field} />
+                          <Input
+                            placeholder="Mukamba"
+                            maxLength={20}
+                            {...field}
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -283,7 +367,9 @@ export function EditDetaineeForm({
                             <SelectItem value="Female">Femme</SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -322,15 +408,20 @@ export function EditDetaineeForm({
                               selected={field.value}
                               onSelect={field.onChange}
                               captionLayout="dropdown"
+                              startMonth={new Date("1940-01-01")}
+                              endMonth={new Date()}
                               disabled={(date) =>
                                 date > new Date() ||
-                                date < new Date("1900-01-01")
+                                date < new Date("1940-01-01")
                               }
                               initialFocus
+                              defaultMonth={new Date("1985-01-01")}
                             />
                           </PopoverContent>
                         </Popover>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -344,9 +435,11 @@ export function EditDetaineeForm({
                           Lieu de naissance
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Goma" {...field} />
+                          <Input placeholder="Goma" maxLength={20} {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -362,10 +455,13 @@ export function EditDetaineeForm({
                         <FormControl>
                           <Input
                             placeholder="Jean et Marie Mukamba"
+                            maxLength={100}
                             {...field}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -379,9 +475,15 @@ export function EditDetaineeForm({
                           Quartier d&apos;origine
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Himbi" {...field} />
+                          <Input
+                            placeholder="Himbi"
+                            maxLength={25}
+                            {...field}
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -410,7 +512,9 @@ export function EditDetaineeForm({
                             <SelectItem value="Widowed">Veuf(ve)</SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -426,10 +530,13 @@ export function EditDetaineeForm({
                         <FormControl>
                           <Input
                             placeholder="Nombre d'enfants, conjoint..."
+                            maxLength={100}
                             {...field}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -443,9 +550,15 @@ export function EditDetaineeForm({
                           Religion
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Catholique" {...field} />
+                          <Input
+                            placeholder="Catholique"
+                            maxLength={25}
+                            {...field}
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -461,10 +574,13 @@ export function EditDetaineeForm({
                         <FormControl>
                           <Input
                             placeholder="Licence en Administration Publique"
+                            maxLength={30}
                             {...field}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -476,9 +592,15 @@ export function EditDetaineeForm({
                       <FormItem>
                         <FormLabel className="text-gray-700">Emploi</FormLabel>
                         <FormControl>
-                          <Input placeholder="Commerçant" {...field} />
+                          <Input
+                            placeholder="Commerçant"
+                            maxLength={25}
+                            {...field}
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -492,9 +614,15 @@ export function EditDetaineeForm({
                           Résidence
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Goma - Himbi" {...field} />
+                          <Input
+                            placeholder="Goma - Himbi"
+                            maxLength={25}
+                            {...field}
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -508,9 +636,15 @@ export function EditDetaineeForm({
                           Téléphone
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="+243 970 123 456" {...field} />
+                          <Input
+                            placeholder="+243 970 123 456"
+                            maxLength={20}
+                            {...field}
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -535,9 +669,15 @@ export function EditDetaineeForm({
                           Motif du crime
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Vol à main armée" {...field} />
+                          <Input
+                            placeholder="Vol à main armée"
+                            maxLength={200}
+                            {...field}
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -550,9 +690,15 @@ export function EditDetaineeForm({
                           Lieu d&apos;arrestation
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Goma Centre" {...field} />
+                          <Input
+                            placeholder="Goma Centre"
+                            maxLength={100}
+                            {...field}
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -595,7 +741,9 @@ export function EditDetaineeForm({
                             />
                           </PopoverContent>
                         </Popover>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -615,7 +763,9 @@ export function EditDetaineeForm({
                             placeholder="Sélectionner l'heure d'arrestation"
                           />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -629,9 +779,15 @@ export function EditDetaineeForm({
                           Arrêté par
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Police Nationale" {...field} />
+                          <Input
+                            placeholder="Police Nationale"
+                            maxLength={100}
+                            {...field}
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -675,7 +831,9 @@ export function EditDetaineeForm({
                             />
                           </PopoverContent>
                         </Popover>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -695,7 +853,9 @@ export function EditDetaineeForm({
                             placeholder="Sélectionner l'heure d'arrivée"
                           />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -709,9 +869,11 @@ export function EditDetaineeForm({
                           Numéro de cellule
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="C-12" {...field} />
+                          <Input placeholder="C-12" maxLength={20} {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -725,9 +887,15 @@ export function EditDetaineeForm({
                           Localisation
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Bloc A" {...field} />
+                          <Input
+                            placeholder="Bloc A"
+                            maxLength={50}
+                            {...field}
+                          />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -757,7 +925,9 @@ export function EditDetaineeForm({
                             </SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -809,7 +979,9 @@ export function EditDetaineeForm({
                                 />
                               </PopoverContent>
                             </Popover>
-                            <FormMessage />
+                            <div className="h-[24px]">
+                              <FormMessage className="text-xs" />
+                            </div>
                           </FormItem>
                         )}
                       />
@@ -825,10 +997,13 @@ export function EditDetaineeForm({
                             <FormControl>
                               <Textarea
                                 placeholder="Fin de peine, acquittement..."
+                                maxLength={200}
                                 {...field}
                               />
                             </FormControl>
-                            <FormMessage />
+                            <div className="h-[24px]">
+                              <FormMessage className="text-xs" />
+                            </div>
                           </FormItem>
                         )}
                       />

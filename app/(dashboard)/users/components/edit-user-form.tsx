@@ -145,7 +145,9 @@ export function EditUserForm({
                         <FormControl>
                           <Input placeholder="Jean-Baptiste" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -161,7 +163,9 @@ export function EditUserForm({
                         <FormControl>
                           <Input placeholder="Mbemba Tshimanga" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -181,7 +185,9 @@ export function EditUserForm({
                             {...field}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -208,7 +214,9 @@ export function EditUserForm({
                             </SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />

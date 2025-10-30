@@ -1,11 +1,22 @@
 import { z } from "zod";
 import { router, protectedProcedure, publicProcedure } from "../trpc";
 import { db } from "@/lib/db";
-import { incidents, victims, users } from "@/lib/db/schema";
-import { and, count, desc, asc, eq, or, ilike, sql } from "drizzle-orm";
+import { incidents, victims, users, auditLogs } from "@/lib/db/schema";
+import {
+  and,
+  count,
+  desc,
+  asc,
+  eq,
+  or,
+  ilike,
+  sql,
+  inArray,
+} from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
-import { logIncidentAction } from "@/lib/audit-logger";
+import { TRPCError } from "@trpc/server";
+import { logIncidentAction, captureChanges } from "@/lib/audit-logger";
 
 const incidentInputSchema = z.object({
   incidentDate: z.string().datetime(),
@@ -105,25 +116,44 @@ export const incidentsRouter = router({
         .limit(limit)
         .offset(offset);
 
-      // Get victims for each incident
-      const incidentsWithVictims = await Promise.all(
-        incidentsResult.map(async (incident) => {
-          const incidentVictims = await db
-            .select({
-              id: victims.id,
-              name: victims.name,
-              sex: victims.sex,
-              causeOfDeath: victims.causeOfDeath,
-            })
-            .from(victims)
-            .where(eq(victims.incidentId, incident.id));
+      if (incidentsResult.length === 0) {
+        return {
+          incidents: [],
+          pagination: {
+            page,
+            limit,
+            totalItems,
+            totalPages: Math.ceil(totalItems / limit),
+          },
+        };
+      }
 
-          return {
-            ...incident,
-            victims: incidentVictims,
-          };
+      // Get victims for the fetched incidents
+      const incidentIds = incidentsResult.map((incident) => incident.id);
+
+      const allVictims = await db
+        .select({
+          id: victims.id,
+          name: victims.name,
+          sex: victims.sex,
+          causeOfDeath: victims.causeOfDeath,
+          incidentId: victims.incidentId,
         })
-      );
+        .from(victims)
+        .where(inArray(victims.incidentId, incidentIds));
+
+      const victimsMap = allVictims.reduce((acc, victim) => {
+        if (!acc[victim.incidentId]) {
+          acc[victim.incidentId] = [];
+        }
+        acc[victim.incidentId].push(victim);
+        return acc;
+      }, {} as Record<string, typeof allVictims>);
+
+      const incidentsWithVictims = incidentsResult.map((incident) => ({
+        ...incident,
+        victims: victimsMap[incident.id] || [],
+      }));
 
       return {
         incidents: incidentsWithVictims,
@@ -146,7 +176,10 @@ export const incidentsRouter = router({
         .limit(1);
 
       if (!incident[0]) {
-        throw new Error("Incident not found");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Incident non trouvé",
+        });
       }
 
       // Get victims for this incident
@@ -166,45 +199,66 @@ export const incidentsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { victims: inputVictims, ...incidentData } = input;
 
-      // Create the incident
-      const newIncident = await db
-        .insert(incidents)
-        .values({
-          ...incidentData,
-          incidentDate: new Date(incidentData.incidentDate),
-          createdBy: ctx.user.id,
-          updatedBy: ctx.user.id,
-        })
-        .returning();
-
-      // Create victims if any
-      if (inputVictims && inputVictims.length > 0) {
-        await db.insert(victims).values(
-          inputVictims.map((victim) => ({
-            ...victim,
-            incidentId: newIncident[0].id,
+      const result = await db.transaction(async (tx) => {
+        const newIncident = await tx
+          .insert(incidents)
+          .values({
+            ...incidentData,
+            incidentDate: new Date(incidentData.incidentDate),
             createdBy: ctx.user.id,
             updatedBy: ctx.user.id,
-          }))
-        );
-      }
+          })
+          .returning();
 
-      // Log the incident creation
-      await logIncidentAction(ctx.user, "create", newIncident[0].id, {
-        description: `Nouvel incident enregistré: ${incidentData.eventType} à ${incidentData.location}`,
-        eventType: incidentData.eventType,
-        location: incidentData.location,
-        numberOfVictims: incidentData.numberOfVictims,
-        victimNames: inputVictims?.map((v) => v.name) || [],
+        if (inputVictims && inputVictims.length > 0) {
+          await tx.insert(victims).values(
+            inputVictims.map((victim) => ({
+              ...victim,
+              incidentId: newIncident[0].id,
+              createdBy: ctx.user.id,
+              updatedBy: ctx.user.id,
+            }))
+          );
+        }
+
+        await tx.insert(auditLogs).values({
+          userId: ctx.user.id,
+          action: "create",
+          entityType: "incident",
+          entityId: newIncident[0].id,
+          details: {
+            description: `Nouvel incident enregistré: ${incidentData.eventType} à ${incidentData.location}`,
+            eventType: incidentData.eventType,
+            location: incidentData.location,
+            numberOfVictims: incidentData.numberOfVictims,
+            victimNames: inputVictims?.map((v) => v.name) || [],
+          },
+        });
+
+        return newIncident[0];
       });
 
-      return newIncident[0];
+      return result;
     }),
 
   update: protectedProcedure
     .input(incidentUpdateSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, victims: inputVictims, ...incidentData } = input;
+
+      // Get current incident for change tracking
+      const currentIncident = await db
+        .select()
+        .from(incidents)
+        .where(eq(incidents.id, id))
+        .limit(1);
+
+      if (!currentIncident || currentIncident.length === 0) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Incident non trouvé",
+        });
+      }
 
       // Prepare update data with proper date conversion
       const updateData: Record<string, unknown> = {
@@ -243,17 +297,62 @@ export const incidentsRouter = router({
         }
       }
 
+      const changes = captureChanges(currentIncident[0], updateData);
+      await logIncidentAction(ctx.user, "update", id, {
+        description: `Modification de l'incident: ${updatedIncident[0].eventType} à ${updatedIncident[0].location}`,
+        changed: changes,
+        victimsUpdated: inputVictims !== undefined,
+      });
+
       return updatedIncident[0];
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
-      // Delete victims first (due to foreign key constraint)
-      await db.delete(victims).where(eq(victims.incidentId, input.id));
+    .mutation(async ({ input, ctx }) => {
+      // Get incident data before deletion for logging (outside transaction)
+      const incidentToDelete = await db
+        .select()
+        .from(incidents)
+        .where(eq(incidents.id, input.id))
+        .limit(1);
 
-      // Delete the incident
-      await db.delete(incidents).where(eq(incidents.id, input.id));
+      if (!incidentToDelete || incidentToDelete.length === 0) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Incident non trouvé",
+        });
+      }
+
+      const result = await db.transaction(async (tx) => {
+        const deletedIncident = await tx
+          .delete(incidents)
+          .where(eq(incidents.id, input.id))
+          .returning();
+
+        if (!deletedIncident || deletedIncident.length === 0) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Incident non trouvé",
+          });
+        }
+
+        await tx.insert(auditLogs).values({
+          userId: ctx.user.id,
+          action: "delete",
+          entityType: "incident",
+          entityId: input.id,
+          details: {
+            description: `Suppression de l'incident: ${incidentToDelete[0].eventType} à ${incidentToDelete[0].location}`,
+            eventType: incidentToDelete[0].eventType,
+            location: incidentToDelete[0].location,
+            numberOfVictims: incidentToDelete[0].numberOfVictims,
+            incidentDate: incidentToDelete[0].incidentDate,
+          },
+        });
+
+        return deletedIncident[0];
+      });
 
       return { success: true };
     }),
