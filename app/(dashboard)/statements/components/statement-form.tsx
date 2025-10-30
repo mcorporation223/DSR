@@ -236,7 +236,9 @@ export function StatementForm({ onSubmit, onSuccess }: StatementFormProps) {
                             </div>
                           )}
                         </div>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -312,7 +314,9 @@ export function StatementForm({ onSubmit, onSuccess }: StatementFormProps) {
                             </div>
                           </div>
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />

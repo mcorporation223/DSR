@@ -151,7 +151,9 @@ export function EditReportForm({
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
+                    <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                   </FormItem>
                 )}
               />
@@ -199,7 +201,9 @@ export function EditReportForm({
                           />
                         </PopoverContent>
                       </Popover>
-                      <FormMessage />
+                      <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                     </FormItem>
                   )}
                 />
@@ -215,7 +219,9 @@ export function EditReportForm({
                       <FormControl>
                         <Input placeholder="Goma Centre" {...field} />
                       </FormControl>
-                      <FormMessage />
+                      <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                     </FormItem>
                   )}
                 />
@@ -238,7 +244,9 @@ export function EditReportForm({
                         className="min-h-[120px]"
                       />
                     </FormControl>
-                    <FormMessage />
+                    <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                   </FormItem>
                 )}
               />

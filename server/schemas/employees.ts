@@ -19,46 +19,167 @@ export const getEmployeeByIdSchema = z.object({
 
 // Input schema for creating a new employee
 export const createEmployeeSchema = z.object({
-  firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
-  lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  firstName: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(2, "Le prénom doit contenir au moins 2 caractères")
+        .max(20, "Le prénom ne peut pas dépasser 20 caractères")
+    ),
+  lastName: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(2, "Le nom doit contenir au moins 2 caractères")
+        .max(20, "Le nom ne peut pas dépasser 20 caractères")
+    ),
   sex: z.enum(["Male", "Female"], {
     message: "Veuillez sélectionner le sexe",
   }),
-  placeOfBirth: z.string().min(2, "Le lieu de naissance est requis"),
-  dateOfBirth: z.coerce.date({
-    message: "La date de naissance est requise",
-  }),
-  education: z.string().min(2, "La formation est requise"),
+  placeOfBirth: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(2, "Le lieu de naissance est requis")
+        .max(20, "Le lieu de naissance ne peut pas dépasser 20 caractères")
+    ),
+  dateOfBirth: z.coerce
+    .date({
+      message: "La date de naissance est requise",
+    })
+    .max(
+      new Date("2005-12-31"),
+      "La date de naissance ne peut pas être après 2005"
+    )
+    .min(
+      new Date("1940-01-01"),
+      "La date de naissance ne peut pas être avant 1940"
+    ),
+  education: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(2, "La formation est requise")
+        .max(30, "La formation ne peut pas dépasser 30 caractères")
+    ),
   maritalStatus: z.enum(["Single", "Married", "Divorced", "Widowed"], {
     message: "Veuillez sélectionner l'état civil",
   }),
-  function: z.string().min(2, "La fonction est requise"),
-  deploymentLocation: z.string().min(2, "Le lieu de déploiement est requis"),
-  residence: z.string().min(2, "La résidence est requise"),
+  function: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(2, "La fonction est requise")
+        .max(25, "La fonction ne peut pas dépasser 25 caractères")
+    ),
+  deploymentLocation: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(2, "Le lieu de déploiement est requis")
+        .max(30, "Le lieu de déploiement ne peut pas dépasser 30 caractères")
+    ),
+  residence: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(2, "La résidence est requise")
+        .max(25, "La résidence ne peut pas dépasser 25 caractères")
+    ),
   phone: z
     .string()
-    .min(10, "Le numéro de téléphone doit contenir au moins 10 chiffres"),
-  email: z.string().email("Veuillez entrer une adresse email valide"),
+    .regex(
+      /^\+243[0-9]{8,10}$/,
+      "Format invalide. Le numéro doit être au format +243XXXXXXXX (8-10 chiffres)"
+    ),
+  email: z
+    .string()
+    .max(30, "L'adresse email ne peut pas dépasser 30 caractères")
+    .email("Veuillez entrer une adresse email valide")
+    .transform((val) => val.toLowerCase().trim()),
   photoUrl: z.string().optional(),
 });
 
 // Input schema for updating an employee
 export const updateEmployeeSchema = z.object({
   id: z.uuid(),
-  firstName: z.string().min(2).optional(),
-  lastName: z.string().min(2).optional(),
+  firstName: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().min(2).max(20))
+    .optional(),
+  lastName: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().min(2).max(20))
+    .optional(),
   sex: z.enum(["Male", "Female"]).optional(),
-  placeOfBirth: z.string().min(2).optional(),
-  dateOfBirth: z.coerce.date().optional(),
-  education: z.string().min(2).optional(),
+  placeOfBirth: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().min(2).max(20))
+    .optional(),
+  dateOfBirth: z.coerce
+    .date()
+    .max(
+      new Date("2005-12-31"),
+      "La date de naissance ne peut pas être après 2005"
+    )
+    .min(
+      new Date("1940-01-01"),
+      "La date de naissance ne peut pas être avant 1940"
+    )
+    .optional(),
+  education: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().min(2).max(30))
+    .optional(),
   maritalStatus: z
     .enum(["Single", "Married", "Divorced", "Widowed"])
     .optional(),
-  function: z.string().min(2).optional(),
-  deploymentLocation: z.string().min(2).optional(),
-  residence: z.string().min(2).optional(),
-  phone: z.string().min(10).optional(),
-  email: z.string().email().optional(),
+  function: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().min(2).max(25))
+    .optional(),
+  deploymentLocation: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().min(2).max(30))
+    .optional(),
+  residence: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().min(2).max(25))
+    .optional(),
+  phone: z
+    .string()
+    .regex(
+      /^\+243[0-9]{8,10}$/,
+      "Format invalide. Le numéro doit être au format +243XXXXXXXX (8-10 chiffres)"
+    )
+    .optional(),
+  email: z
+    .string()
+    .max(30, "L'adresse email ne peut pas dépasser 30 caractères")
+    .email("Veuillez entrer une adresse email valide")
+    .transform((val) => val.toLowerCase().trim())
+    .optional(),
   photoUrl: z.string().optional(),
   isActive: z.boolean().optional(),
 });

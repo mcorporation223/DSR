@@ -143,7 +143,9 @@ export function SeizureForm({ onSuccess }: SeizureFormProps) {
                             {...field}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -170,7 +172,9 @@ export function SeizureForm({ onSuccess }: SeizureFormProps) {
                             <SelectItem value="Moto">Moto</SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -186,7 +190,9 @@ export function SeizureForm({ onSuccess }: SeizureFormProps) {
                         <FormControl>
                           <Input placeholder="NK 1234 ABC" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -202,7 +208,9 @@ export function SeizureForm({ onSuccess }: SeizureFormProps) {
                         <FormControl>
                           <Input placeholder="JH4DC4460SS123456" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -232,7 +240,9 @@ export function SeizureForm({ onSuccess }: SeizureFormProps) {
                             {...field}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -251,7 +261,9 @@ export function SeizureForm({ onSuccess }: SeizureFormProps) {
                             {...field}
                           />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -309,7 +321,9 @@ export function SeizureForm({ onSuccess }: SeizureFormProps) {
                             />
                           </PopoverContent>
                         </Popover>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -325,7 +339,9 @@ export function SeizureForm({ onSuccess }: SeizureFormProps) {
                         <FormControl>
                           <Input placeholder="Goma Centre" {...field} />
                         </FormControl>
-                        <FormMessage />
+                        <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                       </FormItem>
                     )}
                   />

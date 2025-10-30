@@ -48,31 +48,84 @@ import Image from "next/image";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { trpc } from "@/components/trpc-provider";
-import { uploadFile, validateImageFile, getFileUrl } from "@/lib/upload-utils";
+import {
+  uploadFile,
+  validateImageFile,
+  getFileUrl,
+  deleteFile,
+} from "@/lib/upload-utils";
 import { toastNotification } from "@/components/toast-notification";
 
 // Form validation schema
 const employeeFormSchema = z.object({
-  firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
-  lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  firstName: z
+    .string()
+    .min(2, "Le prénom doit contenir au moins 2 caractères")
+    .max(20, "Le prénom ne peut pas dépasser 20 caractères"),
+  lastName: z
+    .string()
+    .min(2, "Le nom doit contenir au moins 2 caractères")
+    .max(20, "Le nom ne peut pas dépasser 20 caractères"),
   sex: z.enum(["Male", "Female"], {
     message: "Veuillez sélectionner le sexe",
   }),
-  placeOfBirth: z.string().min(2, "Le lieu de naissance est requis"),
-  dateOfBirth: z.date({
-    message: "La date de naissance est requise",
-  }),
-  education: z.string().min(2, "La formation est requise"),
+  placeOfBirth: z
+    .string()
+    .min(2, "Le lieu de naissance est requis")
+    .max(20, "Le lieu de naissance ne peut pas dépasser 20 caractères"),
+  dateOfBirth: z
+    .date({
+      message: "La date de naissance est requise",
+    })
+    .max(
+      new Date("2005-12-31"),
+      "La date de naissance ne peut pas être après 2005"
+    )
+    .min(
+      new Date("1940-01-01"),
+      "La date de naissance ne peut pas être avant 1940"
+    ),
+  education: z
+    .string()
+    .min(2, "La formation est requise")
+    .max(30, "La formation ne peut pas dépasser 30 caractères"),
   maritalStatus: z.enum(["Single", "Married", "Divorced", "Widowed"], {
     message: "Veuillez sélectionner l'état civil",
   }),
-  function: z.string().min(2, "La fonction est requise"),
-  deploymentLocation: z.string().min(2, "Le lieu de déploiement est requis"),
-  residence: z.string().min(2, "La résidence est requise"),
+  function: z
+    .string()
+    .min(2, "La fonction est requise")
+    .max(25, "La fonction ne peut pas dépasser 25 caractères"),
+  deploymentLocation: z
+    .string()
+    .min(2, "Le lieu de déploiement est requis")
+    .max(30, "Le lieu de déploiement ne peut pas dépasser 30 caractères"),
+  residence: z
+    .string()
+    .min(2, "La résidence est requise")
+    .max(25, "La résidence ne peut pas dépasser 25 caractères"),
   phone: z
     .string()
-    .min(10, "Le numéro de téléphone doit contenir au moins 10 chiffres"),
-  email: z.string().email("Veuillez entrer une adresse email valide"),
+    .regex(
+      /^\+243\s?[0-9\s]{8,12}$/,
+      "Format invalide. Le numéro doit commencer par +243 suivi de 8-10 chiffres"
+    )
+    .refine(
+      (val) => {
+        // Remove all spaces and check if it has exactly 8-10 digits after +243
+        const digitsOnly = val.replace(/\s/g, "").replace("+243", "");
+        return (
+          digitsOnly.length >= 8 &&
+          digitsOnly.length <= 10 &&
+          /^\d+$/.test(digitsOnly)
+        );
+      },
+      { message: "Le numéro doit contenir 8-10 chiffres après +243" }
+    ),
+  email: z
+    .string()
+    .email("Veuillez entrer une adresse email valide")
+    .max(30, "L'adresse email ne peut pas dépasser 30 caractères"),
   photoUrl: z.string().optional(),
 });
 
@@ -95,6 +148,7 @@ interface EmployeeFormProps {
     phone: string | null;
     email: string | null;
     photoUrl: string | null;
+    updatedAt: Date;
   };
   mode?: "create" | "edit";
 }
@@ -109,6 +163,14 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
     const [isUploading, setIsUploading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Track uploaded files for cleanup
+    const [newlyUploadedFile, setNewlyUploadedFile] = useState<string | null>(
+      null
+    );
+    const [originalPhotoUrl, setOriginalPhotoUrl] = useState<string | null>(
+      null
+    );
 
     useImperativeHandle(ref, () => ({
       openDialog: () => setIsDialogOpen(true),
@@ -138,6 +200,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
         // Set image preview for existing employee photo
         if (employee.photoUrl) {
           const imageUrl = getFileUrl(employee.photoUrl);
+          // Track original photo URL for cleanup when replacing
+          setOriginalPhotoUrl(employee.photoUrl);
+
           // Test if the image can be loaded
           const img = document.createElement("img");
           img.onload = () => setImagePreview(imageUrl);
@@ -148,7 +213,11 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
           img.src = imageUrl;
         } else {
           setImagePreview(null);
+          setOriginalPhotoUrl(null);
         }
+
+        // Reset newly uploaded file tracking when loading an employee
+        setNewlyUploadedFile(null);
 
         form.reset({
           firstName: employee.firstName || "",
@@ -175,6 +244,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
       } else if (mode === "create") {
         // Reset everything for create mode
         setImagePreview(null);
+        setOriginalPhotoUrl(null);
+        setNewlyUploadedFile(null);
+
         form.reset({
           firstName: "",
           lastName: "",
@@ -198,40 +270,98 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
         toastNotification.success("Succès", "Employé ajouté avec succès!");
         form.reset();
         setImagePreview(null);
+        setNewlyUploadedFile(null); // Clear tracking on success
         setIsDialogOpen(false);
         onSuccess?.();
       },
-      onError: (error) => {
+      onError: async (error) => {
         toastNotification.error(
           "Erreur",
           `Une erreur est survenue: ${error.message}`
         );
+
+        // Delete newly uploaded file if employee creation fails
+        if (newlyUploadedFile) {
+          await deleteFile(newlyUploadedFile);
+          setNewlyUploadedFile(null);
+        }
       },
     });
 
     const updateEmployeeMutation = trpc.employees.update.useMutation({
       onSuccess: () => {
         toastNotification.success("Succès", "Employé modifié avec succès!");
+        setNewlyUploadedFile(null); // Clear tracking on success
+        setOriginalPhotoUrl(form.getValues("photoUrl") || null); // Update original to current
         setIsDialogOpen(false);
         onSuccess?.();
       },
-      onError: (error) => {
+      onError: async (error) => {
         toastNotification.error(
           "Erreur",
           `Une erreur est survenue: ${error.message}`
         );
+
+        // Delete newly uploaded file if employee update fails
+        if (newlyUploadedFile) {
+          await deleteFile(newlyUploadedFile);
+          setNewlyUploadedFile(null);
+
+          // Restore original photo URL in form
+          if (originalPhotoUrl) {
+            form.setValue("photoUrl", originalPhotoUrl);
+          }
+        }
       },
     });
 
+    const handleDialogClose = async (open: boolean) => {
+      // If closing the dialog and there's a newly uploaded file that wasn't saved
+      if (!open && newlyUploadedFile) {
+        // In create mode, always delete the uploaded file
+        // In edit mode, delete if it's different from the original
+        if (
+          mode === "create" ||
+          (mode === "edit" && newlyUploadedFile !== originalPhotoUrl)
+        ) {
+          await deleteFile(newlyUploadedFile);
+          setNewlyUploadedFile(null);
+
+          // Restore original photo in edit mode
+          if (mode === "edit" && originalPhotoUrl) {
+            form.setValue("photoUrl", originalPhotoUrl);
+          }
+        }
+      }
+
+      setIsDialogOpen(open);
+    };
+
     const handleSubmit = async (data: EmployeeFormValues) => {
+      // Prevent submission while file is uploading
+      if (isUploading) {
+        toastNotification.error(
+          "Upload en cours",
+          "Veuillez attendre que le téléchargement de la photo soit terminé"
+        );
+        return;
+      }
+
       try {
+        // Normalize phone number and email for consistent DB storage
+        const normalizedData = {
+          ...data,
+          phone: data.phone.replace(/\s/g, ""),
+          email: data.email.toLowerCase().trim(),
+        };
+
         if (mode === "edit" && employee?.id) {
           await updateEmployeeMutation.mutateAsync({
             id: employee.id,
-            ...data,
+            ...normalizedData,
           });
         } else {
-          await createEmployeeMutation.mutateAsync(data);
+          await createEmployeeMutation.mutateAsync(normalizedData);
         }
       } catch {
         // Error is handled by the mutation
@@ -269,6 +399,26 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
         const uploadResult = await uploadFile(file, "employee");
 
         if (uploadResult.success && uploadResult.filePath) {
+          // Delete old file when replacing (edit mode only)
+          if (
+            mode === "edit" &&
+            originalPhotoUrl &&
+            originalPhotoUrl !== uploadResult.filePath
+          ) {
+            await deleteFile(originalPhotoUrl);
+          }
+
+          // Delete previously uploaded file if user uploads again before submitting
+          if (
+            newlyUploadedFile &&
+            newlyUploadedFile !== uploadResult.filePath
+          ) {
+            await deleteFile(newlyUploadedFile);
+          }
+
+          // Track this newly uploaded file for potential cleanup
+          setNewlyUploadedFile(uploadResult.filePath);
+
           form.setValue("photoUrl", uploadResult.filePath);
           toastNotification.success("Succès", "Photo téléchargée avec succès!");
         } else {
@@ -288,7 +438,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
     };
 
     return (
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
         {mode === "create" && (
           <DialogTrigger asChild>
             <Button className="">
@@ -325,9 +475,15 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                             Prénom
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="Jean-Baptiste" {...field} />
+                            <Input
+                              placeholder="Jean-Baptiste"
+                              maxLength={20}
+                              {...field}
+                            />
                           </FormControl>
-                          <FormMessage />
+                          <div className="h-[20px]">
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -341,9 +497,15 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                             Nom de famille
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="Mbemba Tshimanga" {...field} />
+                            <Input
+                              placeholder="Mbemba Tshimanga"
+                              maxLength={20}
+                              {...field}
+                            />
                           </FormControl>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -368,7 +530,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               <SelectItem value="Female">Femme</SelectItem>
                             </SelectContent>
                           </Select>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -410,15 +574,20 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                                 selected={field.value}
                                 onSelect={field.onChange}
                                 captionLayout="dropdown"
+                                startMonth={new Date("1940-01-01")}
+                                endMonth={new Date("2005-12-31")}
                                 disabled={(date) =>
-                                  date > new Date() ||
-                                  date < new Date("1900-01-01")
+                                  date > new Date("2005-12-31") ||
+                                  date < new Date("1940-01-01")
                                 }
                                 initialFocus
+                                defaultMonth={new Date("1985-01-01")}
                               />
                             </PopoverContent>
                           </Popover>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -432,9 +601,15 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                             Lieu de naissance
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="Goma" {...field} />
+                            <Input
+                              placeholder="Goma"
+                              maxLength={20}
+                              {...field}
+                            />
                           </FormControl>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -467,7 +642,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               <SelectItem value="Widowed">Veuf(ve)</SelectItem>
                             </SelectContent>
                           </Select>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -571,9 +748,15 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                             Fonction / Rôle
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="Chef de Service" {...field} />
+                            <Input
+                              placeholder="Chef de Service"
+                              maxLength={25}
+                              {...field}
+                            />
                           </FormControl>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -589,10 +772,13 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                           <FormControl>
                             <Input
                               placeholder="Licence en Administration Publique"
+                              maxLength={30}
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -606,9 +792,15 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                             Lieu de déploiement
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="Nord-Kivu - Goma" {...field} />
+                            <Input
+                              placeholder="Nord-Kivu - Goma"
+                              maxLength={30}
+                              {...field}
+                            />
                           </FormControl>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -630,10 +822,13 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                             <Input
                               type="email"
                               placeholder="j.mbemba@dsr.gov.cd"
+                              maxLength={30}
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -647,9 +842,15 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                             Téléphone
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="+243 970 123 456" {...field} />
+                            <Input
+                              placeholder="+243 970 123 456"
+                              maxLength={20}
+                              {...field}
+                            />
                           </FormControl>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -663,9 +864,15 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                             Résidence
                           </FormLabel>
                           <FormControl>
-                            <Input placeholder="Goma - Himbi" {...field} />
+                            <Input
+                              placeholder="Goma - Himbi"
+                              maxLength={25}
+                              {...field}
+                            />
                           </FormControl>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -676,7 +883,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setIsDialogOpen(false)}
+                    onClick={() => handleDialogClose(false)}
                   >
                     Annuler
                   </Button>
@@ -688,8 +895,13 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                       isUploading
                     }
                   >
-                    {createEmployeeMutation.isPending ||
-                    updateEmployeeMutation.isPending ? (
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Téléchargement en cours...
+                      </>
+                    ) : createEmployeeMutation.isPending ||
+                      updateEmployeeMutation.isPending ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         {mode === "edit"

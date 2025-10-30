@@ -19,70 +19,266 @@ export const getDetaineeByIdSchema = z.object({
 
 // Input schema for creating a new detainee
 export const createDetaineeSchema = z.object({
-  firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
-  lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  firstName: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(2, "Le prénom doit contenir au moins 2 caractères")
+        .max(20, "Le prénom ne peut pas dépasser 20 caractères")
+    ),
+  lastName: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(2, "Le nom doit contenir au moins 2 caractères")
+        .max(20, "Le nom ne peut pas dépasser 20 caractères")
+    ),
   sex: z.enum(["Male", "Female"], {
     message: "Veuillez sélectionner le sexe",
   }),
-  placeOfBirth: z.string().min(2, "Le lieu de naissance est requis"),
-  dateOfBirth: z.coerce.date({
-    message: "La date de naissance est requise",
-  }),
-  parentNames: z.string().optional(),
-  originNeighborhood: z.string().optional(),
-  education: z.string().optional(),
-  employment: z.string().optional(),
+  placeOfBirth: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(2, "Le lieu de naissance est requis")
+        .max(20, "Le lieu de naissance ne peut pas dépasser 20 caractères")
+    ),
+  dateOfBirth: z.coerce
+    .date({
+      message: "La date de naissance est requise",
+    })
+    .max(new Date(), "La date de naissance ne peut pas être dans le futur")
+    .min(
+      new Date("1940-01-01"),
+      "La date de naissance ne peut pas être avant 1940"
+    ),
+  parentNames: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .max(100, "Les noms des parents ne peuvent pas dépasser 100 caractères")
+    )
+    .optional(),
+  originNeighborhood: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .max(25, "Le quartier d'origine ne peut pas dépasser 25 caractères")
+    )
+    .optional(),
+  education: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().max(30, "L'éducation ne peut pas dépasser 30 caractères"))
+    .optional(),
+  employment: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z.string().max(25, "La profession ne peut pas dépasser 25 caractères")
+    )
+    .optional(),
   maritalStatus: z
     .enum(["Single", "Married", "Divorced", "Widowed"])
     .optional(),
-  maritalDetails: z.string().optional(),
-  religion: z.string().optional(),
-  residence: z.string().min(2, "La résidence est requise"),
-  phoneNumber: z.string().optional(),
-  crimeReason: z.string().min(2, "Le motif du crime est requis"),
+  maritalDetails: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .max(100, "Les détails maritaux ne peuvent pas dépasser 100 caractères")
+    )
+    .optional(),
+  religion: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().max(25, "La religion ne peut pas dépasser 25 caractères"))
+    .optional(),
+  residence: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(2, "La résidence est requise")
+        .max(25, "La résidence ne peut pas dépasser 25 caractères")
+    ),
+  phoneNumber: z
+    .string()
+    .regex(
+      /^\+243[0-9]{8,10}$/,
+      "Format invalide. Le numéro doit être au format +243XXXXXXXX (8-10 chiffres)"
+    )
+    .optional()
+    .or(z.literal("")),
+  crimeReason: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(2, "Le motif du crime est requis")
+        .max(200, "Le motif du crime ne peut pas dépasser 200 caractères")
+    ),
   arrestDate: z.coerce.date({
     message: "La date d'arrestation est requise",
   }),
-  arrestLocation: z.string().min(2, "Le lieu d'arrestation est requis"),
-  arrestedBy: z.string().optional(),
-  arrestTime: z.string().optional(), // Changed from z.coerce.date() to z.string() for HH:mm format
-  arrivalDate: z.coerce.date().optional(), // Added missing arrivalDate field
-  arrivalTime: z.string().optional(), // Changed from z.coerce.date() to z.string() for HH:mm format
-  cellNumber: z.string().optional(),
-  location: z.string().optional(),
+  arrestLocation: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .min(2, "Le lieu d'arrestation est requis")
+        .max(100, "Le lieu d'arrestation ne peut pas dépasser 100 caractères")
+    ),
+  arrestedBy: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .max(100, "Le nom de l'agent ne peut pas dépasser 100 caractères")
+    )
+    .optional(),
+  arrestTime: z.string().optional(),
+  arrivalDate: z.coerce.date().optional(),
+  arrivalTime: z.string().optional(),
+  cellNumber: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z
+        .string()
+        .max(20, "Le numéro de cellule ne peut pas dépasser 20 caractères")
+    )
+    .optional(),
+  location: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(
+      z.string().max(50, "L'emplacement ne peut pas dépasser 50 caractères")
+    )
+    .optional(),
 });
 
 // Input schema for updating a detainee
 export const updateDetaineeSchema = z.object({
   id: z.uuid(),
-  firstName: z.string().min(2).optional(),
-  lastName: z.string().min(2).optional(),
+  firstName: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().min(2).max(20))
+    .optional(),
+  lastName: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().min(2).max(20))
+    .optional(),
   sex: z.enum(["Male", "Female"]).optional(),
-  placeOfBirth: z.string().min(2).optional(),
-  dateOfBirth: z.coerce.date().optional(),
-  parentNames: z.string().optional(),
-  originNeighborhood: z.string().optional(),
-  education: z.string().optional(),
-  employment: z.string().optional(),
+  placeOfBirth: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().min(2).max(20))
+    .optional(),
+  dateOfBirth: z.coerce
+    .date()
+    .max(new Date())
+    .min(new Date("1940-01-01"))
+    .optional(),
+  parentNames: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().max(100))
+    .optional(),
+  originNeighborhood: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().max(25))
+    .optional(),
+  education: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().max(30))
+    .optional(),
+  employment: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().max(25))
+    .optional(),
   maritalStatus: z
     .enum(["Single", "Married", "Divorced", "Widowed"])
     .optional(),
-  maritalDetails: z.string().optional(),
-  religion: z.string().optional(),
-  residence: z.string().min(2).optional(),
-  phoneNumber: z.string().optional(),
-  crimeReason: z.string().min(2).optional(),
+  maritalDetails: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().max(100))
+    .optional(),
+  religion: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().max(25))
+    .optional(),
+  residence: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().min(2).max(25))
+    .optional(),
+  phoneNumber: z
+    .string()
+    .regex(
+      /^\+243[0-9]{8,10}$/,
+      "Format invalide. Le numéro doit être au format +243XXXXXXXX (8-10 chiffres)"
+    )
+    .optional()
+    .or(z.literal("")),
+  crimeReason: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().min(2).max(200))
+    .optional(),
   arrestDate: z.coerce.date().optional(),
-  arrestLocation: z.string().min(2).optional(),
-  arrestedBy: z.string().optional(),
-  arrestTime: z.string().optional(), // Changed from z.coerce.date() to z.string() for HH:mm format
-  arrivalDate: z.coerce.date().optional(), // Added missing arrivalDate field
-  arrivalTime: z.string().optional(), // Changed from z.coerce.date() to z.string() for HH:mm format
-  cellNumber: z.string().optional(),
-  location: z.string().optional(),
+  arrestLocation: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().min(2).max(100))
+    .optional(),
+  arrestedBy: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().max(100))
+    .optional(),
+  arrestTime: z.string().optional(),
+  arrivalDate: z.coerce.date().optional(),
+  arrivalTime: z.string().optional(),
+  cellNumber: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().max(20))
+    .optional(),
+  location: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().max(50))
+    .optional(),
   status: z.string().optional(),
   releaseDate: z.coerce.date().optional(),
-  releaseReason: z.string().optional(),
+  releaseReason: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().max(200))
+    .optional(),
 });
 
 // Type exports for use in components

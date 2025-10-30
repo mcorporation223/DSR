@@ -284,7 +284,9 @@ export function EditStatementForm({
                         </div>
                       </div>
                     </FormControl>
-                    <FormMessage />
+                    <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                   </FormItem>
                 )}
               />

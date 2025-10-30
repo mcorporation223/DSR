@@ -136,7 +136,9 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
                           <FormControl>
                             <Input placeholder="Jean-Baptiste" {...field} />
                           </FormControl>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                         </FormItem>
                       )}
                     />
@@ -152,7 +154,9 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
                           <FormControl>
                             <Input placeholder="Mbemba Tshimanga" {...field} />
                           </FormControl>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                         </FormItem>
                       )}
                     />
@@ -172,7 +176,9 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                         </FormItem>
                       )}
                     />
@@ -199,7 +205,9 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
                               </SelectItem>
                             </SelectContent>
                           </Select>
-                          <FormMessage />
+                          <div className="h-[24px]">
+                          <FormMessage className="text-xs" />
+                        </div>
                         </FormItem>
                       )}
                     />

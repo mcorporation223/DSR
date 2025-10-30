@@ -42,6 +42,7 @@ export function EditEmployeeForm({
           phone: employee.phone,
           email: employee.email,
           photoUrl: employee.photoUrl,
+          updatedAt: new Date(employee.updatedAt),
         }}
         onSuccess={onSuccess}
       />
