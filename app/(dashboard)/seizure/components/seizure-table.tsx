@@ -32,6 +32,7 @@ import { SeizureForm } from "./seizure-form";
 import { EditSeizureForm } from "./edit-seizure-form";
 import { DeleteSeizureDialog } from "./delete-seizure-dialog";
 import { SeizureDetailsDialog } from "./seizure-details-dialog";
+import { formatDate } from "@/lib/formatters";
 
 // Types for seizure data
 interface Seizure extends Record<string, unknown> {
@@ -255,7 +256,7 @@ export function SeizureTable() {
       sortable: true,
       render: (value) => (
         <span className="text-sm text-gray-900">
-          {new Date(value as Date).toLocaleDateString("fr-FR")}
+          {formatDate(value as Date)}
         </span>
       ),
     },
@@ -341,7 +342,7 @@ export function SeizureTable() {
       className: "w-36",
       render: (value) => (
         <span className="text-sm text-gray-900">
-          {value ? new Date(value as Date).toLocaleDateString("fr-FR") : "-"}
+          {formatDate(value as Date)}
         </span>
       ),
     },
@@ -352,7 +353,7 @@ export function SeizureTable() {
       sortable: true,
       render: (value) => (
         <span className="text-sm text-gray-600">
-          {new Date(value as Date).toLocaleDateString("fr-FR")}
+          {formatDate(value as Date)}
         </span>
       ),
     },

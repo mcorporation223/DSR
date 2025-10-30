@@ -12,6 +12,7 @@ import {
 import { trpc } from "@/components/trpc-provider";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { formatDate } from "@/lib/formatters";
 
 interface Incident {
   id: string;
@@ -72,7 +73,7 @@ export function DeleteIncidentDialog({
           </div>
           <div className="text-sm">
             <span className="font-medium">Date:</span>{" "}
-            {incident.incidentDate.toLocaleDateString("fr-FR")}
+            {formatDate(incident.incidentDate)}
           </div>
           <div className="text-sm">
             <span className="font-medium">Lieu:</span> {incident.location}

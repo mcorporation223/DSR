@@ -35,6 +35,7 @@ import { EmployeeDetailsDialog } from "./employee-details-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmployeeStatusBadge } from "@/components/status-badge";
 import { getFileUrl } from "@/lib/upload-utils";
+import { formatDate } from "@/lib/formatters";
 
 // Types for employee data - Updated to match database schema exactly
 interface Employee extends Record<string, unknown> {
@@ -273,9 +274,7 @@ export function EmployeesTable() {
       className: "w-32",
       render: (value) => (
         <span className="text-sm text-gray-900">
-          {value
-            ? new Date(value as string).toLocaleDateString("fr-FR")
-            : "N/A"}
+          {formatDate(value as string)}
         </span>
       ),
     },
@@ -381,7 +380,7 @@ export function EmployeesTable() {
       sortable: true,
       render: (value) => (
         <span className="text-sm text-gray-600">
-          {new Date(value as string).toLocaleDateString("fr-FR")}
+          {formatDate(value as string)}
         </span>
       ),
     },
@@ -391,7 +390,7 @@ export function EmployeesTable() {
       className: "w-40",
       render: (value) => (
         <span className="text-sm text-gray-600">
-          {new Date(value as string).toLocaleDateString("fr-FR")}
+          {formatDate(value as string)}
         </span>
       ),
     },

@@ -4,6 +4,7 @@ import { statements, users, detainees } from "@/lib/db/schema";
 import { and, count, desc, asc, eq, or, ilike, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import {
   statementInputSchema,
   statementUpdateSchema,
@@ -103,7 +104,10 @@ export const statementsRouter = router({
         .limit(1);
 
       if (!statement[0]) {
-        throw new Error("Statement not found");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Déclaration non trouvée",
+        });
       }
 
       return statement[0];
@@ -148,7 +152,10 @@ export const statementsRouter = router({
         .limit(1);
 
       if (!currentStatement || currentStatement.length === 0) {
-        throw new Error("Déclaration non trouvée");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Déclaration non trouvée",
+        });
       }
 
       // Prepare update data
@@ -185,7 +192,10 @@ export const statementsRouter = router({
         .limit(1);
 
       if (!statementToDelete || statementToDelete.length === 0) {
-        throw new Error("Déclaration non trouvée");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Déclaration non trouvée",
+        });
       }
 
       await db.delete(statements).where(eq(statements.id, input.id));

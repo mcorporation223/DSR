@@ -176,7 +176,10 @@ export const incidentsRouter = router({
         .limit(1);
 
       if (!incident[0]) {
-        throw new Error("Incident not found");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Incident non trouvé",
+        });
       }
 
       // Get victims for this incident
@@ -196,39 +199,46 @@ export const incidentsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { victims: inputVictims, ...incidentData } = input;
 
-      // Create the incident
-      const newIncident = await db
-        .insert(incidents)
-        .values({
-          ...incidentData,
-          incidentDate: new Date(incidentData.incidentDate),
-          createdBy: ctx.user.id,
-          updatedBy: ctx.user.id,
-        })
-        .returning();
-
-      // Create victims if any
-      if (inputVictims && inputVictims.length > 0) {
-        await db.insert(victims).values(
-          inputVictims.map((victim) => ({
-            ...victim,
-            incidentId: newIncident[0].id,
+      const result = await db.transaction(async (tx) => {
+        const newIncident = await tx
+          .insert(incidents)
+          .values({
+            ...incidentData,
+            incidentDate: new Date(incidentData.incidentDate),
             createdBy: ctx.user.id,
             updatedBy: ctx.user.id,
-          }))
-        );
-      }
+          })
+          .returning();
 
-      // Log the incident creation
-      await logIncidentAction(ctx.user, "create", newIncident[0].id, {
-        description: `Nouvel incident enregistré: ${incidentData.eventType} à ${incidentData.location}`,
-        eventType: incidentData.eventType,
-        location: incidentData.location,
-        numberOfVictims: incidentData.numberOfVictims,
-        victimNames: inputVictims?.map((v) => v.name) || [],
+        if (inputVictims && inputVictims.length > 0) {
+          await tx.insert(victims).values(
+            inputVictims.map((victim) => ({
+              ...victim,
+              incidentId: newIncident[0].id,
+              createdBy: ctx.user.id,
+              updatedBy: ctx.user.id,
+            }))
+          );
+        }
+
+        await tx.insert(auditLogs).values({
+          userId: ctx.user.id,
+          action: "create",
+          entityType: "incident",
+          entityId: newIncident[0].id,
+          details: {
+            description: `Nouvel incident enregistré: ${incidentData.eventType} à ${incidentData.location}`,
+            eventType: incidentData.eventType,
+            location: incidentData.location,
+            numberOfVictims: incidentData.numberOfVictims,
+            victimNames: inputVictims?.map((v) => v.name) || [],
+          },
+        });
+
+        return newIncident[0];
       });
 
-      return newIncident[0];
+      return result;
     }),
 
   update: protectedProcedure
@@ -287,7 +297,6 @@ export const incidentsRouter = router({
         }
       }
 
-      // ✅ ADD: Capture changes and log
       const changes = captureChanges(currentIncident[0], updateData);
       await logIncidentAction(ctx.user, "update", id, {
         description: `Modification de l'incident: ${updatedIncident[0].eventType} à ${updatedIncident[0].location}`,

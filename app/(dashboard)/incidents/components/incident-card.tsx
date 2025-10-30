@@ -18,6 +18,7 @@ import {
   Users,
 } from "lucide-react";
 import type { Incident } from "./incident-table";
+import { formatDate as safeFormatDate } from "@/lib/formatters";
 
 interface IncidentCardProps {
   incident: Incident;
@@ -37,9 +38,7 @@ export function IncidentCard({
     Fusillades: "bg-orange-500",
   } as const;
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString("fr-FR");
-  };
+  // Using safe formatDate utility function that handles null/undefined dates
 
   const getVictimInfo = () => {
     if (
@@ -142,7 +141,7 @@ export function IncidentCard({
         <div className="flex items-center text-gray-600 mb-2">
           <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
           <span className="text-sm font-medium">
-            {formatDate(incident.incidentDate)}
+            {safeFormatDate(incident.incidentDate)}
           </span>
         </div>
 
@@ -191,7 +190,7 @@ export function IncidentCard({
 
         {/* Footer with creation date */}
         <div className="flex justify-between items-center mt-4 pt-3 border-t text-xs text-gray-400">
-          <span>Créé le {formatDate(incident.createdAt)}</span>
+          <span>Créé le {safeFormatDate(incident.createdAt)}</span>
           {incident.createdByName && <span>par {incident.createdByName}</span>}
         </div>
       </CardContent>

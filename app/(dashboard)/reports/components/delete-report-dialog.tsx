@@ -12,6 +12,7 @@ import {
 import { trpc } from "@/components/trpc-provider";
 import { toastNotification } from "@/components/toast-notification";
 import { Loader2 } from "lucide-react";
+import { formatDate } from "@/lib/formatters";
 
 interface Report {
   id: string;
@@ -36,7 +37,7 @@ export function DeleteReportDialog({
   const deleteReportMutation = trpc.reports.delete.useMutation({
     onSuccess: () => {
       toastNotification.success("Succès", "Rapport supprimé avec succès");
-       onSuccess();
+      onSuccess();
       onClose();
     },
     onError: (error) => {
@@ -72,7 +73,7 @@ export function DeleteReportDialog({
           </div>
           <div className="text-sm">
             <span className="font-medium">Date:</span>{" "}
-            {report.reportDate.toLocaleDateString("fr-FR")}
+            {formatDate(report.reportDate)}
           </div>
           <div className="text-sm">
             <span className="font-medium">Contenu:</span>{" "}

@@ -136,7 +136,10 @@ export const seizuresRouter = router({
         .limit(1);
 
       if (!seizure[0]) {
-        throw new Error("Seizure not found");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Saisie non trouvée",
+        });
       }
 
       return seizure[0];
@@ -184,7 +187,10 @@ export const seizuresRouter = router({
         .limit(1);
 
       if (!currentSeizure || currentSeizure.length === 0) {
-        throw new Error("Saisie non trouvée");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Saisie non trouvée",
+        });
       }
 
       // Prepare update data with proper date conversion

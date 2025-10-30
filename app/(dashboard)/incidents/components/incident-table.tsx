@@ -29,6 +29,7 @@ import {
 } from "@/components/column-visibility";
 import { trpc } from "@/components/trpc-provider";
 import { IncidentForm } from "./incident-form";
+import { formatDate } from "@/lib/formatters";
 import { EditIncidentForm } from "./edit-incident-form";
 import { DeleteIncidentDialog } from "./delete-incident-dialog";
 import { IncidentDetailsDialog } from "./incident-details-dialog";
@@ -244,7 +245,7 @@ export function IncidentTable() {
       sortable: true,
       render: (value) => (
         <span className="text-sm text-gray-900">
-          {new Date(value as Date).toLocaleDateString("fr-FR")}
+          {formatDate(value as Date)}
         </span>
       ),
     },
@@ -367,7 +368,7 @@ export function IncidentTable() {
       sortable: true,
       render: (value) => (
         <span className="text-sm text-gray-600">
-          {new Date(value as Date).toLocaleDateString("fr-FR")}
+          {formatDate(value as Date)}
         </span>
       ),
     },
