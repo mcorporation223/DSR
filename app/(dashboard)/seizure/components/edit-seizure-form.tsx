@@ -41,6 +41,13 @@ import { fr } from "date-fns/locale";
 import { trpc } from "@/components/trpc-provider";
 import { toastNotification } from "@/components/toast-notification";
 
+// Helper function to convert between old French values and new English values
+function normalizeSeizureType(type: string): "car" | "motorcycle" {
+  if (type === "Voiture" || type === "car") return "car";
+  if (type === "Moto" || type === "motorcycle") return "motorcycle";
+  return "car"; // default fallback
+}
+
 // Define Seizure type based on what we get from the table
 export interface Seizure {
   id: string;
@@ -63,7 +70,7 @@ export interface Seizure {
 // Form validation schema matching the backend update schema
 const editSeizureFormSchema = z.object({
   itemName: z.string().min(1, "Le nom/description de l'objet est requis"),
-  type: z.enum(["Voiture", "Moto"], {
+  type: z.enum(["car", "motorcycle"], {
     message: "Sélectionner le type",
   }),
   seizureLocation: z.string().optional(),
@@ -114,7 +121,7 @@ export function EditSeizureForm({
     resolver: zodResolver(editSeizureFormSchema),
     defaultValues: {
       itemName: "",
-      type: "Voiture",
+      type: "car",
       seizureLocation: "",
       chassisNumber: "",
       plateNumber: "",
@@ -131,7 +138,7 @@ export function EditSeizureForm({
     if (seizure && isOpen) {
       form.reset({
         itemName: seizure.itemName || "",
-        type: (seizure.type as "Voiture" | "Moto") || "Voiture",
+        type: normalizeSeizureType(seizure.type || "car"),
         seizureLocation: seizure.seizureLocation || "",
         chassisNumber: seizure.chassisNumber || "",
         plateNumber: seizure.plateNumber || "",
@@ -218,8 +225,8 @@ export function EditSeizureForm({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Voiture">Voiture</SelectItem>
-                            <SelectItem value="Moto">Moto</SelectItem>
+                            <SelectItem value="car">Voiture</SelectItem>
+                            <SelectItem value="motorcycle">Moto</SelectItem>
                           </SelectContent>
                         </Select>
                         <div className="h-[24px]">
@@ -470,8 +477,8 @@ export function EditSeizureForm({
                             </PopoverContent>
                           </Popover>
                           <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />

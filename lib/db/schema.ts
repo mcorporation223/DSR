@@ -59,8 +59,12 @@ export const employees = pgTable("employees", {
 
   // Audit Fields
   isActive: boolean("is_active").default(true),
-  createdBy: uuid("created_by").references(() => users.id),
-  updatedBy: uuid("updated_by").references(() => users.id),
+  createdBy: uuid("created_by").references(() => users.id, {
+    onDelete: "restrict",
+  }),
+  updatedBy: uuid("updated_by").references(() => users.id, {
+    onDelete: "restrict",
+  }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -113,8 +117,12 @@ export const detainees = pgTable(
     releaseReason: text("release_reason"),
 
     // Audit Fields
-    createdBy: uuid("created_by").references(() => users.id),
-    updatedBy: uuid("updated_by").references(() => users.id),
+    createdBy: uuid("created_by").references(() => users.id, {
+      onDelete: "restrict",
+    }),
+    updatedBy: uuid("updated_by").references(() => users.id, {
+      onDelete: "restrict",
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -171,8 +179,12 @@ export const victims = pgTable(
     causeOfDeath: text("cause_of_death"), // Cause du Décès (Ex: Balles, Arme blanche...)
 
     // Audit Fields
-    createdBy: uuid("created_by").references(() => users.id),
-    updatedBy: uuid("updated_by").references(() => users.id),
+    createdBy: uuid("created_by").references(() => users.id, {
+      onDelete: "restrict",
+    }),
+    updatedBy: uuid("updated_by").references(() => users.id, {
+      onDelete: "restrict",
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -184,8 +196,12 @@ export const reports = pgTable("reports", {
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content"),
   location: varchar("location", { length: 255 }),
-  createdBy: uuid("created_by").references(() => users.id),
-  updatedBy: uuid("updated_by").references(() => users.id),
+  createdBy: uuid("created_by").references(() => users.id, {
+    onDelete: "restrict",
+  }),
+  updatedBy: uuid("updated_by").references(() => users.id, {
+    onDelete: "restrict",
+  }),
   reportDate: timestamp("report_date").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -219,8 +235,12 @@ export const seizures = pgTable(
     releaseDate: timestamp("release_date"), // If released back to owner
 
     // Audit Fields
-    createdBy: uuid("created_by").references(() => users.id),
-    updatedBy: uuid("updated_by").references(() => users.id),
+    createdBy: uuid("created_by").references(() => users.id, {
+      onDelete: "restrict",
+    }),
+    updatedBy: uuid("updated_by").references(() => users.id, {
+      onDelete: "restrict",
+    }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -236,10 +256,14 @@ export const statements = pgTable("statements", {
   fileUrl: varchar("file_url", { length: 500 }).notNull(), // URL or path to the statement file
   detaineeId: uuid("detainee_id")
     .notNull()
-    .references(() => detainees.id), // Foreign key to detainees
+    .references(() => detainees.id, { onDelete: "restrict" }), // Foreign key to detainees
   // Audit Fields
-  createdBy: uuid("created_by").references(() => users.id),
-  updatedBy: uuid("updated_by").references(() => users.id),
+  createdBy: uuid("created_by").references(() => users.id, {
+    onDelete: "restrict",
+  }),
+  updatedBy: uuid("updated_by").references(() => users.id, {
+    onDelete: "restrict",
+  }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

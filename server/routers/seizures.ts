@@ -1,9 +1,10 @@
 import { router, protectedProcedure, publicProcedure } from "../trpc";
 import { db } from "@/lib/db";
-import { seizures, users } from "@/lib/db/schema";
+import { seizures, users, auditLogs } from "@/lib/db/schema";
 import { and, count, desc, asc, eq, or, ilike, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import {
   seizureInputSchema,
   seizureUpdateSchema,
@@ -60,6 +61,7 @@ export const seizuresRouter = router({
       const totalItems = totalResult[0]?.count || 0;
 
       // Get seizures with sorting and user names
+      // Note: sortBy is validated by seizureQuerySchema enum, ensuring type safety
       const orderBy =
         sortOrder === "asc" ? asc(seizures[sortBy]) : desc(seizures[sortBy]);
 
@@ -227,8 +229,56 @@ export const seizuresRouter = router({
 
   delete: protectedProcedure
     .input(seizureDeleteSchema)
-    .mutation(async ({ input }) => {
-      await db.delete(seizures).where(eq(seizures.id, input.id));
+    .mutation(async ({ input, ctx }) => {
+      // Get seizure data before deletion for logging (outside transaction)
+      const seizureToDelete = await db
+        .select()
+        .from(seizures)
+        .where(eq(seizures.id, input.id))
+        .limit(1);
+
+      if (!seizureToDelete || seizureToDelete.length === 0) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Saisie non trouvée",
+        });
+      }
+
+      // Wrap seizure deletion and audit log in a transaction
+      const result = await db.transaction(async (tx) => {
+        // 1. Delete the seizure
+        const deletedSeizure = await tx
+          .delete(seizures)
+          .where(eq(seizures.id, input.id))
+          .returning();
+
+        if (!deletedSeizure || deletedSeizure.length === 0) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Saisie non trouvée",
+          });
+        }
+
+        // 2. Insert audit log within the same transaction
+        await tx.insert(auditLogs).values({
+          userId: ctx.user.id,
+          action: "delete",
+          entityType: "seizure",
+          entityId: input.id,
+          details: {
+            description: `Suppression de la saisie: ${seizureToDelete[0].itemName}`,
+            itemName: seizureToDelete[0].itemName,
+            type: seizureToDelete[0].type,
+            seizureLocation: seizureToDelete[0].seizureLocation,
+            ownerName: seizureToDelete[0].ownerName,
+            plateNumber: seizureToDelete[0].plateNumber,
+            chassisNumber: seizureToDelete[0].chassisNumber,
+          },
+        });
+
+        return deletedSeizure[0];
+      });
+
       return { success: true };
     }),
 

@@ -245,23 +245,23 @@ export function EmployeeDetailsDialog({
                 </p>
               </div>
 
-              {employee.createdBy && (
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Créé par
-                  </label>
-                  <p className="text-sm text-gray-900">{employee.createdBy}</p>
-                </div>
-              )}
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Créé par
+                </label>
+                <p className="text-sm text-gray-900">
+                  {employee.createdByName || employee.createdBy || "N/A"}
+                </p>
+              </div>
 
-              {employee.updatedBy && (
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Modifié par
-                  </label>
-                  <p className="text-sm text-gray-900">{employee.updatedBy}</p>
-                </div>
-              )}
+              <div>
+                <label className="text-sm font-medium text-gray-500">
+                  Modifié par
+                </label>
+                <p className="text-sm text-gray-900">
+                  {employee.updatedByName || employee.updatedBy || "N/A"}
+                </p>
+              </div>
             </div>
           </div>
         </div>

@@ -58,6 +58,8 @@ interface Employee extends Record<string, unknown> {
   updatedBy: string | null;
   createdAt: string; // This comes as string from the database
   updatedAt: string; // This comes as string from the database
+  createdByName?: string | null; // User name fields from backend joins
+  updatedByName?: string | null;
 }
 
 export function EmployeesTable() {

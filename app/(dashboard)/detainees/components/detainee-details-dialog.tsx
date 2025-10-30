@@ -384,27 +384,23 @@ export function DetaineeDetailsDialog({
                   </p>
                 </div>
 
-                {detainee.createdByName && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Enregistré par
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      {detainee.createdByName}
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Créé par
+                  </label>
+                  <p className="text-sm text-gray-900">
+                    {detainee.createdByName || detainee.createdBy || "N/A"}
+                  </p>
+                </div>
 
-                {detainee.updatedByName && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Modifié par
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      {detainee.updatedByName}
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Modifié par
+                  </label>
+                  <p className="text-sm text-gray-900">
+                    {detainee.updatedByName || detainee.updatedBy || "N/A"}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

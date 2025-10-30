@@ -481,9 +481,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <div className="h-[20px]">
-                            <FormMessage className="text-xs" />
-                          </div>
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -503,9 +501,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <div className="h-[24px]">
-                            <FormMessage className="text-xs" />
-                          </div>
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -530,9 +526,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               <SelectItem value="Female">Femme</SelectItem>
                             </SelectContent>
                           </Select>
-                          <div className="h-[24px]">
-                            <FormMessage className="text-xs" />
-                          </div>
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -585,9 +579,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               />
                             </PopoverContent>
                           </Popover>
-                          <div className="h-[24px]">
-                            <FormMessage className="text-xs" />
-                          </div>
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -607,9 +599,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <div className="h-[24px]">
-                            <FormMessage className="text-xs" />
-                          </div>
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -642,9 +632,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               <SelectItem value="Widowed">Veuf(ve)</SelectItem>
                             </SelectContent>
                           </Select>
-                          <div className="h-[24px]">
-                            <FormMessage className="text-xs" />
-                          </div>
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -754,9 +742,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <div className="h-[24px]">
-                            <FormMessage className="text-xs" />
-                          </div>
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -776,9 +762,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <div className="h-[24px]">
-                            <FormMessage className="text-xs" />
-                          </div>
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -798,9 +782,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <div className="h-[24px]">
-                            <FormMessage className="text-xs" />
-                          </div>
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -826,9 +808,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <div className="h-[24px]">
-                            <FormMessage className="text-xs" />
-                          </div>
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -848,9 +828,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <div className="h-[24px]">
-                            <FormMessage className="text-xs" />
-                          </div>
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />
@@ -870,9 +848,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <div className="h-[24px]">
-                            <FormMessage className="text-xs" />
-                          </div>
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )}
                     />

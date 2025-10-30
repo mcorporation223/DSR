@@ -1,6 +1,7 @@
 import { router, publicProcedure, protectedProcedure } from "../trpc";
-import { employees, auditLogs } from "@/lib/db/schema";
-import { desc, asc, like, and, eq, or, count } from "drizzle-orm";
+import { employees, auditLogs, users } from "@/lib/db/schema";
+import { desc, asc, like, and, eq, or, count, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import {
   getAllEmployeesSchema,
   getEmployeeByIdSchema,
@@ -9,6 +10,10 @@ import {
 } from "../schemas/employees";
 import { captureChanges } from "@/lib/audit-logger";
 import { TRPCError } from "@trpc/server";
+
+// Create aliases for the users table to handle both createdBy and updatedBy
+const createdByUser = alias(users, "createdByUser");
+const updatedByUser = alias(users, "updatedByUser");
 
 export const employeesRouter = router({
   // Fetch all employees with optional filters
@@ -67,10 +72,37 @@ export const employeesRouter = router({
           whereConditions.length > 0 ? and(...whereConditions) : undefined
         );
 
-      // Get employees
+      // Get employees with user names
       const employeesList = await ctx.db
-        .select()
+        .select({
+          // All employee fields
+          id: employees.id,
+          firstName: employees.firstName,
+          lastName: employees.lastName,
+          sex: employees.sex,
+          placeOfBirth: employees.placeOfBirth,
+          dateOfBirth: employees.dateOfBirth,
+          education: employees.education,
+          maritalStatus: employees.maritalStatus,
+          employeeId: employees.employeeId,
+          function: employees.function,
+          deploymentLocation: employees.deploymentLocation,
+          residence: employees.residence,
+          phone: employees.phone,
+          email: employees.email,
+          photoUrl: employees.photoUrl,
+          isActive: employees.isActive,
+          createdBy: employees.createdBy,
+          updatedBy: employees.updatedBy,
+          createdAt: employees.createdAt,
+          updatedAt: employees.updatedAt,
+          // User names
+          createdByName: sql<string>`CONCAT(${createdByUser.firstName}, ' ', ${createdByUser.lastName})`,
+          updatedByName: sql<string>`CONCAT(${updatedByUser.firstName}, ' ', ${updatedByUser.lastName})`,
+        })
         .from(employees)
+        .leftJoin(createdByUser, eq(employees.createdBy, createdByUser.id))
+        .leftJoin(updatedByUser, eq(employees.updatedBy, updatedByUser.id))
         .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
         .orderBy(orderBy)
         .limit(limit)
@@ -91,13 +123,40 @@ export const employeesRouter = router({
       };
     }),
 
-  // Fetch a single employee by ID
+  // Fetch a single employee by ID with user names
   getById: protectedProcedure
     .input(getEmployeeByIdSchema)
     .query(async ({ ctx, input }) => {
       const employee = await ctx.db
-        .select()
+        .select({
+          // All employee fields
+          id: employees.id,
+          firstName: employees.firstName,
+          lastName: employees.lastName,
+          sex: employees.sex,
+          placeOfBirth: employees.placeOfBirth,
+          dateOfBirth: employees.dateOfBirth,
+          education: employees.education,
+          maritalStatus: employees.maritalStatus,
+          employeeId: employees.employeeId,
+          function: employees.function,
+          deploymentLocation: employees.deploymentLocation,
+          residence: employees.residence,
+          phone: employees.phone,
+          email: employees.email,
+          photoUrl: employees.photoUrl,
+          isActive: employees.isActive,
+          createdBy: employees.createdBy,
+          updatedBy: employees.updatedBy,
+          createdAt: employees.createdAt,
+          updatedAt: employees.updatedAt,
+          // User names
+          createdByName: sql<string>`CONCAT(${createdByUser.firstName}, ' ', ${createdByUser.lastName})`,
+          updatedByName: sql<string>`CONCAT(${updatedByUser.firstName}, ' ', ${updatedByUser.lastName})`,
+        })
         .from(employees)
+        .leftJoin(createdByUser, eq(employees.createdBy, createdByUser.id))
+        .leftJoin(updatedByUser, eq(employees.updatedBy, updatedByUser.id))
         .where(eq(employees.id, input.id))
         .limit(1);
 
