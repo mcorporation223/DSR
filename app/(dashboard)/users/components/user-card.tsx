@@ -6,10 +6,10 @@ import {
   Edit,
   Trash2,
   Eye,
-  Key,
   Mail,
-  User as UserIcon,
   Calendar,
+  User as UserIcon,
+  Key,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import type { User } from "./user-table";
 
@@ -37,11 +38,12 @@ export function UserCard({
 }: UserCardProps) {
   const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("fr-FR");
   };
 
-  // Get role display info
+  // Get role display text
   const getRoleDisplay = (role: string) => {
     switch (role) {
       case "admin":
@@ -53,7 +55,7 @@ export function UserCard({
     }
   };
 
-  // Get status display info
+  // Get status display text
   const getStatusDisplay = (isActive: boolean, isPasswordSet: boolean) => {
     if (!isPasswordSet && isActive) {
       return { text: "En attente", color: "bg-yellow-500" };
@@ -72,15 +74,23 @@ export function UserCard({
       onClick={() => onView(user)}
     >
       <CardContent className="p-4">
-        {/* Header with name and actions */}
+        {/* Header with avatar, name, and actions */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <UserIcon className="w-5 h-5 text-blue-600" />
-            </div>
+            <Avatar className="h-12 w-12 flex-shrink-0">
+              <AvatarFallback className="bg-gray-200 text-gray-600">
+                {fullName
+                  ? fullName
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()
+                  : "U"}
+              </AvatarFallback>
+            </Avatar>
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-gray-900 text-lg truncate">
-                {fullName || "Utilisateur sans nom"}
+                {fullName || "Nom non défini"}
               </h3>
               <p className="text-sm text-gray-600 truncate">{user.email}</p>
             </div>
@@ -95,7 +105,10 @@ export function UserCard({
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-              onClick={() => onView(user)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onView(user);
+              }}
             >
               <Eye className="w-4 h-4" />
             </Button>
@@ -109,18 +122,31 @@ export function UserCard({
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem onSelect={() => onEdit(user)}>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    onEdit(user);
+                  }}
+                >
                   <Edit className="w-4 h-4 mr-2" />
                   Modifier
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => onResetPassword(user)}>
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    onResetPassword(user);
+                  }}
+                >
                   <Key className="w-4 h-4 mr-2" />
                   Réinitialiser mot de passe
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
-                  onSelect={() => onDelete(user)}
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    onDelete(user);
+                  }}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Supprimer
@@ -130,8 +156,19 @@ export function UserCard({
           </div>
         </div>
 
-        {/* Role Badge */}
-        <div className="mb-3">
+        {/* Status and Role Badges */}
+        <div className="mb-3 flex gap-2 flex-wrap">
+          <div className="flex items-center gap-2 border px-2 py-1 rounded-md w-max">
+            <div
+              className={`w-4 h-4 rounded-full flex items-center justify-center ${statusInfo.color}`}
+            >
+              <div className="w-2 h-2 bg-white rounded-full"></div>
+            </div>
+            <span className="text-sm font-medium text-gray-900">
+              {statusInfo.text}
+            </span>
+          </div>
+
           <div className="flex items-center gap-2 border px-2 py-1 rounded-md w-max">
             <div
               className={`w-4 h-4 rounded-full flex items-center justify-center ${roleInfo.color}`}
@@ -144,47 +181,37 @@ export function UserCard({
           </div>
         </div>
 
-        {/* Status Badge */}
-        <div className="mb-3">
-          <div className="flex items-center gap-2 border px-2 py-1 rounded-md w-max">
-            <div
-              className={`w-4 h-4 rounded-full flex items-center justify-center ${statusInfo.color}`}
-            >
-              <div className="w-2 h-2 bg-white rounded-full"></div>
-            </div>
-            <span className="text-sm font-medium text-gray-900">
-              {statusInfo.text}
-            </span>
-          </div>
-        </div>
-
-        {/* Additional Info */}
-        <div className="space-y-2">
+        {/* User Information */}
+        <div className="space-y-2 text-sm">
+          {/* Email */}
           <div className="flex items-center gap-2 text-gray-600">
             <Mail className="w-4 h-4 flex-shrink-0" />
             <span className="truncate">{user.email}</span>
           </div>
-          <div className="flex items-center gap-2 text-gray-600">
-            <Calendar className="w-4 h-4 flex-shrink-0" />
-            <span>Créé le {formatDate(user.createdAt)}</span>
-          </div>
-        </div>
 
-        {/* Password Status Indicator */}
-        {!user.isPasswordSet && user.isActive && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
+          {/* User Icon for role display */}
+          <div className="flex items-center gap-2 text-gray-600">
+            <UserIcon className="w-4 h-4 flex-shrink-0" />
+            <span>{roleInfo.text}</span>
+          </div>
+
+          {/* Password status */}
+          {!user.isPasswordSet && user.isActive && (
+            <div className="flex items-center gap-2 text-amber-600">
               <Key className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm">Mot de passe non défini</span>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Footer with last updated */}
+        {/* Footer with creation date */}
         <div className="mt-3 pt-3 border-t border-gray-100">
-          <p className="text-xs text-gray-500">
-            Dernière modification: {formatDate(user.updatedAt)}
-          </p>
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-gray-400" />
+            <p className="text-xs text-gray-500">
+              Créé le {formatDate(user.createdAt)}
+            </p>
+          </div>
         </div>
       </CardContent>
     </Card>

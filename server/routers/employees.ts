@@ -1,6 +1,6 @@
 import { router, publicProcedure, protectedProcedure } from "../trpc";
 import { employees, auditLogs, users } from "@/lib/db/schema";
-import { desc, asc, like, and, eq, or, count, sql } from "drizzle-orm";
+import { desc, asc, ilike, and, eq, or, count, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import {
   getAllEmployeesSchema,
@@ -30,9 +30,9 @@ export const employeesRouter = router({
       if (search) {
         whereConditions.push(
           or(
-            like(employees.firstName, `%${search}%`),
-            like(employees.lastName, `%${search}%`),
-            like(employees.email, `%${search}%`)
+            ilike(employees.firstName, `%${search}%`),
+            ilike(employees.lastName, `%${search}%`),
+            ilike(employees.email, `%${search}%`)
           )
         );
       }

@@ -5,8 +5,8 @@ import {
   MoreHorizontal,
   Trash2,
   FileText,
-  User,
   Calendar,
+  User,
   ExternalLink,
 } from "lucide-react";
 import {
@@ -24,36 +24,33 @@ interface StatementCardProps {
 }
 
 export function StatementCard({ statement, onDelete }: StatementCardProps) {
-  // Format date for display
-  const formatDateTime = (date: Date) => {
-    return date.toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
+  const formatDateTime = (date: Date | string) => {
+    if (!date) return "N/A";
+    const dateObj = typeof date === "string" ? new Date(date) : date;
+    return dateObj.toLocaleDateString("fr-FR", {
       year: "numeric",
+      month: "short",
+      day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
   };
 
-  const handleFileOpen = () => {
+  const handleFileClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     window.open(statement.fileUrl, "_blank");
   };
 
   return (
-    <Card className="w-full bg-white hover:shadow-md transition-shadow border border-gray-200">
+    <Card className="w-full bg-white hover:shadow-md transition-shadow">
       <CardContent className="p-4">
         {/* Header with detainee name and actions */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <h3
-                className="text-lg font-semibold text-gray-900 truncate"
-                title={statement.detaineeName}
-              >
-                {statement.detaineeName}
-              </h3>
-            </div>
+            <h3 className="font-semibold text-gray-900 text-lg leading-tight mb-1">
+              {statement.detaineeName}
+            </h3>
+            <p className="text-sm text-gray-600">Détenu</p>
           </div>
 
           {/* Actions */}
@@ -71,10 +68,13 @@ export function StatementCard({ statement, onDelete }: StatementCardProps) {
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-40">
                 <DropdownMenuItem
                   variant="destructive"
-                  onSelect={() => onDelete(statement)}
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    onDelete(statement);
+                  }}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Supprimer
@@ -84,58 +84,68 @@ export function StatementCard({ statement, onDelete }: StatementCardProps) {
           </div>
         </div>
 
-        {/* File Link */}
+        {/* File Section */}
         <div className="mb-4">
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-2 h-auto py-3 border-dashed border-blue-200 text-blue-600 hover:bg-blue-50"
-            onClick={handleFileOpen}
+          <div
+            className="flex items-center gap-3 p-3 border border-blue-200 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+            onClick={handleFileClick}
           >
-            <FileText className="w-5 h-5 flex-shrink-0" />
-            <div className="flex-1 text-left">
-              <div className="font-medium">Déclaration</div>
-              <div className="text-xs text-blue-500">Cliquer pour ouvrir</div>
+            <div className="flex-shrink-0">
+              <FileText className="w-6 h-6 text-blue-600" />
             </div>
-            <ExternalLink className="w-4 h-4 flex-shrink-0" />
-          </Button>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-blue-900">
+                Déclaration du détenu
+              </p>
+              <p className="text-xs text-blue-700">
+                Cliquer pour ouvrir le document
+              </p>
+            </div>
+            <ExternalLink className="w-4 h-4 text-blue-600 flex-shrink-0" />
+          </div>
         </div>
 
-        {/* Creator Info */}
-        <div className="space-y-2 mb-3">
-          {statement.createdByName && (
+        {/* Creator Information */}
+        {statement.createdByName && (
+          <div className="mb-3">
             <div className="flex items-center gap-2 text-gray-600">
               <User className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm">
                 Créé par {statement.createdByName}
               </span>
             </div>
-          )}
-          {statement.updatedByName &&
-            statement.updatedByName !== statement.createdByName && (
+          </div>
+        )}
+
+        {/* Modifier Information */}
+        {statement.updatedByName &&
+          statement.updatedByName !== statement.createdByName && (
+            <div className="mb-3">
               <div className="flex items-center gap-2 text-gray-600">
                 <User className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm">
                   Modifié par {statement.updatedByName}
                 </span>
               </div>
-            )}
-        </div>
+            </div>
+          )}
 
-        {/* Footer with creation date */}
-        <div className="pt-3 border-t border-gray-100">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <Calendar className="w-3 h-3 flex-shrink-0" />
-            <span>
+        {/* Footer with dates */}
+        <div className="pt-3 border-t border-gray-100 space-y-1">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-gray-400" />
+            <p className="text-xs text-gray-500">
               Créé le {formatDateTime(statement.createdAt)}
-              {statement.updatedAt &&
-                statement.updatedAt > statement.createdAt && (
-                  <span>
-                    {" "}
-                    • Modifié le {formatDateTime(statement.updatedAt)}
-                  </span>
-                )}
-            </span>
+            </p>
           </div>
+          {statement.updatedAt.getTime() !== statement.createdAt.getTime() && (
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-gray-400" />
+              <p className="text-xs text-gray-500">
+                Modifié le {formatDateTime(statement.updatedAt)}
+              </p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

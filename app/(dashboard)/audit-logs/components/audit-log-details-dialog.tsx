@@ -6,7 +6,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Calendar, User, FileText, Info, Clock, Tag } from "lucide-react";
+import { StatusBadge } from "@/components/status-badge";
+import { Calendar, User, Clock, Tag } from "lucide-react";
 import type { AuditLog } from "./audit-logs-table";
 
 interface AuditLogDetailsDialogProps {
@@ -100,43 +101,31 @@ export function AuditLogDetailsDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
-            <FileText className="w-5 h-5 text-blue-600" />
             Détails du journal d&apos;audit
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Header Information */}
-          <div className={`p-4 rounded-lg ${actionInfo.bgColor} border`}>
-            <div className="flex items-center justify-between mb-3">
+          <div className="p-4 rounded-lg bg-gray-50">
+            <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 border px-3 py-1.5 rounded-md bg-white">
-                  <div className={`w-3 h-3 rounded-full ${actionInfo.color}`} />
-                  <span className="text-sm font-medium text-gray-900">
-                    {actionInfo.text}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 border px-3 py-1.5 rounded-md bg-white">
-                  <div className={`w-3 h-3 rounded-full ${entityInfo.color}`} />
-                  <span className="text-sm font-medium text-gray-900">
-                    {entityInfo.text}
-                  </span>
-                </div>
+                <StatusBadge
+                  text={actionInfo.text}
+                  circleColor={actionInfo.color}
+                  icon={<div className="w-2 h-2 bg-white rounded-full"></div>}
+                />
+                <StatusBadge
+                  text={entityInfo.text}
+                  circleColor={entityInfo.color}
+                  icon={<div className="w-2 h-2 bg-white rounded-full"></div>}
+                />
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Calendar className="w-4 h-4" />
                 {new Date(log.createdAt).toLocaleString("fr-FR")}
               </div>
             </div>
-
-            {details?.description && (
-              <div className="flex items-start gap-2">
-                <Info className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                <p className={`text-sm font-medium ${actionInfo.textColor}`}>
-                  {details.description}
-                </p>
-              </div>
-            )}
           </div>
 
           {/* User Information */}

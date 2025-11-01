@@ -1,18 +1,18 @@
-import { SeizureTable } from "./components/seizure-table";
 import { SeizureCardsList } from "./components/seizure-cards-list";
+import { SeizureTable } from "./components/seizure-table";
 
 export default function SeizurePage() {
   return (
-    <div className="p-6 mt-8 rounded-lg bg-white min-h-[calc(30vh)]">
-      {/* Desktop Table View */}
-      <div className="hidden md:block">
+    <>
+      {/* Desktop View - Table */}
+      <div className="hidden md:block p-6 mt-8 rounded-lg bg-white min-h-[calc(30vh)]">
         <SeizureTable />
       </div>
 
-      {/* Mobile Cards View */}
-      <div className="block md:hidden">
+      {/* Mobile View - Cards */}
+      <div className="block md:hidden p-4 mt-4">
         <SeizureCardsList />
       </div>
-    </div>
+    </>
   );
 }
