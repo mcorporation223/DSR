@@ -9,9 +9,13 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  Car,
-  Bike,
+  Activity,
+  FileText,
 } from "lucide-react";
+import { trpc } from "@/components/trpc-provider";
+import { AuditLogCard } from "./audit-log-card";
+import { AuditLogDetailsDialog } from "./audit-log-details-dialog";
+import { type AuditLog } from "./audit-logs-table";
 
 // Mobile Pagination Component
 interface MobilePaginationProps {
@@ -94,65 +98,50 @@ function MobilePagination({
     </div>
   );
 }
-import { trpc } from "@/components/trpc-provider";
-import { SeizureCard } from "./seizure-card";
-import { SeizureForm } from "./seizure-form";
-import { EditSeizureForm } from "./edit-seizure-form";
-import { DeleteSeizureDialog } from "./delete-seizure-dialog";
-import { SeizureDetailsDialog } from "./seizure-details-dialog";
-import { type Seizure } from "./seizure-table";
 
-export function SeizureCardsList() {
+export function AuditLogCardsList() {
   // State management
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<
-    "seizureDate" | "itemName" | "type" | "status" | "createdAt"
-  >("createdAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [typeFilter, setTypeFilter] = useState<
-    "car" | "motorcycle" | undefined
+  const [actionFilter, setActionFilter] = useState<
+    "create" | "update" | "delete" | "status_change" | undefined
   >(undefined);
-  const [statusFilter, setStatusFilter] = useState<string | undefined>(
-    undefined
-  );
+  const [entityTypeFilter, setEntityTypeFilter] = useState<
+    | "employee"
+    | "detainee"
+    | "report"
+    | "statement"
+    | "incident"
+    | "seizure"
+    | "user"
+    | undefined
+  >(undefined);
 
   // Dialog states
-  const [editingSeizure, setEditingSeizure] = useState<Seizure | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [deletingSeizure, setDeletingSeizure] = useState<Seizure | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [viewingSeizure, setViewingSeizure] = useState<Seizure | null>(null);
+  const [viewingLog, setViewingLog] = useState<AuditLog | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
   const itemsPerPage = 10;
 
   // TRPC query
   const {
-    data: seizuresData,
+    data: auditLogsData,
     isLoading,
     isError,
     error,
     refetch,
-  } = trpc.seizures.getAll.useQuery({
+  } = trpc.auditLogs.getAll.useQuery({
     page: currentPage,
     limit: itemsPerPage,
     search: searchTerm || undefined,
-    sortBy,
-    sortOrder,
-    type: typeFilter,
-    status: statusFilter,
+    sortBy: "createdAt",
+    sortOrder: "desc",
+    action: actionFilter,
+    entityType: entityTypeFilter,
   });
 
-  const seizures =
-    seizuresData?.seizures?.map((seizure) => ({
-      ...seizure,
-      seizureDate: new Date(seizure.seizureDate),
-      releaseDate: seizure.releaseDate ? new Date(seizure.releaseDate) : null,
-      createdAt: new Date(seizure.createdAt),
-      updatedAt: new Date(seizure.updatedAt),
-    })) || [];
-  const pagination = seizuresData?.pagination;
+  const auditLogs = (auditLogsData?.data || []) as AuditLog[];
+  const pagination = auditLogsData?.pagination;
 
   // Event handlers
   const handleSearch = useCallback((value: string) => {
@@ -160,67 +149,35 @@ export function SeizureCardsList() {
     setCurrentPage(1);
   }, []);
 
-  const handleTypeFilter = useCallback(
-    (type: "car" | "motorcycle" | undefined) => {
-      setTypeFilter(type);
+  const handleActionFilterChange = useCallback(
+    (action: typeof actionFilter) => {
+      setActionFilter(action);
       setCurrentPage(1);
     },
     []
   );
 
-  const handleStatusFilter = useCallback((status: string | undefined) => {
-    setStatusFilter(status);
-    setCurrentPage(1);
+  const handleEntityTypeFilterChange = useCallback(
+    (entityType: typeof entityTypeFilter) => {
+      setEntityTypeFilter(entityType);
+      setCurrentPage(1);
+    },
+    []
+  );
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
   }, []);
-
-  const handleSeizureSuccess = useCallback(() => {
-    refetch();
-  }, [refetch]);
-
-  // Edit handlers
-  const handleEditSeizure = useCallback((seizure: Seizure) => {
-    setEditingSeizure(seizure);
-    setIsEditDialogOpen(true);
-  }, []);
-
-  const handleEditDialogClose = useCallback(() => {
-    setIsEditDialogOpen(false);
-    setEditingSeizure(null);
-  }, []);
-
-  const handleEditSuccess = useCallback(() => {
-    refetch();
-  }, [refetch]);
-
-  // Delete handlers
-  const handleDeleteSeizure = useCallback((seizure: Seizure) => {
-    setDeletingSeizure(seizure);
-    setIsDeleteDialogOpen(true);
-  }, []);
-
-  const handleDeleteDialogClose = useCallback(() => {
-    setIsDeleteDialogOpen(false);
-    setDeletingSeizure(null);
-  }, []);
-
-  const handleDeleteSuccess = useCallback(() => {
-    refetch();
-  }, [refetch]);
 
   // View handlers
-  const handleViewSeizure = useCallback((seizure: Seizure) => {
-    setViewingSeizure(seizure);
+  const handleViewLog = useCallback((log: AuditLog) => {
+    setViewingLog(log);
     setIsDetailsDialogOpen(true);
   }, []);
 
   const handleDetailsDialogClose = useCallback(() => {
     setIsDetailsDialogOpen(false);
-    setViewingSeizure(null);
-  }, []);
-
-  // Pagination handlers
-  const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page);
+    setViewingLog(null);
   }, []);
 
   // Error state
@@ -243,9 +200,10 @@ export function SeizureCardsList() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Saisies</h1>
-        <SeizureForm onSuccess={handleSeizureSuccess} />
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Journaux d&apos;audit
+        </h1>
       </div>
 
       {/* Search Bar */}
@@ -253,70 +211,111 @@ export function SeizureCardsList() {
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
         <Input
           type="text"
-          placeholder="Rechercher des saisies..."
+          placeholder="Rechercher dans les journaux..."
           value={searchTerm}
           onChange={(e) => handleSearch(e.target.value)}
           className="pl-10"
         />
       </div>
 
-      {/* Filters */}
+      {/* Action Filters */}
       <div className="flex flex-wrap gap-2">
         <Button
-          variant={typeFilter === undefined ? "default" : "outline"}
+          variant={actionFilter === undefined ? "default" : "outline"}
           size="sm"
-          onClick={() => handleTypeFilter(undefined)}
+          onClick={() => handleActionFilterChange(undefined)}
         >
           <Filter className="w-4 h-4 mr-2" />
-          Tous types
+          Toutes actions
         </Button>
         <Button
-          variant={typeFilter === "car" ? "default" : "outline"}
+          variant={actionFilter === "create" ? "default" : "outline"}
           size="sm"
-          onClick={() => handleTypeFilter("car")}
+          onClick={() => handleActionFilterChange("create")}
         >
-          <Car className="w-4 h-4 mr-2" />
-          Voitures
+          Création
         </Button>
         <Button
-          variant={typeFilter === "motorcycle" ? "default" : "outline"}
+          variant={actionFilter === "update" ? "default" : "outline"}
           size="sm"
-          onClick={() => handleTypeFilter("motorcycle")}
+          onClick={() => handleActionFilterChange("update")}
         >
-          <Bike className="w-4 h-4 mr-2" />
-          Motos
+          Modification
+        </Button>
+        <Button
+          variant={actionFilter === "delete" ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleActionFilterChange("delete")}
+        >
+          Suppression
+        </Button>
+        <Button
+          variant={actionFilter === "status_change" ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleActionFilterChange("status_change")}
+        >
+          Changement statut
         </Button>
       </div>
 
-      {/* Status Filters */}
+      {/* Entity Type Filters */}
       <div className="flex flex-wrap gap-2">
         <Button
-          variant={statusFilter === undefined ? "default" : "outline"}
+          variant={entityTypeFilter === undefined ? "default" : "outline"}
           size="sm"
-          onClick={() => handleStatusFilter(undefined)}
+          onClick={() => handleEntityTypeFilterChange(undefined)}
         >
-          Tous statuts
+          <FileText className="w-4 h-4 mr-2" />
+          Tous types
         </Button>
         <Button
-          variant={statusFilter === "in_custody" ? "default" : "outline"}
+          variant={entityTypeFilter === "employee" ? "default" : "outline"}
           size="sm"
-          onClick={() => handleStatusFilter("in_custody")}
+          onClick={() => handleEntityTypeFilterChange("employee")}
         >
-          En garde
+          Employé
         </Button>
         <Button
-          variant={statusFilter === "released" ? "default" : "outline"}
+          variant={entityTypeFilter === "detainee" ? "default" : "outline"}
           size="sm"
-          onClick={() => handleStatusFilter("released")}
+          onClick={() => handleEntityTypeFilterChange("detainee")}
         >
-          Libéré
+          Détenu
         </Button>
         <Button
-          variant={statusFilter === "disposed" ? "default" : "outline"}
+          variant={entityTypeFilter === "report" ? "default" : "outline"}
           size="sm"
-          onClick={() => handleStatusFilter("disposed")}
+          onClick={() => handleEntityTypeFilterChange("report")}
         >
-          Disposé
+          Rapport
+        </Button>
+        <Button
+          variant={entityTypeFilter === "statement" ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleEntityTypeFilterChange("statement")}
+        >
+          Déclaration
+        </Button>
+        <Button
+          variant={entityTypeFilter === "incident" ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleEntityTypeFilterChange("incident")}
+        >
+          Incident
+        </Button>
+        <Button
+          variant={entityTypeFilter === "seizure" ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleEntityTypeFilterChange("seizure")}
+        >
+          Saisie
+        </Button>
+        <Button
+          variant={entityTypeFilter === "user" ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleEntityTypeFilterChange("user")}
+        >
+          Utilisateur
         </Button>
       </div>
 
@@ -325,7 +324,9 @@ export function SeizureCardsList() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="flex items-center space-x-2">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-gray-600">Chargement des saisies...</span>
+            <span className="text-gray-600">
+              Chargement des journaux d&apos;audit...
+            </span>
           </div>
         </div>
       )}
@@ -333,39 +334,20 @@ export function SeizureCardsList() {
       {/* Results */}
       {!isLoading && (
         <>
-          {/* Results Count */}
-          <div className="text-sm text-gray-600">
-            {pagination?.totalItems ? (
-              <>
-                {pagination.totalItems === 1
-                  ? "1 saisie trouvée"
-                  : `${pagination.totalItems} saisies trouvées`}
-                {searchTerm && ` pour "${searchTerm}"`}
-              </>
-            ) : (
-              "Aucune saisie trouvée"
-            )}
-          </div>
-
-          {/* Seizures Grid */}
-          {seizures.length > 0 ? (
+          {/* Audit Logs Grid */}
+          {auditLogs.length > 0 ? (
             <div className="grid gap-4">
-              {seizures.map((seizure) => (
-                <SeizureCard
-                  key={seizure.id}
-                  seizure={seizure}
-                  onEdit={handleEditSeizure}
-                  onDelete={handleDeleteSeizure}
-                  onView={handleViewSeizure}
-                />
+              {auditLogs.map((log) => (
+                <AuditLogCard key={log.id} log={log} onView={handleViewLog} />
               ))}
             </div>
           ) : (
             <div className="text-center py-12">
+              <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">
-                {searchTerm || typeFilter || statusFilter
-                  ? "Aucune saisie ne correspond à vos critères de recherche."
-                  : "Aucune saisie enregistrée pour le moment."}
+                {searchTerm || actionFilter || entityTypeFilter
+                  ? "Aucun journal ne correspond à vos critères de recherche."
+                  : "Aucun journal d'audit enregistré pour le moment."}
               </p>
             </div>
           )}
@@ -375,7 +357,7 @@ export function SeizureCardsList() {
             <MobilePagination
               currentPage={pagination.page}
               totalPages={pagination.totalPages}
-              totalItems={pagination.totalItems}
+              totalItems={pagination.totalCount}
               itemsPerPage={pagination.limit}
               onPageChange={handlePageChange}
             />
@@ -384,24 +366,10 @@ export function SeizureCardsList() {
       )}
 
       {/* Dialogs */}
-      <EditSeizureForm
-        seizure={editingSeizure}
-        isOpen={isEditDialogOpen}
-        onClose={handleEditDialogClose}
-        onSuccess={handleEditSuccess}
-      />
-
-      <DeleteSeizureDialog
-        seizure={deletingSeizure}
-        isOpen={isDeleteDialogOpen}
-        onClose={handleDeleteDialogClose}
-        onSuccess={handleDeleteSuccess}
-      />
-
-      <SeizureDetailsDialog
-        seizure={viewingSeizure}
+      <AuditLogDetailsDialog
         isOpen={isDetailsDialogOpen}
         onClose={handleDetailsDialogClose}
+        log={viewingLog}
       />
     </div>
   );

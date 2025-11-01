@@ -6,13 +6,10 @@ import {
   Edit,
   Trash2,
   Eye,
-  User,
   Calendar,
   MapPin,
+  User,
   Phone,
-  Briefcase,
-  GraduationCap,
-  Download,
   Shield,
 } from "lucide-react";
 import {
@@ -21,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Detainee } from "./detainee-table";
 
@@ -37,18 +35,16 @@ export function DetaineeCard({
   onEdit,
   onDelete,
 }: DetaineeCardProps) {
-  // Format date for display
-  const formatDate = (date: string | null) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString("fr-FR");
-  };
-
-  // Get full name
   const fullName = `${detainee.firstName || ""} ${
     detainee.lastName || ""
   }`.trim();
 
-  // Get status display
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("fr-FR");
+  };
+
+  // Get status display text
   const getStatusDisplay = (status: string | null) => {
     switch (status) {
       case "in_custody":
@@ -66,35 +62,36 @@ export function DetaineeCard({
 
   return (
     <Card
-      className="w-full bg-white hover:shadow-md transition-shadow cursor-pointer border border-gray-200"
+      className="w-full bg-white hover:shadow-md transition-shadow cursor-pointer"
       onClick={() => onView(detainee)}
     >
       <CardContent className="p-4">
-        {/* Header with name and actions */}
+        {/* Header with avatar, name, and actions */}
         <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0">
-            <h3
-              className="text-lg font-semibold text-gray-900 truncate"
-              title={fullName}
-            >
-              {fullName || "N/A"}
-            </h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm text-gray-600">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <Avatar className="h-12 w-12 flex-shrink-0">
+              <AvatarFallback className="bg-gray-200 text-gray-600">
+                {fullName
+                  ? fullName
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase()
+                  : "D"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 text-lg truncate">
+                {fullName || "Nom non défini"}
+              </h3>
+              <p className="text-sm text-gray-600">
                 {detainee.sex === "Male"
                   ? "Homme"
                   : detainee.sex === "Female"
                   ? "Femme"
                   : "N/A"}
-              </span>
-              {detainee.cellNumber && (
-                <>
-                  <span className="text-gray-400">•</span>
-                  <span className="text-sm text-gray-600">
-                    Cellule {detainee.cellNumber}
-                  </span>
-                </>
-              )}
+                {detainee.cellNumber && ` • Cellule ${detainee.cellNumber}`}
+              </p>
             </div>
           </div>
 
@@ -107,16 +104,12 @@ export function DetaineeCard({
               variant="ghost"
               size="sm"
               className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-              onClick={() => onView(detainee)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onView(detainee);
+              }}
             >
               <Eye className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-            >
-              <Download className="w-4 h-4" />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -129,13 +122,21 @@ export function DetaineeCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem onSelect={() => onEdit(detainee)}>
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    onEdit(detainee);
+                  }}
+                >
                   <Edit className="w-4 h-4 mr-2" />
                   Modifier
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
-                  onSelect={() => onDelete(detainee)}
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    onDelete(detainee);
+                  }}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Supprimer
@@ -159,82 +160,69 @@ export function DetaineeCard({
           </div>
         </div>
 
-        {/* Key Information Grid */}
-        <div className="space-y-3 mb-3">
+        {/* Key Information */}
+        <div className="space-y-2 text-sm">
           {/* Crime Reason */}
           {detainee.crimeReason && (
-            <div className="flex items-start gap-2">
-              <Shield className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Motif d&apos;arrestation
-                </span>
-                <p className="text-sm text-gray-900 break-words">
-                  {detainee.crimeReason}
-                </p>
-              </div>
+            <div className="flex items-start gap-2 text-gray-600">
+              <Shield className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span className="line-clamp-2">{detainee.crimeReason}</span>
             </div>
           )}
 
-          {/* Arrest Info */}
-          {detainee.arrestDate && (
-            <div className="flex items-center gap-2 text-gray-600">
-              <Calendar className="w-4 h-4 flex-shrink-0" />
-              <span className="text-sm">
-                Arrêté le {formatDate(detainee.arrestDate)}
-                {detainee.arrestLocation && ` à ${detainee.arrestLocation}`}
-              </span>
-            </div>
-          )}
-
-          {/* Personal Info */}
-          <div className="grid grid-cols-1 gap-2">
-            {detainee.dateOfBirth && (
-              <div className="flex items-center gap-2 text-gray-600">
-                <User className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm">
-                  Né(e) le {formatDate(detainee.dateOfBirth)}
-                </span>
-                {detainee.placeOfBirth && (
-                  <span className="text-sm">à {detainee.placeOfBirth}</span>
-                )}
-              </div>
-            )}
-
+          {/* Location Information */}
+          <div className="grid grid-cols-1 gap-1">
             {detainee.residence && (
               <div className="flex items-center gap-2 text-gray-600">
                 <MapPin className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm truncate">{detainee.residence}</span>
+                <span className="truncate">{detainee.residence}</span>
               </div>
             )}
-
-            {detainee.phoneNumber && (
+            {detainee.arrestLocation && (
               <div className="flex items-center gap-2 text-gray-600">
-                <Phone className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm">{detainee.phoneNumber}</span>
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">
+                  Arrêté à {detainee.arrestLocation}
+                </span>
               </div>
             )}
           </div>
 
-          {/* Education and Employment */}
-          <div className="grid grid-cols-1 gap-2">
-            {detainee.education && (
+          {/* Contact and Personal Info */}
+          <div className="grid grid-cols-1 gap-1">
+            {detainee.phoneNumber && (
               <div className="flex items-center gap-2 text-gray-600">
-                <GraduationCap className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm truncate">{detainee.education}</span>
+                <Phone className="w-4 h-4 flex-shrink-0" />
+                <span>{detainee.phoneNumber}</span>
+              </div>
+            )}
+            {detainee.dateOfBirth && (
+              <div className="flex items-center gap-2 text-gray-600">
+                <Calendar className="w-4 h-4 flex-shrink-0" />
+                <span>Né(e) le {formatDate(detainee.dateOfBirth)}</span>
               </div>
             )}
             {detainee.employment && (
               <div className="flex items-center gap-2 text-gray-600">
-                <Briefcase className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm truncate">{detainee.employment}</span>
+                <User className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">{detainee.employment}</span>
               </div>
             )}
           </div>
+
+          {/* Arrest Date */}
+          {detainee.arrestDate && (
+            <div className="flex items-center gap-2 text-amber-600">
+              <Calendar className="w-4 h-4 flex-shrink-0" />
+              <span className="font-medium">
+                Arrêté le {formatDate(detainee.arrestDate)}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Footer with creation date */}
-        <div className="pt-3 border-t border-gray-100">
+        <div className="mt-3 pt-3 border-t border-gray-100">
           <p className="text-xs text-gray-500">
             Enregistré le {formatDate(detainee.createdAt)}
           </p>

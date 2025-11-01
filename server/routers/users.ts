@@ -3,7 +3,7 @@ import { users } from "@/lib/db/schema";
 import {
   desc,
   asc,
-  like,
+  ilike,
   and,
   eq,
   or,
@@ -51,9 +51,9 @@ export const usersRouter = router({
       if (search) {
         whereConditions.push(
           or(
-            like(users.firstName, `%${search}%`),
-            like(users.lastName, `%${search}%`),
-            like(users.email, `%${search}%`)
+            ilike(users.firstName, `%${search}%`),
+            ilike(users.lastName, `%${search}%`),
+            ilike(users.email, `%${search}%`)
           )
         );
       }

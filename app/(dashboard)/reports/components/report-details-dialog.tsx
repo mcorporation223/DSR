@@ -130,7 +130,7 @@ export function ReportDetailsDialog({
               <h3 className="text-lg font-medium text-gray-900 border-b pb-2">
                 Informations système
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">
                     Date d&apos;enregistrement

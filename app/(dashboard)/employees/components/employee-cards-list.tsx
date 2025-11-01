@@ -3,7 +3,13 @@
 import { EmployeeCard } from "./employee-card";
 import type { Employee } from "./employees-table";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, Loader2 } from "lucide-react";
+import {
+  Search,
+  Filter,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useState, useCallback } from "react";
 import { trpc } from "@/components/trpc-provider";
 import { EmployeeForm } from "./employee-form";
@@ -46,9 +52,9 @@ function MobilePagination({
           size="sm"
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}
-          className="px-4"
+          className="w-10 h-10 p-0"
         >
-          Précédent
+          <ChevronLeft className="w-4 h-4" />
         </Button>
         <div className="flex items-center gap-1">
           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -83,9 +89,9 @@ function MobilePagination({
           size="sm"
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(currentPage + 1)}
-          className="px-4"
+          className="w-10 h-10 p-0"
         >
-          Suivant
+          <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
     </div>

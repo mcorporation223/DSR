@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/status-badge";
 import { Search, Filter, Loader2, Eye } from "lucide-react";
 import {
   DropdownMenu,
@@ -64,7 +65,12 @@ export function AuditLogsTable() {
   >(undefined);
   const [columnVisibility, setColumnVisibility] = useState<
     ColumnVisibilityOption[]
-  >(auditLogColumnConfig.map((col) => ({ ...col, visible: true })));
+  >(
+    auditLogColumnConfig.map((col) => ({
+      ...col,
+      visible: col.defaultVisible,
+    }))
+  );
   const [viewingLog, setViewingLog] = useState<AuditLog | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
@@ -231,12 +237,11 @@ export function AuditLogsTable() {
       render: (value) => {
         const actionInfo = getActionDisplay(value as string);
         return (
-          <div className="flex items-center gap-2 border px-2 py-1 rounded-md w-max">
-            <div className={`w-3 h-3 rounded-full ${actionInfo.color}`} />
-            <span className="text-sm font-medium text-gray-900">
-              {actionInfo.text}
-            </span>
-          </div>
+          <StatusBadge
+            text={actionInfo.text}
+            circleColor={actionInfo.color}
+            icon={<div className="w-2 h-2 bg-white rounded-full"></div>}
+          />
         );
       },
     },
@@ -248,12 +253,11 @@ export function AuditLogsTable() {
       render: (value) => {
         const entityInfo = getEntityTypeDisplay(value as string);
         return (
-          <div className="flex items-center gap-2 border px-2 py-1 rounded-md w-max">
-            <div className={`w-3 h-3 rounded-full ${entityInfo.color}`} />
-            <span className="text-sm font-medium text-gray-900">
-              {entityInfo.text}
-            </span>
-          </div>
+          <StatusBadge
+            text={entityInfo.text}
+            circleColor={entityInfo.color}
+            icon={<div className="w-2 h-2 bg-white rounded-full"></div>}
+          />
         );
       },
     },
@@ -590,13 +594,33 @@ export function AuditLogsTable() {
 
 // Define column configuration for visibility control
 export const auditLogColumnConfig = [
-  { key: "createdAt", label: "Date & Heure", hideable: false },
-  { key: "action", label: "Action", hideable: false },
-  { key: "entityType", label: "Type d'entité", hideable: false },
-  { key: "entityId", label: "ID Entité", hideable: true },
-  { key: "userFirstName", label: "Utilisateur", hideable: false },
-  { key: "details", label: "Détails", hideable: true },
-  { key: "actions", label: "Actions", hideable: false },
+  {
+    key: "createdAt",
+    label: "Date & Heure",
+    hideable: false,
+    defaultVisible: true,
+  },
+  { key: "action", label: "Action", hideable: false, defaultVisible: true },
+  {
+    key: "entityType",
+    label: "Type d'entité",
+    hideable: false,
+    defaultVisible: true,
+  },
+  {
+    key: "entityId",
+    label: "ID Entité",
+    hideable: true,
+    defaultVisible: false,
+  },
+  {
+    key: "userFirstName",
+    label: "Utilisateur",
+    hideable: false,
+    defaultVisible: true,
+  },
+  { key: "details", label: "Détails", hideable: true, defaultVisible: true },
+  { key: "actions", label: "Actions", hideable: false, defaultVisible: true },
 ];
 
 // Export the AuditLog type so it can be used in other files

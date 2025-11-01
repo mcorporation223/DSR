@@ -1,111 +1,151 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  Eye,
+  Calendar,
+  MapPin,
+  AlertTriangle,
+  Users,
+  User,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Eye,
-  MapPin,
-  Calendar,
-  Users,
-} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { formatDate } from "@/lib/formatters";
 import type { Incident } from "./incident-table";
-import { formatDate as safeFormatDate } from "@/lib/formatters";
 
 interface IncidentCardProps {
   incident: Incident;
+  onView: (incident: Incident) => void;
   onEdit: (incident: Incident) => void;
   onDelete: (incident: Incident) => void;
-  onView: (incident: Incident) => void;
 }
 
 export function IncidentCard({
   incident,
+  onView,
   onEdit,
   onDelete,
-  onView,
 }: IncidentCardProps) {
-  const eventTypeColors = {
-    Assassinats: "bg-red-500",
-    Fusillades: "bg-orange-500",
-  } as const;
+  // Get event type display with color coding
+  const getEventTypeDisplay = (eventType: string) => {
+    switch (eventType) {
+      case "Assassinats":
+        return {
+          text: "Assassinats",
+          color: "bg-red-500",
+          icon: AlertTriangle,
+        };
+      case "Fusillades":
+        return {
+          text: "Fusillades",
+          color: "bg-orange-500",
+          icon: AlertTriangle,
+        };
+      default:
+        return { text: eventType, color: "bg-gray-500", icon: AlertTriangle };
+    }
+  };
 
-  // Using safe formatDate utility function that handles null/undefined dates
+  const eventTypeInfo = getEventTypeDisplay(incident.eventType);
+  const EventIcon = eventTypeInfo.icon;
 
+  // Get victim information for display
   const getVictimInfo = () => {
     if (
-      incident.eventType !== "Assassinats" ||
-      !incident.victims ||
-      incident.victims.length === 0
+      incident.eventType === "Assassinats" &&
+      incident.victims &&
+      incident.victims.length > 0
     ) {
-      return null;
+      const sexes = incident.victims.map((v) => v.sex);
+      const uniqueSexes = [...new Set(sexes)];
+      const sexDisplay =
+        uniqueSexes.length === 1
+          ? uniqueSexes[0] === "Male"
+            ? "Homme"
+            : "Femme"
+          : "Mixte";
+
+      const names = incident.victims
+        .map((v) => v.name)
+        .filter((name) => name.trim() !== "")
+        .join(", ");
+
+      const causes = incident.victims
+        .map((v) => v.causeOfDeath)
+        .filter((cause) => cause && cause.trim() !== "");
+      const uniqueCauses = [...new Set(causes)];
+
+      return {
+        count: incident.numberOfVictims || incident.victims.length,
+        sex: sexDisplay,
+        names: names || "Non spécifié",
+        causes:
+          uniqueCauses.length > 0 ? uniqueCauses.join(", ") : "Non spécifié",
+      };
     }
-
-    const sexes = incident.victims.map((v) => v.sex);
-    const uniqueSexes = [...new Set(sexes)];
-    let displaySex = "-";
-
-    if (uniqueSexes.length === 1) {
-      displaySex = uniqueSexes[0] === "Male" ? "Homme" : "Femme";
-    } else if (uniqueSexes.length > 1) {
-      displaySex = "Mixte";
-    }
-
-    const names = incident.victims
-      .map((v) => v.name)
-      .filter((name) => name.trim() !== "")
-      .join(", ");
-
-    const causes = incident.victims
-      .map((v) => v.causeOfDeath)
-      .filter((cause) => cause && cause.trim() !== "");
-    const uniqueCauses = [...new Set(causes)];
-    const displayCause =
-      uniqueCauses.length > 0 ? uniqueCauses.join(", ") : "-";
-
-    return {
-      count: incident.numberOfVictims || incident.victims.length,
-      sex: displaySex,
-      names,
-      cause: displayCause,
-    };
+    return null;
   };
 
   const victimInfo = getVictimInfo();
 
   return (
     <Card
-      className="cursor-pointer hover:shadow-md transition-shadow duration-200 bg-white border border-gray-200"
+      className="w-full bg-white hover:shadow-md transition-shadow cursor-pointer"
       onClick={() => onView(incident)}
     >
       <CardContent className="p-4">
-        {/* Header with Type and Actions */}
+        {/* Header with event type and actions */}
         <div className="flex items-start justify-between mb-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 border px-2 py-1 rounded-md w-max">
-              <div
-                className={`w-4 h-4 rounded-full flex items-center justify-center ${
-                  eventTypeColors[
-                    incident.eventType as keyof typeof eventTypeColors
-                  ] || "bg-gray-500"
-                }`}
-              >
-                <div className="w-2 h-2 bg-white rounded-full"></div>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div
+              className={`p-2 rounded-lg ${eventTypeInfo.color.replace(
+                "bg-",
+                "bg-"
+              )} bg-opacity-10 flex-shrink-0`}
+            >
+              <EventIcon
+                className={`w-5 h-5 ${eventTypeInfo.color.replace(
+                  "bg-",
+                  "text-"
+                )}`}
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 text-lg">
+                {eventTypeInfo.text}
+              </h3>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Calendar className="w-4 h-4 flex-shrink-0" />
+                <span>{formatDate(incident.incidentDate)}</span>
               </div>
-              <span className="text-sm font-medium text-gray-900">
-                {incident.eventType}
-              </span>
             </div>
           </div>
-          <div onClick={(e) => e.stopPropagation()}>
+
+          {/* Actions */}
+          <div
+            className="flex items-center gap-1 flex-shrink-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                onView(incident);
+              }}
+            >
+              <Eye className="w-4 h-4" />
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -117,17 +157,21 @@ export function IncidentCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem onSelect={() => onView(incident)}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  Voir détails
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => onEdit(incident)}>
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    onEdit(incident);
+                  }}
+                >
                   <Edit className="w-4 h-4 mr-2" />
                   Modifier
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
-                  onSelect={() => onDelete(incident)}
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    onDelete(incident);
+                  }}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
                   Supprimer
@@ -137,61 +181,52 @@ export function IncidentCard({
           </div>
         </div>
 
-        {/* Incident Date */}
-        <div className="flex items-center text-gray-600 mb-2">
-          <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
-          <span className="text-sm font-medium">
-            {safeFormatDate(incident.incidentDate)}
-          </span>
-        </div>
-
         {/* Location */}
-        <div className="flex items-start text-gray-600 mb-3">
-          <MapPin className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
-          <span className="text-sm break-words min-w-0">
-            {incident.location}
-          </span>
+        <div className="mb-3">
+          <div className="flex items-center gap-2 text-gray-600">
+            <MapPin className="w-4 h-4 flex-shrink-0" />
+            <span className="text-sm truncate">{incident.location}</span>
+          </div>
         </div>
 
         {/* Victim Information (only for Assassinats) */}
         {victimInfo && (
-          <div className="border-t pt-3 mt-3">
-            <div className="flex items-center text-gray-600 mb-2">
-              <Users className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span className="text-sm font-medium">
-                {victimInfo.count} victime{victimInfo.count > 1 ? "s" : ""} (
-                {victimInfo.sex})
-              </span>
+          <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <h4 className="text-sm font-medium text-red-900 mb-2 flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Informations sur les victimes
+            </h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <User className="w-3 h-3 text-red-600" />
+                <span className="text-red-800">
+                  {victimInfo.count} victime{victimInfo.count > 1 ? "s" : ""} (
+                  {victimInfo.sex})
+                </span>
+              </div>
+
+              <div className="text-red-700">
+                <span className="font-medium">Noms:</span>
+                <span className="block truncate mt-1">{victimInfo.names}</span>
+              </div>
+
+              {victimInfo.causes !== "Non spécifié" && (
+                <div className="text-red-700">
+                  <span className="font-medium">Cause du décès:</span>
+                  <span className="block truncate mt-1">
+                    {victimInfo.causes}
+                  </span>
+                </div>
+              )}
             </div>
-
-            {victimInfo.names && (
-              <div className="mb-2">
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Noms:
-                </span>
-                <p className="text-sm text-gray-700 mt-1 break-words">
-                  {victimInfo.names}
-                </p>
-              </div>
-            )}
-
-            {victimInfo.cause !== "-" && (
-              <div>
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Cause du décès:
-                </span>
-                <p className="text-sm text-gray-700 mt-1 break-words">
-                  {victimInfo.cause}
-                </p>
-              </div>
-            )}
           </div>
         )}
 
         {/* Footer with creation date */}
-        <div className="flex justify-between items-center mt-4 pt-3 border-t text-xs text-gray-400">
-          <span>Créé le {safeFormatDate(incident.createdAt)}</span>
-          {incident.createdByName && <span>par {incident.createdByName}</span>}
+        <div className="pt-3 border-t border-gray-100">
+          <p className="text-xs text-gray-500">
+            Enregistré le {formatDate(incident.createdAt)}
+          </p>
         </div>
       </CardContent>
     </Card>

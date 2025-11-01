@@ -1,30 +1,38 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Search, Filter, Loader2 } from "lucide-react";
-import { useState, useCallback, useMemo } from "react";
-import { trpc } from "@/components/trpc-provider";
 import { ReportCard } from "./report-card";
+import type { Report } from "./reports-table";
+import { Button } from "@/components/ui/button";
+import {
+  Search,
+  Filter,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { useState, useCallback } from "react";
+import { trpc } from "@/components/trpc-provider";
 import { ReportForm } from "./report-form";
 import { EditReportForm } from "./edit-report-form";
 import { DeleteReportDialog } from "./delete-report-dialog";
 import { ReportDetailsDialog } from "./report-details-dialog";
-import type { Report } from "./reports-table";
 
 // Mobile Pagination Component
+interface MobilePaginationProps {
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  onPageChange: (page: number) => void;
+}
+
 function MobilePagination({
   currentPage,
   totalPages,
   totalItems,
   itemsPerPage,
   onPageChange,
-}: {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  itemsPerPage: number;
-  onPageChange: (page: number) => void;
-}) {
+}: MobilePaginationProps) {
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
@@ -33,7 +41,11 @@ function MobilePagination({
   return (
     <div className="flex flex-col items-center gap-4 mt-6">
       <div className="text-sm text-gray-600 text-center">
-        Affichage de {startItem} à {endItem} sur {totalItems} rapports
+        Affichage de{" "}
+        <span className="font-medium">
+          {startItem} à {endItem}
+        </span>{" "}
+        sur <span className="font-medium">{totalItems}</span> résultats
       </div>
       <div className="flex items-center gap-2">
         <Button
@@ -41,9 +53,9 @@ function MobilePagination({
           size="sm"
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}
-          className="h-9 px-3"
+          className="w-10 h-10 p-0"
         >
-          Précédent
+          <ChevronLeft className="w-4 h-4" />
         </Button>
         <div className="flex items-center gap-1">
           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -59,15 +71,17 @@ function MobilePagination({
             }
 
             return (
-              <Button
+              <button
                 key={pageNum}
-                variant={pageNum === currentPage ? "default" : "outline"}
-                size="sm"
                 onClick={() => onPageChange(pageNum)}
-                className="h-9 w-9 p-0"
+                className={`w-10 h-10 text-sm font-medium rounded-lg ${
+                  pageNum === currentPage
+                    ? "text-white bg-blue-500"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
               >
                 {pageNum}
-              </Button>
+              </button>
             );
           })}
         </div>
@@ -76,9 +90,9 @@ function MobilePagination({
           size="sm"
           disabled={currentPage === totalPages}
           onClick={() => onPageChange(currentPage + 1)}
-          className="h-9 px-3"
+          className="w-10 h-10 p-0"
         >
-          Suivant
+          <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
     </div>
@@ -86,21 +100,27 @@ function MobilePagination({
 }
 
 interface ReportCardsListProps {
-  className?: string;
+  emptyMessage?: string;
 }
 
-export function ReportCardsList({ className = "" }: ReportCardsListProps) {
+export function ReportCardsList({
+  emptyMessage = "Aucun rapport trouvé",
+}: ReportCardsListProps) {
   // State management
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<"reportDate" | "title" | "createdAt">(
+    "reportDate"
+  );
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // Dialog states
-  const [editingReport, setEditingReport] = useState<Report | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [deletingReport, setDeletingReport] = useState<Report | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [viewingReport, setViewingReport] = useState<Report | null>(null);
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [reportToEdit, setReportToEdit] = useState<Report | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [reportToView, setReportToView] = useState<Report | null>(null);
 
   const itemsPerPage = 10;
 
@@ -115,21 +135,17 @@ export function ReportCardsList({ className = "" }: ReportCardsListProps) {
     page: currentPage,
     limit: itemsPerPage,
     search: searchTerm || undefined,
-    sortBy: "reportDate",
-    sortOrder: "desc",
+    sortBy,
+    sortOrder,
   });
 
-  const reports = useMemo(
-    () =>
-      reportsData?.reports?.map((report) => ({
-        ...report,
-        reportDate: new Date(report.reportDate),
-        createdAt: new Date(report.createdAt),
-        updatedAt: new Date(report.updatedAt),
-      })) || [],
-    [reportsData?.reports]
-  );
-
+  const reports =
+    reportsData?.reports?.map((report) => ({
+      ...report,
+      reportDate: new Date(report.reportDate),
+      createdAt: new Date(report.createdAt),
+      updatedAt: new Date(report.updatedAt),
+    })) || [];
   const pagination = reportsData?.pagination;
 
   // Handlers
@@ -138,59 +154,71 @@ export function ReportCardsList({ className = "" }: ReportCardsListProps) {
     setCurrentPage(1);
   }, []);
 
+  const handleSortChange = useCallback(
+    (newSortBy: typeof sortBy) => {
+      if (newSortBy === sortBy) {
+        setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+      } else {
+        setSortBy(newSortBy);
+        setSortOrder("desc");
+      }
+      setCurrentPage(1);
+    },
+    [sortBy]
+  );
+
   const handleReportSuccess = useCallback(() => {
     refetch();
   }, [refetch]);
 
-  // Edit handlers
   const handleEditReport = useCallback((report: Report) => {
-    setEditingReport(report);
-    setIsEditDialogOpen(true);
+    setReportToEdit(report);
+    setEditDialogOpen(true);
   }, []);
 
   const handleEditDialogClose = useCallback(() => {
-    setIsEditDialogOpen(false);
-    setEditingReport(null);
+    setEditDialogOpen(false);
+    setReportToEdit(null);
   }, []);
 
   const handleEditSuccess = useCallback(() => {
     refetch();
-  }, [refetch]);
+    handleEditDialogClose();
+  }, [refetch, handleEditDialogClose]);
 
-  // Delete handlers
   const handleDeleteReport = useCallback((report: Report) => {
-    setDeletingReport(report);
-    setIsDeleteDialogOpen(true);
+    setReportToDelete(report);
+    setDeleteDialogOpen(true);
   }, []);
 
   const handleDeleteDialogClose = useCallback(() => {
-    setIsDeleteDialogOpen(false);
-    setDeletingReport(null);
+    setDeleteDialogOpen(false);
+    setReportToDelete(null);
   }, []);
 
   const handleDeleteSuccess = useCallback(() => {
     refetch();
-  }, [refetch]);
+    handleDeleteDialogClose();
+  }, [refetch, handleDeleteDialogClose]);
 
-  // View handlers
   const handleViewReport = useCallback((report: Report) => {
-    setViewingReport(report);
-    setIsDetailsDialogOpen(true);
+    setReportToView(report);
+    setDetailsDialogOpen(true);
   }, []);
 
   const handleDetailsDialogClose = useCallback(() => {
-    setIsDetailsDialogOpen(false);
-    setViewingReport(null);
+    setDetailsDialogOpen(false);
+    setReportToView(null);
   }, []);
 
   // Error state
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
+      <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h2 className="text-lg font-medium text-gray-900 mb-2">
             Erreur lors du chargement
-          </h3>
+          </h2>
           <p className="text-gray-600 mb-4">
             {error?.message || "Une erreur est survenue"}
           </p>
@@ -201,123 +229,153 @@ export function ReportCardsList({ className = "" }: ReportCardsListProps) {
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className="space-y-6">
       {/* Mobile Controls */}
       <div className="space-y-4">
         {/* Header */}
-        <div className="flex justify-between sm:flex-row sm:items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">Rapports</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold text-gray-900">Rapports</h1>
           <ReportForm onSuccess={handleReportSuccess} />
         </div>
 
-        {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Rechercher des rapports..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
-            />
-          </div>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Rechercher un rapport..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+          />
+        </div>
+
+        {/* Sort Filters */}
+        <div className="flex flex-wrap gap-2">
           <Button
-            variant="outline"
-            className="border-gray-300 bg-white text-gray-700 whitespace-nowrap"
+            variant={sortBy === "reportDate" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleSortChange("reportDate")}
+            className="gap-2"
           >
-            <Filter className="w-4 h-4 mr-2" />
-            Filtres
+            <Filter className="w-4 h-4" />
+            Par date de rapport
+            {sortBy === "reportDate" && (
+              <span className="text-xs">
+                {sortOrder === "desc" ? "↓" : "↑"}
+              </span>
+            )}
+          </Button>
+          <Button
+            variant={sortBy === "title" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleSortChange("title")}
+          >
+            Par titre
+            {sortBy === "title" && (
+              <span className="text-xs">
+                {sortOrder === "desc" ? "↓" : "↑"}
+              </span>
+            )}
+          </Button>
+          <Button
+            variant={sortBy === "createdAt" ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleSortChange("createdAt")}
+          >
+            Par création
+            {sortBy === "createdAt" && (
+              <span className="text-xs">
+                {sortOrder === "desc" ? "↓" : "↑"}
+              </span>
+            )}
           </Button>
         </div>
       </div>
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex items-center justify-center py-12">
+        <div className="flex items-center justify-center h-64">
           <div className="flex items-center space-x-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-5 h-5 animate-spin" />
             <span className="text-gray-600">Chargement des rapports...</span>
           </div>
         </div>
       )}
 
-      {/* Reports Grid */}
-      {!isLoading && (
-        <>
-          {reports.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Aucun rapport trouvé
-                </h3>
-                <p className="text-gray-500">
-                  {searchTerm
-                    ? "Aucun rapport ne correspond à votre recherche."
-                    : "Commencez par créer votre premier rapport."}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
-              {reports.map((report) => (
-                <ReportCard
-                  key={report.id}
-                  report={report}
-                  onView={handleViewReport}
-                  onEdit={handleEditReport}
-                  onDelete={handleDeleteReport}
+      {/* Empty State */}
+      {!isLoading && reports.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+              <svg
+                className="w-8 h-8 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
-              ))}
+              </svg>
             </div>
-          )}
-
-          {/* Mobile Pagination */}
-          {pagination && pagination.totalPages > 1 && (
-            <MobilePagination
-              currentPage={pagination.page}
-              totalPages={pagination.totalPages}
-              totalItems={pagination.totalItems}
-              itemsPerPage={pagination.limit}
-              onPageChange={setCurrentPage}
-            />
-          )}
-        </>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Aucun rapport
+            </h3>
+            <p className="text-gray-500">{emptyMessage}</p>
+          </div>
+        </div>
       )}
 
-      {/* Dialogs */}
+      {/* Cards List */}
+      {!isLoading && reports.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {reports.map((report) => (
+            <ReportCard
+              key={report.id}
+              report={report}
+              onView={handleViewReport}
+              onEdit={handleEditReport}
+              onDelete={handleDeleteReport}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Mobile Pagination */}
+      {!isLoading && pagination && pagination.totalPages > 1 && (
+        <MobilePagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.totalItems}
+          itemsPerPage={pagination.limit}
+          onPageChange={setCurrentPage}
+        />
+      )}
+
+      {/* Edit Report Dialog */}
       <EditReportForm
-        report={editingReport}
-        isOpen={isEditDialogOpen}
+        report={reportToEdit}
+        isOpen={editDialogOpen}
         onClose={handleEditDialogClose}
         onSuccess={handleEditSuccess}
       />
 
+      {/* Delete Dialog */}
       <DeleteReportDialog
-        report={deletingReport}
-        isOpen={isDeleteDialogOpen}
+        report={reportToDelete}
+        isOpen={deleteDialogOpen}
         onClose={handleDeleteDialogClose}
         onSuccess={handleDeleteSuccess}
       />
 
+      {/* Details Dialog */}
       <ReportDetailsDialog
-        report={viewingReport}
-        isOpen={isDetailsDialogOpen}
+        report={reportToView}
+        isOpen={detailsDialogOpen}
         onClose={handleDetailsDialogClose}
       />
     </div>

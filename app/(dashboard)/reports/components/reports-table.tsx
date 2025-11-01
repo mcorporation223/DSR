@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   MoreHorizontal,
   Search,
-  Filter,
   Loader2,
   Edit,
   Trash2,
@@ -409,13 +408,13 @@ export function ReportsTable() {
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
             />
           </div>
-          <Button
+          {/* <Button
             variant="outline"
             className="border-gray-300 bg-white text-gray-700"
           >
             <Filter className="w-4 h-4 mr-2" />
             Filtres
-          </Button>
+          </Button> */}
           <ColumnVisibility
             columns={columnVisibility}
             onVisibilityChange={handleColumnVisibilityChange}
