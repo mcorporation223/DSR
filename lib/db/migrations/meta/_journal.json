@@ -3,13 +3,6 @@
   "dialect": "postgresql",
   "entries": [
     {
-      "idx": 0,
-      "version": "7",
-      "when": 1757617139801,
-      "tag": "0000_fast_the_initiative",
-      "breakpoints": true
-    },
-    {
       "idx": 1,
       "version": "7",
       "when": 1757926375636,
@@ -49,13 +42,6 @@
       "version": "7",
       "when": 1758302664258,
       "tag": "0006_graceful_scrambler",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1761731191223,
-      "tag": "0007_cuddly_ezekiel_stane",
       "breakpoints": true
     }
   ]
