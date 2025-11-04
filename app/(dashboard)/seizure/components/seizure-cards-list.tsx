@@ -106,10 +106,10 @@ export function SeizureCardsList() {
   // State management
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<
+  const [sortBy] = useState<
     "seizureDate" | "itemName" | "type" | "status" | "createdAt"
   >("createdAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortOrder] = useState<"asc" | "desc">("desc");
   const [typeFilter, setTypeFilter] = useState<
     "car" | "motorcycle" | undefined
   >(undefined);

@@ -17,7 +17,7 @@ import {
 import {
   LOCATIONS,
   NEIGHBORHOODS,
-  PROVINCES,
+  // PROVINCES,
   RELIGIONS,
   MARITAL_STATUS,
   EDUCATION_LEVELS,
@@ -28,7 +28,7 @@ import {
   INCIDENT_TYPES,
   CAUSES_OF_DEATH,
   getRandomElement,
-  getRandomDate,
+  // getRandomDate,
 } from "./generators/constants";
 
 // Load environment variables
@@ -554,9 +554,9 @@ async function seedLarge() {
 if (process.argv.length > 2) {
   process.argv.slice(2).forEach((arg) => {
     const [key, value] = arg.replace("--", "").split("=");
-    if (key in SEED_CONFIG && !isNaN(Number(value))) {
-      (SEED_CONFIG as any)[key] = Number(value);
-      console.log(`� Set ${key} = ${Number(value)}`);
+    if (key in SEED_CONFIG && !isNaN(Number(value)) && key !== "victimsPer") {
+      (SEED_CONFIG as unknown as Record<string, number>)[key] = Number(value);
+      console.log(`🔧 Set ${key} = ${Number(value)}`);
     }
   });
 }

@@ -225,9 +225,10 @@ function generateAuditDetails(
   action: string,
   entityType: string,
   entityId: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   options: AuditLogGeneratorOptions
-): any {
-  const baseDetails: any = {
+): Record<string, unknown> {
+  const baseDetails: Record<string, unknown> = {
     description: getActionDescription(action, entityType),
     entityId: entityId,
     timestamp: new Date().toISOString(),
@@ -338,8 +339,8 @@ function getActionDescription(action: string, entityType: string): string {
 /**
  * Generate create-specific details
  */
-function generateCreateDetails(entityType: string): any {
-  const details: any = {
+function generateCreateDetails(entityType: string): Record<string, unknown> {
+  const details: Record<string, unknown> = {
     created_via: getRandomElement(["web_interface", "api", "import", "system"]),
   };
 
@@ -389,7 +390,7 @@ function generateCreateDetails(entityType: string): any {
 /**
  * Generate update-specific details
  */
-function generateUpdateDetails(entityType: string): any {
+function generateUpdateDetails(entityType: string): Record<string, unknown> {
   const fieldChanges =
     ENTITY_FIELD_CHANGES[entityType as keyof typeof ENTITY_FIELD_CHANGES];
   if (!fieldChanges || fieldChanges.length === 0) {
@@ -420,8 +421,10 @@ function generateUpdateDetails(entityType: string): any {
 /**
  * Generate status change specific details
  */
-function generateStatusChangeDetails(entityType: string): any {
-  const details: any = {
+function generateStatusChangeDetails(
+  entityType: string
+): Record<string, unknown> {
+  const details: Record<string, unknown> = {
     status_change_reason: getRandomElement([
       "Procédure légale",
       "Décision administrative",
@@ -461,8 +464,10 @@ function generateStatusChangeDetails(entityType: string): any {
 /**
  * Generate bulk update specific details
  */
-function generateBulkUpdateDetails(entityType: string): any {
-  const details: any = {
+function generateBulkUpdateDetails(
+  entityType: string
+): Record<string, unknown> {
+  const details: Record<string, unknown> = {
     update_criteria: getRandomElement([
       "Status update",
       "Location change",
@@ -698,7 +703,7 @@ export function generateAuditLogsByAction(
   const auditLogs: NewAuditLog[] = [];
 
   for (const [action, count] of Object.entries(actionDistribution)) {
-    if (!AUDIT_ACTIONS.includes(action as any)) {
+    if (!AUDIT_ACTIONS.includes(action as (typeof AUDIT_ACTIONS)[number])) {
       console.warn(`Unknown audit action: ${action}`);
       continue;
     }
@@ -912,12 +917,18 @@ export function validateAuditLogs(auditLogs: NewAuditLog[]): {
     }
 
     // Validate action values
-    if (log.action && !AUDIT_ACTIONS.includes(log.action as any)) {
+    if (
+      log.action &&
+      !AUDIT_ACTIONS.includes(log.action as (typeof AUDIT_ACTIONS)[number])
+    ) {
       errors.push(`Audit log ${index}: Invalid action '${log.action}'`);
     }
 
     // Validate entity type values
-    if (log.entityType && !ENTITY_TYPES.includes(log.entityType as any)) {
+    if (
+      log.entityType &&
+      !ENTITY_TYPES.includes(log.entityType as (typeof ENTITY_TYPES)[number])
+    ) {
       errors.push(`Audit log ${index}: Invalid entityType '${log.entityType}'`);
     }
 

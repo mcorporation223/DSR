@@ -240,6 +240,7 @@ export function generateRealisticStatementDistribution(
   const oneStatementCount = Math.floor(detaineeIds.length * 0.7);
   const twoStatementCount = Math.floor(detaineeIds.length * 0.2);
   const threeStatementCount = Math.floor(detaineeIds.length * 0.08);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const multipleStatementCount =
     detaineeIds.length -
     oneStatementCount -
