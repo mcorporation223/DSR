@@ -35,6 +35,9 @@ ENV NODE_ENV production
 # Install postgresql-client for database initialization scripts
 RUN apk add --no-cache postgresql-client
 
+# Enable pnpm for database initialization scripts
+RUN corepack enable pnpm
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
