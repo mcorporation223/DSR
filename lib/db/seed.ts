@@ -39,7 +39,7 @@ async function seed() {
         {
           firstName: "Jean",
           lastName: "Mukamana",
-          email: "admin@dsr.gov.cd",
+          email: "admin2@dsr.gov.cd",
           passwordHash,
           role: "admin",
         },
