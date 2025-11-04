@@ -4,7 +4,7 @@ FROM node:20-alpine AS base
 # Install dependencies only when needed
 FROM base AS deps
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat postgresql-client
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
@@ -32,6 +32,9 @@ ENV NODE_ENV production
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED 1
 
+# Install postgresql-client for database initialization scripts
+RUN apk add --no-cache postgresql-client
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
@@ -46,12 +49,30 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copy database files and scripts for initialization
+COPY --from=builder --chown=nextjs:nodejs /app/lib ./lib
+COPY --from=builder --chown=nextjs:nodejs /app/server ./server
+COPY --from=builder --chown=nextjs:nodejs /app/types ./types
+COPY --from=builder --chown=nextjs:nodejs /app/drizzle.config.ts ./drizzle.config.ts
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+
+# Copy initialization scripts
+COPY --chown=nextjs:nodejs scripts ./scripts
+RUN chmod +x scripts/*.sh
+
+# Create uploads directory
+RUN mkdir -p uploads && chown nextjs:nodejs uploads
+
 USER nextjs
 
 EXPOSE 3000
 
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
+
+# Set custom entrypoint
+ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
 
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output

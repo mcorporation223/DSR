@@ -38,6 +38,26 @@ services:
       DB_POOL_MIN: 2
       DB_POOL_MAX: 10
       UPLOADS_PATH: "/app/uploads"
+
+      # Database initialization settings
+      AUTO_INIT_DB: "true"              # Set to "false" to disable auto-initialization
+      SKIP_DB_INIT: "false"             # Set to "true" to skip database initialization entirely
+      SEED_LARGE_DATA: "true"           # Set to "false" to use default seed data instead
+
+      # PostgreSQL connection for init scripts
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dsr
+
+      # Optional: Customize seed data counts (uncomment to use)
+      # SEED_USERS: 100
+      # SEED_EMPLOYEES: 1000
+      # SEED_DETAINEES: 10000
+      # SEED_INCIDENTS: 2000
+      # SEED_SEIZURES: 5000
+      # SEED_STATEMENTS: 3000
+      # SEED_REPORTS: 1000
+      # SEED_AUDIT_LOGS: 20000
     ports:
       - "3000:3000"
     volumes:
