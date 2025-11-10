@@ -15,6 +15,7 @@ import {
   Key,
   UserCheck,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { toastNotification } from "@/components/toast-notification";
 import { trpc } from "@/components/trpc-provider";
 import { signIn } from "next-auth/react";
@@ -51,7 +52,7 @@ export default function SetupPasswordPage() {
           <Card className="shadow-xl border-0">
             <CardContent className="space-y-6 py-8">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
+                <Spinner className="w-8 h-8 text-blue-600 mx-auto" />
                 <p className="mt-2 text-sm text-gray-600">Initialisation...</p>
               </div>
             </CardContent>
@@ -270,7 +271,7 @@ function SetupPasswordForm() {
             >
               <CardContent className="space-y-6 py-8">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
+                  <Spinner className="w-8 h-8 text-blue-600 mx-auto" />
                   <p className="mt-2 text-sm text-gray-600">
                     Validation du token...
                   </p>
@@ -515,7 +516,7 @@ function SetupPasswordForm() {
                   >
                     {isSubmitting ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        <Spinner className="w-4 h-4 mr-2" />
                         Configuration du mot de passe...
                       </>
                     ) : (

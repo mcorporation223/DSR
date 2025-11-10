@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { trpc } from "@/components/trpc-provider";
 import { toastNotification } from "@/components/toast-notification";
 import type { Detainee } from "./detainee-table";
@@ -82,6 +82,7 @@ export function DeleteDetaineeDialog({
                   {fullName
                     ? fullName
                         .split(" ")
+                        .slice(0, 2)
                         .map((n) => n[0])
                         .join("")
                         .toUpperCase()
@@ -120,9 +121,7 @@ export function DeleteDetaineeDialog({
             onClick={handleDelete}
             disabled={deleteDetainee.isPending}
           >
-            {deleteDetainee.isPending && (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            )}
+            {deleteDetainee.isPending && <Spinner className="w-4 h-4 mr-2" />}
             Supprimer définitivement
           </Button>
         </DialogFooter>

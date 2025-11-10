@@ -25,7 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, ChevronDown, Loader2 } from "lucide-react";
+import { Plus, ChevronDown } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -362,7 +363,7 @@ export function SeizureForm({ onSuccess }: SeizureFormProps) {
                   disabled={createSeizureMutation.isPending}
                 >
                   {createSeizureMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Spinner className="mr-2 h-4 w-4" />
                   )}
                   Ajouter la saisie
                 </Button>

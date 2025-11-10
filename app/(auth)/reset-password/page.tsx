@@ -9,14 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Loader2,
-  Eye,
-  EyeOff,
-  CheckCircle,
-  XCircle,
-  KeyRound,
-} from "lucide-react";
+import { Eye, EyeOff, CheckCircle, XCircle, KeyRound } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { trpc } from "@/components/trpc-provider";
 import { toastNotification } from "@/components/toast-notification";
 
@@ -152,7 +146,7 @@ export default function ResetPasswordPage() {
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+              <Spinner className="w-8 h-8 text-blue-600 mx-auto mb-4" />
               <p className="text-gray-600">Vérification du lien...</p>
             </div>
           </CardContent>
@@ -301,7 +295,7 @@ export default function ResetPasswordPage() {
             >
               {isSubmitting || resetPasswordMutation.isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Spinner className="w-4 h-4 mr-2" />
                   Mise à jour...
                 </>
               ) : (

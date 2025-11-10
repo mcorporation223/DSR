@@ -3,13 +3,8 @@
 import { UserCard } from "./user-card";
 import type { User } from "./user-table";
 import { Button } from "@/components/ui/button";
-import {
-  Search,
-  Filter,
-  Loader2,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Search, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useState, useCallback } from "react";
 import { trpc } from "@/components/trpc-provider";
 import { UserForm } from "./user-form";
@@ -351,7 +346,7 @@ export function UserCardsList({
       {isLoading && (
         <div className="flex items-center justify-center h-64">
           <div className="flex items-center space-x-2">
-            <Loader2 className="w-5 h-5 animate-spin" />
+            <Spinner className="w-5 h-5" />
             <span className="text-gray-600">
               Chargement des utilisateurs...
             </span>

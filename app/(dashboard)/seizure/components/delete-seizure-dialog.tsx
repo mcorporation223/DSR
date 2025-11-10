@@ -8,7 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { trpc } from "@/components/trpc-provider";
 import { toastNotification } from "@/components/toast-notification";
 import type { Seizure } from "./seizure-table";
@@ -111,9 +112,7 @@ export function DeleteSeizureDialog({
             onClick={handleDelete}
             disabled={deleteSeizure.isPending}
           >
-            {deleteSeizure.isPending && (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            )}
+            {deleteSeizure.isPending && <Spinner className="w-4 h-4 mr-2" />}
             Supprimer définitivement
           </Button>
         </DialogFooter>

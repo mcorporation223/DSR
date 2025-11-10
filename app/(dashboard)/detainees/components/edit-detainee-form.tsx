@@ -25,7 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -87,7 +88,7 @@ const editDetaineeFormSchema = z.object({
     .max(25, "La profession ne peut pas dépasser 25 caractères")
     .optional(),
   maritalStatus: z
-    .enum(["Single", "Married", "Divorced", "Widowed"])
+    .enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"])
     .optional(),
   maritalDetails: z
     .string()
@@ -239,10 +240,10 @@ export function EditDetaineeForm({
         education: detainee.education || "",
         employment: detainee.employment || "",
         maritalStatus: detainee.maritalStatus as
-          | "Single"
-          | "Married"
-          | "Divorced"
-          | "Widowed"
+          | "Célibataire"
+          | "Marié(e)"
+          | "Divorcé(e)"
+          | "Veuf(ve)"
           | undefined,
         maritalDetails: detainee.maritalDetails || "",
         religion: detainee.religion || "",
@@ -506,10 +507,14 @@ export function EditDetaineeForm({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Single">Célibataire</SelectItem>
-                            <SelectItem value="Married">Marié(e)</SelectItem>
-                            <SelectItem value="Divorced">Divorcé(e)</SelectItem>
-                            <SelectItem value="Widowed">Veuf(ve)</SelectItem>
+                            <SelectItem value="Célibataire">
+                              Célibataire
+                            </SelectItem>
+                            <SelectItem value="Marié(e)">Marié(e)</SelectItem>
+                            <SelectItem value="Divorcé(e)">
+                              Divorcé(e)
+                            </SelectItem>
+                            <SelectItem value="Veuf(ve)">Veuf(ve)</SelectItem>
                           </SelectContent>
                         </Select>
                         <div className="h-[24px]">
@@ -1023,7 +1028,7 @@ export function EditDetaineeForm({
                 </Button>
                 <Button type="submit" disabled={updateDetainee.isPending}>
                   {updateDetainee.isPending && (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Spinner className="w-4 h-4 mr-2" />
                   )}
                   Modifier le détenu
                 </Button>

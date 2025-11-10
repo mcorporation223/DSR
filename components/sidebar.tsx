@@ -195,6 +195,7 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                         {session?.user?.name
                           ? session.user.name
                               .split(" ")
+                              .slice(0, 2)
                               .map((n) => n[0])
                               .join("")
                               .toUpperCase()

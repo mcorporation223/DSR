@@ -82,6 +82,7 @@ export function UserCard({
                 {fullName
                   ? fullName
                       .split(" ")
+                      .slice(0, 2)
                       .map((n) => n[0])
                       .join("")
                       .toUpperCase()

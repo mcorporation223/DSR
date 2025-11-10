@@ -26,7 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, ChevronDown, Loader2 } from "lucide-react";
+import { Plus, ChevronDown } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -86,7 +87,7 @@ const detaineeFormSchema = z.object({
     .max(25, "La profession ne peut pas dépasser 25 caractères")
     .optional(),
   maritalStatus: z
-    .enum(["Single", "Married", "Divorced", "Widowed"])
+    .enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"])
     .optional(),
   maritalDetails: z
     .string()
@@ -432,10 +433,14 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Single">Célibataire</SelectItem>
-                            <SelectItem value="Married">Marié(e)</SelectItem>
-                            <SelectItem value="Divorced">Divorcé(e)</SelectItem>
-                            <SelectItem value="Widowed">Veuf(ve)</SelectItem>
+                            <SelectItem value="Célibataire">
+                              Célibataire
+                            </SelectItem>
+                            <SelectItem value="Marié(e)">Marié(e)</SelectItem>
+                            <SelectItem value="Divorcé(e)">
+                              Divorcé(e)
+                            </SelectItem>
+                            <SelectItem value="Veuf(ve)">Veuf(ve)</SelectItem>
                           </SelectContent>
                         </Select>
                         <div className="h-[24px]">
@@ -839,7 +844,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                 </Button>
                 <Button type="submit" disabled={createDetainee.isPending}>
                   {createDetainee.isPending && (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Spinner className="w-4 h-4 mr-2" />
                   )}
                   Ajouter le détenu
                 </Button>

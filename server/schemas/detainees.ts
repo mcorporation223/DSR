@@ -89,7 +89,7 @@ export const createDetaineeSchema = z.object({
     )
     .optional(),
   maritalStatus: z
-    .enum(["Single", "Married", "Divorced", "Widowed"])
+    .enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"])
     .optional(),
   maritalDetails: z
     .string()
@@ -218,7 +218,7 @@ export const updateDetaineeSchema = z.object({
     .pipe(z.string().max(25))
     .optional(),
   maritalStatus: z
-    .enum(["Single", "Married", "Divorced", "Widowed"])
+    .enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"])
     .optional(),
   maritalDetails: z
     .string()

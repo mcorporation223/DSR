@@ -6,12 +6,12 @@ import { Input } from "@/components/ui/input";
 import {
   Search,
   Filter,
-  Loader2,
   ChevronLeft,
   ChevronRight,
   Activity,
   FileText,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { trpc } from "@/components/trpc-provider";
 import { AuditLogCard } from "./audit-log-card";
 import { AuditLogDetailsDialog } from "./audit-log-details-dialog";
@@ -323,7 +323,7 @@ export function AuditLogCardsList() {
       {isLoading && (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="flex items-center space-x-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Spinner className="w-4 h-4" />
             <span className="text-gray-600">
               Chargement des journaux d&apos;audit...
             </span>

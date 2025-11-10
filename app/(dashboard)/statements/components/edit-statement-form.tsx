@@ -17,7 +17,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Upload, FileText, Loader2, X } from "lucide-react";
+import { Upload, FileText, X } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -285,8 +286,8 @@ export function EditStatementForm({
                       </div>
                     </FormControl>
                     <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
+                      <FormMessage className="text-xs" />
+                    </div>
                   </FormItem>
                 )}
               />
@@ -306,7 +307,7 @@ export function EditStatementForm({
                 >
                   {updateStatement.isPending || isUploading ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Spinner className="w-4 h-4 mr-2" />
                       {isUploading ? "Téléchargement..." : "Modification..."}
                     </>
                   ) : (

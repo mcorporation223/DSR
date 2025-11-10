@@ -1,15 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  MoreHorizontal,
-  Search,
-  Loader2,
-  Edit,
-  Trash2,
-  Eye,
-  Inbox,
-} from "lucide-react";
+import { MoreHorizontal, Search, Edit, Trash2, Eye, Inbox } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -428,7 +421,7 @@ export function ReportsTable() {
       {/* Loading state */}
       {isLoading && (
         <div className="flex items-center justify-center h-32">
-          <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+          <Spinner className="w-6 h-6 text-blue-500" />
           <span className="ml-2 text-gray-600">Chargement des rapports...</span>
         </div>
       )}

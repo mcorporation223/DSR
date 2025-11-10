@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/rich-text-editor";
-import { Plus, ChevronDown, Loader2 } from "lucide-react";
+import { Plus, ChevronDown } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -249,7 +250,7 @@ export function ReportForm({ onSubmit, onSuccess }: ReportFormProps) {
                 <Button type="submit" disabled={createReportMutation.isPending}>
                   {createReportMutation.isPending ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Spinner className="w-4 h-4 mr-2" />
                       Création...
                     </>
                   ) : (

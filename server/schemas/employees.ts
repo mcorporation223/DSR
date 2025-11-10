@@ -37,7 +37,7 @@ export const createEmployeeSchema = z.object({
         .min(2, "Le nom doit contenir au moins 2 caractères")
         .max(20, "Le nom ne peut pas dépasser 20 caractères")
     ),
-  sex: z.enum(["Male", "Female"], {
+  sex: z.enum(["M", "F"], {
     message: "Veuillez sélectionner le sexe",
   }),
   placeOfBirth: z
@@ -70,7 +70,7 @@ export const createEmployeeSchema = z.object({
         .min(2, "La formation est requise")
         .max(30, "La formation ne peut pas dépasser 30 caractères")
     ),
-  maritalStatus: z.enum(["Single", "Married", "Divorced", "Widowed"], {
+  maritalStatus: z.enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"], {
     message: "Veuillez sélectionner l'état civil",
   }),
   function: z
@@ -108,9 +108,17 @@ export const createEmployeeSchema = z.object({
     ),
   email: z
     .string()
-    .max(30, "L'adresse email ne peut pas dépasser 30 caractères")
-    .email("Veuillez entrer une adresse email valide")
-    .transform((val) => val.toLowerCase().trim()),
+    .transform((val) => val.toLowerCase().trim())
+    .refine(
+      (val) => val === "" || z.string().email().safeParse(val).success,
+      "Veuillez entrer une adresse email valide"
+    )
+    .refine(
+      (val) => val.length <= 30,
+      "L'adresse email ne peut pas dépasser 30 caractères"
+    )
+    .optional()
+    .or(z.literal("")),
   photoUrl: z.string().optional(),
 });
 
@@ -127,7 +135,7 @@ export const updateEmployeeSchema = z.object({
     .transform((val) => val.trim())
     .pipe(z.string().min(2).max(20))
     .optional(),
-  sex: z.enum(["Male", "Female"]).optional(),
+  sex: z.enum(["M", "F"]).optional(),
   placeOfBirth: z
     .string()
     .transform((val) => val.trim())
@@ -150,7 +158,7 @@ export const updateEmployeeSchema = z.object({
     .pipe(z.string().min(2).max(30))
     .optional(),
   maritalStatus: z
-    .enum(["Single", "Married", "Divorced", "Widowed"])
+    .enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"])
     .optional(),
   function: z
     .string()
@@ -176,9 +184,15 @@ export const updateEmployeeSchema = z.object({
     .optional(),
   email: z
     .string()
-    .max(30, "L'adresse email ne peut pas dépasser 30 caractères")
-    .email("Veuillez entrer une adresse email valide")
     .transform((val) => val.toLowerCase().trim())
+    .refine(
+      (val) => val === "" || z.string().email().safeParse(val).success,
+      "Veuillez entrer une adresse email valide"
+    )
+    .refine(
+      (val) => val.length <= 30,
+      "L'adresse email ne peut pas dépasser 30 caractères"
+    )
     .optional(),
   photoUrl: z.string().optional(),
   isActive: z.boolean().optional(),

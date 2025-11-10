@@ -25,7 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -137,8 +138,8 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
                             <Input placeholder="Jean-Baptiste" {...field} />
                           </FormControl>
                           <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -155,8 +156,8 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
                             <Input placeholder="Mbemba Tshimanga" {...field} />
                           </FormControl>
                           <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -177,8 +178,8 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
                             />
                           </FormControl>
                           <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -206,8 +207,8 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
                             </SelectContent>
                           </Select>
                           <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
+                            <FormMessage className="text-xs" />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -225,7 +226,7 @@ export const UserForm = forwardRef<UserFormRef, UserFormProps>(
                   <Button type="submit" disabled={createUserMutation.isPending}>
                     {createUserMutation.isPending ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Spinner className="w-4 h-4 mr-2" />
                         Création en cours...
                       </>
                     ) : (
