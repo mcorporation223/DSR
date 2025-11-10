@@ -10,6 +10,7 @@ import {
   Trash2,
   Eye,
   Key,
+  Inbox,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -637,7 +638,21 @@ export function UsersTable() {
           columns={columns}
           data={filteredUsers}
           keyField="id"
-          emptyMessage="Aucun utilisateur trouvé"
+          emptyState={
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                <Inbox className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Aucun utilisateur trouvé
+              </h3>
+              <p className="text-sm text-gray-500 max-w-sm text-center">
+                {searchTerm || roleFilter || statusFilter
+                  ? "Aucun utilisateur ne correspond à vos critères de recherche. Essayez de modifier vos filtres."
+                  : "Commencez par ajouter votre premier utilisateur pour gérer l'accès au système."}
+              </p>
+            </div>
+          }
           pagination={paginationConfig}
           showPagination={!!paginationConfig}
           sortConfig={sortConfig}
