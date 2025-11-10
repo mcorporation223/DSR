@@ -9,6 +9,7 @@ import {
   Edit,
   Trash2,
   Eye,
+  Inbox,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -546,7 +547,21 @@ export function EmployeesTable() {
           columns={columns}
           data={employees}
           keyField="id"
-          emptyMessage="Aucun employé trouvé"
+          emptyState={
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                <Inbox className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Aucun employé trouvé
+              </h3>
+              <p className="text-sm text-gray-500 max-w-sm text-center">
+                {searchTerm || activeFilter !== undefined
+                  ? "Aucun employé ne correspond à vos critères de recherche. Essayez de modifier vos filtres."
+                  : "Commencez par ajouter votre premier employé pour gérer votre personnel."}
+              </p>
+            </div>
+          }
           pagination={paginationConfig}
           showPagination={!!paginationConfig}
           sortConfig={sortConfig}

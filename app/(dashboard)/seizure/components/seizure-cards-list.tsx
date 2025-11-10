@@ -106,10 +106,6 @@ export function SeizureCardsList() {
   // State management
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<
-    "seizureDate" | "itemName" | "type" | "status" | "createdAt"
-  >("createdAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [typeFilter, setTypeFilter] = useState<
     "car" | "motorcycle" | undefined
   >(undefined);
@@ -138,8 +134,8 @@ export function SeizureCardsList() {
     page: currentPage,
     limit: itemsPerPage,
     search: searchTerm || undefined,
-    sortBy,
-    sortOrder,
+    sortBy: "createdAt" as const,
+    sortOrder: "desc" as const,
     type: typeFilter,
     status: statusFilter,
   });

@@ -5,6 +5,7 @@ import {
   MoreHorizontal,
   // Download,
   Search,
+  Filter,
   Loader2,
   // Edit,
   Trash2,
@@ -219,7 +220,7 @@ export function StatementsTable() {
       key: "createdBy",
       label: "Créé par",
       className: "w-32",
-      render: (_, record) => (
+      render: (value, record) => (
         <span
           className="text-sm text-gray-600 truncate block max-w-[120px]"
           title={record.createdByName as string}
@@ -232,7 +233,7 @@ export function StatementsTable() {
       key: "updatedBy",
       label: "Modifié par",
       className: "w-32",
-      render: (_, record) => (
+      render: (value, record) => (
         <span
           className="text-sm text-gray-600 truncate block max-w-[120px]"
           title={record.updatedByName as string}

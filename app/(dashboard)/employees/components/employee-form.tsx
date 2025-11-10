@@ -151,6 +151,7 @@ interface EmployeeFormProps {
     updatedAt: Date;
   };
   mode?: "create" | "edit";
+  children?: React.ReactNode;
 }
 
 interface EmployeeFormRef {
@@ -158,7 +159,7 @@ interface EmployeeFormRef {
 }
 
 export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
-  ({ onSuccess, employee, mode = "create" }, ref) => {
+  ({ onSuccess, employee, mode = "create", children }, ref) => {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -441,10 +442,12 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
       <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
         {mode === "create" && (
           <DialogTrigger asChild>
-            <Button className="">
-              <Plus className="w-4 h-4 mr-2" />
-              Ajouter Employé
-            </Button>
+            {children || (
+              <Button className="">
+                <Plus className="w-4 h-4 mr-2" />
+                Ajouter Employé
+              </Button>
+            )}
           </DialogTrigger>
         )}
         <DialogContent className="max-w-2xl p-0">

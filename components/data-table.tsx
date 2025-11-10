@@ -46,6 +46,7 @@ export interface DataTableProps<T = Record<string, unknown>> {
   rowClassName?: string | ((row: T, index: number) => string);
   onRowClick?: (row: T, index: number) => void;
   emptyMessage?: string;
+  emptyState?: ReactNode;
   pagination?: PaginationConfig;
   showPagination?: boolean;
   sortConfig?: SortConfig;
@@ -60,6 +61,7 @@ export function DataTable<T extends Record<string, unknown>>({
   rowClassName = "",
   onRowClick,
   emptyMessage = "Aucune donnée disponible",
+  emptyState,
   pagination,
   showPagination = false,
   sortConfig,
@@ -244,9 +246,11 @@ export function DataTable<T extends Record<string, unknown>>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="py-8 text-center text-gray-500"
+                  className="py-12 text-center"
                 >
-                  {emptyMessage}
+                  {emptyState || (
+                    <span className="text-gray-500">{emptyMessage}</span>
+                  )}
                 </TableCell>
               </TableRow>
             ) : (

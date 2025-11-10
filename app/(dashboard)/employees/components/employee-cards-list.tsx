@@ -9,6 +9,7 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  Inbox,
 } from "lucide-react";
 import { useState, useCallback } from "react";
 import { trpc } from "@/components/trpc-provider";
@@ -98,13 +99,7 @@ function MobilePagination({
   );
 }
 
-interface EmployeeCardsListProps {
-  emptyMessage?: string;
-}
-
-export function EmployeeCardsList({
-  emptyMessage = "Aucun employé trouvé",
-}: EmployeeCardsListProps) {
+export function EmployeeCardsList() {
   // State management
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
@@ -261,27 +256,17 @@ export function EmployeeCardsList({
       {/* Empty State */}
       {!isLoading && employees.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12">
-          <div className="text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-              <svg
-                className="w-8 h-8 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Aucun employé
-            </h3>
-            <p className="text-gray-500">{emptyMessage}</p>
+          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+            <Inbox className="w-8 h-8 text-gray-400" />
           </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Aucun employé trouvé
+          </h3>
+          <p className="text-sm text-gray-500 max-w-sm text-center px-4">
+            {searchTerm || activeFilter !== undefined
+              ? "Aucun employé ne correspond à vos critères de recherche. Essayez de modifier vos filtres."
+              : "Commencez par ajouter votre premier employé pour gérer votre personnel."}
+          </p>
         </div>
       )}
 
