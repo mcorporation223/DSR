@@ -10,7 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { trpc } from "@/components/trpc-provider";
 import { toastNotification } from "@/components/toast-notification";
 
@@ -126,7 +127,7 @@ export function ResetPasswordDialog({
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Spinner className="w-4 h-4 mr-2" />
                 Envoi en cours...
               </>
             ) : (

@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
-import { Search, Filter, Loader2, Eye } from "lucide-react";
+import { Search, Filter, Eye } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -557,7 +558,7 @@ export function AuditLogsTable() {
       {isLoading && (
         <div className="flex items-center justify-center h-64">
           <div className="flex items-center space-x-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Spinner className="w-4 h-4" />
             <span className="text-gray-600">
               Chargement des journaux d&apos;audit...
             </span>

@@ -26,7 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Upload, ChevronDown, Loader2 } from "lucide-react";
+import { Plus, Upload, ChevronDown } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -58,74 +59,57 @@ import { toastNotification } from "@/components/toast-notification";
 
 // Form validation schema
 const employeeFormSchema = z.object({
-  firstName: z
-    .string()
-    .min(2, "Le prénom doit contenir au moins 2 caractères")
-    .max(20, "Le prénom ne peut pas dépasser 20 caractères"),
-  lastName: z
-    .string()
-    .min(2, "Le nom doit contenir au moins 2 caractères")
-    .max(20, "Le nom ne peut pas dépasser 20 caractères"),
-  sex: z.enum(["Male", "Female"], {
-    message: "Veuillez sélectionner le sexe",
+  firstName: z.string().min(2, "Min 2 caractères").max(20, "Max 20 caractères"),
+  lastName: z.string().min(2, "Min 2 caractères").max(20, "Max 20 caractères"),
+  sex: z.enum(["M", "F"], {
+    message: "Sélectionner le sexe",
   }),
-  placeOfBirth: z
-    .string()
-    .min(2, "Le lieu de naissance est requis")
-    .max(20, "Le lieu de naissance ne peut pas dépasser 20 caractères"),
+  placeOfBirth: z.string().min(2, "Requis").max(20, "Max 20 caractères"),
   dateOfBirth: z
     .date({
-      message: "La date de naissance est requise",
+      message: "Date requise",
     })
-    .max(
-      new Date("2005-12-31"),
-      "La date de naissance ne peut pas être après 2005"
-    )
-    .min(
-      new Date("1940-01-01"),
-      "La date de naissance ne peut pas être avant 1940"
-    ),
-  education: z
-    .string()
-    .min(2, "La formation est requise")
-    .max(30, "La formation ne peut pas dépasser 30 caractères"),
-  maritalStatus: z.enum(["Single", "Married", "Divorced", "Widowed"], {
-    message: "Veuillez sélectionner l'état civil",
+    .max(new Date("2005-12-31"), "Date trop récente")
+    .min(new Date("1940-01-01"), "Date trop ancienne"),
+  education: z.string().min(2, "Requis").max(30, "Max 30 caractères"),
+  maritalStatus: z.enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"], {
+    message: "Sélectionner l'état civil",
   }),
-  function: z
-    .string()
-    .min(2, "La fonction est requise")
-    .max(25, "La fonction ne peut pas dépasser 25 caractères"),
-  deploymentLocation: z
-    .string()
-    .min(2, "Le lieu de déploiement est requis")
-    .max(30, "Le lieu de déploiement ne peut pas dépasser 30 caractères"),
-  residence: z
-    .string()
-    .min(2, "La résidence est requise")
-    .max(25, "La résidence ne peut pas dépasser 25 caractères"),
+  function: z.string().min(2, "Requis").max(25, "Max 25 caractères"),
+  deploymentLocation: z.string().min(2, "Requis").max(30, "Max 30 caractères"),
+  residence: z.string().min(2, "Requis").max(25, "Max 25 caractères"),
   phone: z
     .string()
     .regex(
-      /^\+243\s?[0-9\s]{8,12}$/,
-      "Format invalide. Le numéro doit commencer par +243 suivi de 8-10 chiffres"
+      /^\+[1-9]\d{1,3}\s?[0-9\s]{6,14}$/,
+      "Format: +XXX suivi de 6-12 chiffres"
     )
     .refine(
       (val) => {
-        // Remove all spaces and check if it has exactly 8-10 digits after +243
-        const digitsOnly = val.replace(/\s/g, "").replace("+243", "");
+        // Remove all spaces and check if it has the right format for international numbers
+        const digitsOnly = val.replace(/\s/g, "");
+        const match = digitsOnly.match(/^\+([1-9]\d{1,3})(\d+)$/);
+        if (!match) return false;
+
+        const countryCode = match[1];
+        const number = match[2];
+
+        // Country code should be 1-4 digits, number should be 6-12 digits
         return (
-          digitsOnly.length >= 8 &&
-          digitsOnly.length <= 10 &&
-          /^\d+$/.test(digitsOnly)
+          countryCode.length >= 1 &&
+          countryCode.length <= 4 &&
+          number.length >= 6 &&
+          number.length <= 12
         );
       },
-      { message: "Le numéro doit contenir 8-10 chiffres après +243" }
+      { message: "Format international requis: +XXX suivi de 6-12 chiffres" }
     ),
   email: z
     .string()
-    .email("Veuillez entrer une adresse email valide")
-    .max(30, "L'adresse email ne peut pas dépasser 30 caractères"),
+    .email("Email invalide")
+    .max(30, "Max 30 caractères")
+    .optional()
+    .or(z.literal("")),
   photoUrl: z.string().optional(),
 });
 
@@ -223,17 +207,17 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
         form.reset({
           firstName: employee.firstName || "",
           lastName: employee.lastName || "",
-          sex: employee.sex as "Male" | "Female" | undefined,
+          sex: employee.sex as "M" | "F" | undefined,
           placeOfBirth: employee.placeOfBirth || "",
           dateOfBirth: employee.dateOfBirth
             ? new Date(employee.dateOfBirth)
             : undefined,
           education: employee.education || "",
           maritalStatus: employee.maritalStatus as
-            | "Single"
-            | "Married"
-            | "Divorced"
-            | "Widowed"
+            | "Célibataire"
+            | "Marié(e)"
+            | "Divorcé(e)"
+            | "Veuf(ve)"
             | undefined,
           function: employee.function || "",
           deploymentLocation: employee.deploymentLocation || "",
@@ -353,7 +337,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
         const normalizedData = {
           ...data,
           phone: data.phone.replace(/\s/g, ""),
-          email: data.email.toLowerCase().trim(),
+          email: data.email ? data.email.toLowerCase().trim() : null,
         };
 
         if (mode === "edit" && employee?.id) {
@@ -484,7 +468,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -504,7 +490,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -525,11 +513,13 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Male">Homme</SelectItem>
-                              <SelectItem value="Female">Femme</SelectItem>
+                              <SelectItem value="M">Homme</SelectItem>
+                              <SelectItem value="F">Femme</SelectItem>
                             </SelectContent>
                           </Select>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -582,7 +572,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               />
                             </PopoverContent>
                           </Popover>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -598,11 +590,13 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                           <FormControl>
                             <Input
                               placeholder="Goma"
-                              maxLength={20}
+                              maxLength={80}
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -625,17 +619,19 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Single">
+                              <SelectItem value="Célibataire">
                                 Célibataire
                               </SelectItem>
-                              <SelectItem value="Married">Marié(e)</SelectItem>
-                              <SelectItem value="Divorced">
+                              <SelectItem value="Marié(e)">Marié(e)</SelectItem>
+                              <SelectItem value="Divorcé(e)">
                                 Divorcé(e)
                               </SelectItem>
-                              <SelectItem value="Widowed">Veuf(ve)</SelectItem>
+                              <SelectItem value="Veuf(ve)">Veuf(ve)</SelectItem>
                             </SelectContent>
                           </Select>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -667,7 +663,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
 
                             {isUploading ? (
                               <>
-                                <Loader2 className="h-8 w-8 text-blue-600 animate-spin mb-1" />
+                                <Spinner className="h-8 w-8 text-blue-600 mb-1" />
                                 <div className="text-blue-600 font-medium">
                                   Téléchargement en cours...
                                 </div>
@@ -745,7 +741,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -761,11 +759,13 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                           <FormControl>
                             <Input
                               placeholder="Licence en Administration Publique"
-                              maxLength={30}
+                              maxLength={100}
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -785,7 +785,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -811,7 +813,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -826,12 +830,14 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                           </FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="+243 970 123 456"
+                              placeholder="+243 970 123 456 ou +250 788 123 456"
                               maxLength={20}
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -847,11 +853,13 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                           <FormControl>
                             <Input
                               placeholder="Goma - Himbi"
-                              maxLength={25}
+                              maxLength={80}
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -876,13 +884,13 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                   >
                     {isUploading ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Spinner className="w-4 h-4 mr-2" />
                         Téléchargement en cours...
                       </>
                     ) : createEmployeeMutation.isPending ||
                       updateEmployeeMutation.isPending ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Spinner className="w-4 h-4 mr-2" />
                         {mode === "edit"
                           ? "Modification en cours..."
                           : "Ajout en cours..."}

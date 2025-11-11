@@ -25,7 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -87,7 +88,7 @@ const editDetaineeFormSchema = z.object({
     .max(25, "La profession ne peut pas dépasser 25 caractères")
     .optional(),
   maritalStatus: z
-    .enum(["Single", "Married", "Divorced", "Widowed"])
+    .enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"])
     .optional(),
   maritalDetails: z
     .string()
@@ -104,19 +105,28 @@ const editDetaineeFormSchema = z.object({
   phoneNumber: z
     .string()
     .regex(
-      /^\+243\s?[0-9\s]{8,12}$/,
-      "Format invalide. Le numéro doit commencer par +243 suivi de 8-10 chiffres"
+      /^\+[1-9]\d{1,3}\s?[0-9\s]{6,14}$/,
+      "Format invalide. Le numéro doit être au format international (+XXX suivi de 6-12 chiffres)"
     )
     .refine(
       (val) => {
-        const digitsOnly = val.replace(/\s/g, "").replace("+243", "");
+        // Remove all spaces and check if it has the right format for international numbers
+        const digitsOnly = val.replace(/\s/g, "");
+        const match = digitsOnly.match(/^\+([1-9]\d{1,3})(\d+)$/);
+        if (!match) return false;
+
+        const countryCode = match[1];
+        const number = match[2];
+
+        // Country code should be 1-4 digits, number should be 6-12 digits
         return (
-          digitsOnly.length >= 8 &&
-          digitsOnly.length <= 10 &&
-          /^\d+$/.test(digitsOnly)
+          countryCode.length >= 1 &&
+          countryCode.length <= 4 &&
+          number.length >= 6 &&
+          number.length <= 12
         );
       },
-      { message: "Le numéro doit contenir 8-10 chiffres après +243" }
+      { message: "Format international requis: +XXX suivi de 6-12 chiffres" }
     )
     .optional()
     .or(z.literal("")),
@@ -239,10 +249,10 @@ export function EditDetaineeForm({
         education: detainee.education || "",
         employment: detainee.employment || "",
         maritalStatus: detainee.maritalStatus as
-          | "Single"
-          | "Married"
-          | "Divorced"
-          | "Widowed"
+          | "Célibataire"
+          | "Marié(e)"
+          | "Divorcé(e)"
+          | "Veuf(ve)"
           | undefined,
         maritalDetails: detainee.maritalDetails || "",
         religion: detainee.religion || "",
@@ -506,10 +516,14 @@ export function EditDetaineeForm({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Single">Célibataire</SelectItem>
-                            <SelectItem value="Married">Marié(e)</SelectItem>
-                            <SelectItem value="Divorced">Divorcé(e)</SelectItem>
-                            <SelectItem value="Widowed">Veuf(ve)</SelectItem>
+                            <SelectItem value="Célibataire">
+                              Célibataire
+                            </SelectItem>
+                            <SelectItem value="Marié(e)">Marié(e)</SelectItem>
+                            <SelectItem value="Divorcé(e)">
+                              Divorcé(e)
+                            </SelectItem>
+                            <SelectItem value="Veuf(ve)">Veuf(ve)</SelectItem>
                           </SelectContent>
                         </Select>
                         <div className="h-[24px]">
@@ -637,7 +651,7 @@ export function EditDetaineeForm({
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="+243 970 123 456"
+                            placeholder="+243 970 123 456 ou +250 788 123 456"
                             maxLength={20}
                             {...field}
                           />
@@ -1023,7 +1037,7 @@ export function EditDetaineeForm({
                 </Button>
                 <Button type="submit" disabled={updateDetainee.isPending}>
                   {updateDetainee.isPending && (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Spinner className="w-4 h-4 mr-2" />
                   )}
                   Modifier le détenu
                 </Button>

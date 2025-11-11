@@ -37,7 +37,7 @@ export const createEmployeeSchema = z.object({
         .min(2, "Le nom doit contenir au moins 2 caractères")
         .max(20, "Le nom ne peut pas dépasser 20 caractères")
     ),
-  sex: z.enum(["Male", "Female"], {
+  sex: z.enum(["M", "F"], {
     message: "Veuillez sélectionner le sexe",
   }),
   placeOfBirth: z
@@ -70,7 +70,7 @@ export const createEmployeeSchema = z.object({
         .min(2, "La formation est requise")
         .max(30, "La formation ne peut pas dépasser 30 caractères")
     ),
-  maritalStatus: z.enum(["Single", "Married", "Divorced", "Widowed"], {
+  maritalStatus: z.enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"], {
     message: "Veuillez sélectionner l'état civil",
   }),
   function: z
@@ -103,14 +103,23 @@ export const createEmployeeSchema = z.object({
   phone: z
     .string()
     .regex(
-      /^\+243[0-9]{8,10}$/,
-      "Format invalide. Le numéro doit être au format +243XXXXXXXX (8-10 chiffres)"
+      /^\+[1-9]\d{1,3}[0-9]{6,12}$/,
+      "Format invalide. Le numéro doit être au format international (+XXX suivi de 6-12 chiffres)"
     ),
   email: z
     .string()
-    .max(30, "L'adresse email ne peut pas dépasser 30 caractères")
-    .email("Veuillez entrer une adresse email valide")
-    .transform((val) => val.toLowerCase().trim()),
+    .transform((val) => val.toLowerCase().trim())
+    .transform((val) => (val === "" ? null : val)) // Convert empty string to null
+    .refine(
+      (val) => val === null || z.string().email().safeParse(val).success,
+      "Veuillez entrer une adresse email valide"
+    )
+    .refine(
+      (val) => val === null || val.length <= 30,
+      "L'adresse email ne peut pas dépasser 30 caractères"
+    )
+    .nullable()
+    .optional(),
   photoUrl: z.string().optional(),
 });
 
@@ -127,7 +136,7 @@ export const updateEmployeeSchema = z.object({
     .transform((val) => val.trim())
     .pipe(z.string().min(2).max(20))
     .optional(),
-  sex: z.enum(["Male", "Female"]).optional(),
+  sex: z.enum(["M", "F"]).optional(),
   placeOfBirth: z
     .string()
     .transform((val) => val.trim())
@@ -150,7 +159,7 @@ export const updateEmployeeSchema = z.object({
     .pipe(z.string().min(2).max(30))
     .optional(),
   maritalStatus: z
-    .enum(["Single", "Married", "Divorced", "Widowed"])
+    .enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"])
     .optional(),
   function: z
     .string()
@@ -170,15 +179,23 @@ export const updateEmployeeSchema = z.object({
   phone: z
     .string()
     .regex(
-      /^\+243[0-9]{8,10}$/,
-      "Format invalide. Le numéro doit être au format +243XXXXXXXX (8-10 chiffres)"
+      /^\+[1-9]\d{1,3}[0-9]{6,12}$/,
+      "Format invalide. Le numéro doit être au format international (+XXX suivi de 6-12 chiffres)"
     )
     .optional(),
   email: z
     .string()
-    .max(30, "L'adresse email ne peut pas dépasser 30 caractères")
-    .email("Veuillez entrer une adresse email valide")
     .transform((val) => val.toLowerCase().trim())
+    .transform((val) => (val === "" ? null : val)) // Convert empty string to null
+    .refine(
+      (val) => val === null || z.string().email().safeParse(val).success,
+      "Veuillez entrer une adresse email valide"
+    )
+    .refine(
+      (val) => val === null || val.length <= 30,
+      "L'adresse email ne peut pas dépasser 30 caractères"
+    )
+    .nullable()
     .optional(),
   photoUrl: z.string().optional(),
   isActive: z.boolean().optional(),

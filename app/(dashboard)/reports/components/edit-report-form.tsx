@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/rich-text-editor";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -152,8 +153,8 @@ export function EditReportForm({
                       />
                     </FormControl>
                     <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
+                      <FormMessage className="text-xs" />
+                    </div>
                   </FormItem>
                 )}
               />
@@ -202,8 +203,8 @@ export function EditReportForm({
                         </PopoverContent>
                       </Popover>
                       <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
+                        <FormMessage className="text-xs" />
+                      </div>
                     </FormItem>
                   )}
                 />
@@ -220,8 +221,8 @@ export function EditReportForm({
                         <Input placeholder="Goma Centre" {...field} />
                       </FormControl>
                       <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
+                        <FormMessage className="text-xs" />
+                      </div>
                     </FormItem>
                   )}
                 />
@@ -245,8 +246,8 @@ export function EditReportForm({
                       />
                     </FormControl>
                     <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
+                      <FormMessage className="text-xs" />
+                    </div>
                   </FormItem>
                 )}
               />
@@ -263,7 +264,7 @@ export function EditReportForm({
                 <Button type="submit" disabled={updateReport.isPending}>
                   {updateReport.isPending ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <Spinner className="w-4 h-4 mr-2" />
                       Modification...
                     </>
                   ) : (

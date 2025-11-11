@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Eye, EyeOff, Mail, Lock, AlertCircle, LogIn } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toastNotification } from "@/components/toast-notification";
@@ -216,7 +217,7 @@ export function SignInForm() {
               >
                 {isLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    <Spinner className="w-4 h-4 mr-2" />
                     Connexion en cours...
                   </>
                 ) : (

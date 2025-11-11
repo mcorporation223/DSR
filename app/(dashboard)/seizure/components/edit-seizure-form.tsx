@@ -24,7 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -497,7 +498,7 @@ export function EditSeizureForm({
                 </Button>
                 <Button type="submit" disabled={updateSeizure.isPending}>
                   {updateSeizure.isPending && (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Spinner className="w-4 h-4 mr-2" />
                   )}
                   Modifier la saisie
                 </Button>

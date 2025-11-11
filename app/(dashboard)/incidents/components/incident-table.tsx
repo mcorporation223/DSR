@@ -5,12 +5,12 @@ import {
   MoreHorizontal,
   Search,
   Filter,
-  Loader2,
   Edit,
   Trash2,
   Eye,
   Inbox,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -508,7 +508,7 @@ export function IncidentTable() {
       {isLoading && (
         <div className="flex items-center justify-center h-64">
           <div className="flex items-center space-x-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Spinner className="w-4 h-4" />
             <span className="text-gray-600">Chargement des incidents...</span>
           </div>
         </div>

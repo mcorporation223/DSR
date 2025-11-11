@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { trpc } from "@/components/trpc-provider";
 import { toastNotification } from "@/components/toast-notification";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { formatDetailedDateTime } from "@/lib/formatters";
 
 interface Statement {
@@ -118,7 +118,7 @@ export function DeleteStatementDialog({
           >
             {deleteStatementMutation.isPending ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Spinner className="w-4 h-4 mr-2" />
                 Suppression...
               </>
             ) : (

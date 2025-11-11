@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { trpc } from "@/components/trpc-provider";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 import { formatDate } from "@/lib/formatters";
 
 interface Incident {
@@ -114,7 +114,7 @@ export function DeleteIncidentDialog({
           >
             {deleteIncidentMutation.isPending ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Spinner className="w-4 h-4 mr-2" />
                 Suppression...
               </>
             ) : (
