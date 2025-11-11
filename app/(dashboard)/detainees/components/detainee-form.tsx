@@ -104,19 +104,28 @@ const detaineeFormSchema = z.object({
   phoneNumber: z
     .string()
     .regex(
-      /^\+243\s?[0-9\s]{8,12}$/,
-      "Format invalide. Le numéro doit commencer par +243 suivi de 8-10 chiffres"
+      /^\+[1-9]\d{1,3}\s?[0-9\s]{6,14}$/,
+      "Format invalide. Le numéro doit être au format international (+XXX suivi de 6-12 chiffres)"
     )
     .refine(
       (val) => {
-        const digitsOnly = val.replace(/\s/g, "").replace("+243", "");
+        // Remove all spaces and check if it has the right format for international numbers
+        const digitsOnly = val.replace(/\s/g, "");
+        const match = digitsOnly.match(/^\+([1-9]\d{1,3})(\d+)$/);
+        if (!match) return false;
+
+        const countryCode = match[1];
+        const number = match[2];
+
+        // Country code should be 1-4 digits, number should be 6-12 digits
         return (
-          digitsOnly.length >= 8 &&
-          digitsOnly.length <= 10 &&
-          /^\d+$/.test(digitsOnly)
+          countryCode.length >= 1 &&
+          countryCode.length <= 4 &&
+          number.length >= 6 &&
+          number.length <= 12
         );
       },
-      { message: "Le numéro doit contenir 8-10 chiffres après +243" }
+      { message: "Format international requis: +XXX suivi de 6-12 chiffres" }
     )
     .optional()
     .or(z.literal("")),
@@ -568,7 +577,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="+243 970 123 456"
+                            placeholder="+243 970 123 456 ou +250 788 123 456"
                             maxLength={20}
                             {...field}
                           />

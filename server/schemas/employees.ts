@@ -103,22 +103,23 @@ export const createEmployeeSchema = z.object({
   phone: z
     .string()
     .regex(
-      /^\+243[0-9]{8,10}$/,
-      "Format invalide. Le numéro doit être au format +243XXXXXXXX (8-10 chiffres)"
+      /^\+[1-9]\d{1,3}[0-9]{6,12}$/,
+      "Format invalide. Le numéro doit être au format international (+XXX suivi de 6-12 chiffres)"
     ),
   email: z
     .string()
     .transform((val) => val.toLowerCase().trim())
+    .transform((val) => (val === "" ? null : val)) // Convert empty string to null
     .refine(
-      (val) => val === "" || z.string().email().safeParse(val).success,
+      (val) => val === null || z.string().email().safeParse(val).success,
       "Veuillez entrer une adresse email valide"
     )
     .refine(
-      (val) => val.length <= 30,
+      (val) => val === null || val.length <= 30,
       "L'adresse email ne peut pas dépasser 30 caractères"
     )
-    .optional()
-    .or(z.literal("")),
+    .nullable()
+    .optional(),
   photoUrl: z.string().optional(),
 });
 
@@ -178,21 +179,23 @@ export const updateEmployeeSchema = z.object({
   phone: z
     .string()
     .regex(
-      /^\+243[0-9]{8,10}$/,
-      "Format invalide. Le numéro doit être au format +243XXXXXXXX (8-10 chiffres)"
+      /^\+[1-9]\d{1,3}[0-9]{6,12}$/,
+      "Format invalide. Le numéro doit être au format international (+XXX suivi de 6-12 chiffres)"
     )
     .optional(),
   email: z
     .string()
     .transform((val) => val.toLowerCase().trim())
+    .transform((val) => (val === "" ? null : val)) // Convert empty string to null
     .refine(
-      (val) => val === "" || z.string().email().safeParse(val).success,
+      (val) => val === null || z.string().email().safeParse(val).success,
       "Veuillez entrer une adresse email valide"
     )
     .refine(
-      (val) => val.length <= 30,
+      (val) => val === null || val.length <= 30,
       "L'adresse email ne peut pas dépasser 30 caractères"
     )
+    .nullable()
     .optional(),
   photoUrl: z.string().optional(),
   isActive: z.boolean().optional(),

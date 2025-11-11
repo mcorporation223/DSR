@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AlertTriangle } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { trpc } from "@/components/trpc-provider";
 import { toastNotification } from "@/components/toast-notification";

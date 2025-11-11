@@ -80,18 +80,29 @@ const employeeFormSchema = z.object({
   residence: z.string().min(2, "Requis").max(25, "Max 25 caractères"),
   phone: z
     .string()
-    .regex(/^\+243\s?[0-9\s]{8,12}$/, "Format: +243 suivi de 8-10 chiffres")
+    .regex(
+      /^\+[1-9]\d{1,3}\s?[0-9\s]{6,14}$/,
+      "Format: +XXX suivi de 6-12 chiffres"
+    )
     .refine(
       (val) => {
-        // Remove all spaces and check if it has exactly 8-10 digits after +243
-        const digitsOnly = val.replace(/\s/g, "").replace("+243", "");
+        // Remove all spaces and check if it has the right format for international numbers
+        const digitsOnly = val.replace(/\s/g, "");
+        const match = digitsOnly.match(/^\+([1-9]\d{1,3})(\d+)$/);
+        if (!match) return false;
+
+        const countryCode = match[1];
+        const number = match[2];
+
+        // Country code should be 1-4 digits, number should be 6-12 digits
         return (
-          digitsOnly.length >= 8 &&
-          digitsOnly.length <= 10 &&
-          /^\d+$/.test(digitsOnly)
+          countryCode.length >= 1 &&
+          countryCode.length <= 4 &&
+          number.length >= 6 &&
+          number.length <= 12
         );
       },
-      { message: "8-10 chiffres requis après +243" }
+      { message: "Format international requis: +XXX suivi de 6-12 chiffres" }
     ),
   email: z
     .string()
@@ -326,7 +337,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
         const normalizedData = {
           ...data,
           phone: data.phone.replace(/\s/g, ""),
-          email: data.email ? data.email.toLowerCase().trim() : "",
+          email: data.email ? data.email.toLowerCase().trim() : null,
         };
 
         if (mode === "edit" && employee?.id) {
@@ -457,7 +468,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -477,7 +490,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -502,7 +517,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               <SelectItem value="F">Femme</SelectItem>
                             </SelectContent>
                           </Select>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -555,7 +572,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               />
                             </PopoverContent>
                           </Popover>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -575,7 +594,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -608,7 +629,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               <SelectItem value="Veuf(ve)">Veuf(ve)</SelectItem>
                             </SelectContent>
                           </Select>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -718,7 +741,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -738,7 +763,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -758,7 +785,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -784,7 +813,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -799,12 +830,14 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                           </FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="+243 970 123 456"
+                              placeholder="+243 970 123 456 ou +250 788 123 456"
                               maxLength={20}
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />
@@ -824,7 +857,9 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                               {...field}
                             />
                           </FormControl>
-                          <FormMessage className="text-xs" />
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs " />
+                          </div>
                         </FormItem>
                       )}
                     />

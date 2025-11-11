@@ -117,8 +117,8 @@ export const createDetaineeSchema = z.object({
   phoneNumber: z
     .string()
     .regex(
-      /^\+243[0-9]{8,10}$/,
-      "Format invalide. Le numéro doit être au format +243XXXXXXXX (8-10 chiffres)"
+      /^\+[1-9]\d{1,3}[0-9]{6,12}$/,
+      "Format invalide. Le numéro doit être au format international (+XXX suivi de 6-12 chiffres)"
     )
     .optional()
     .or(z.literal("")),
@@ -238,8 +238,8 @@ export const updateDetaineeSchema = z.object({
   phoneNumber: z
     .string()
     .regex(
-      /^\+243[0-9]{8,10}$/,
-      "Format invalide. Le numéro doit être au format +243XXXXXXXX (8-10 chiffres)"
+      /^\+[1-9]\d{1,3}[0-9]{6,12}$/,
+      "Format invalide. Le numéro doit être au format international (+XXX suivi de 6-12 chiffres)"
     )
     .optional()
     .or(z.literal("")),
