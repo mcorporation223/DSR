@@ -85,12 +85,14 @@ export const detaineesRouter = router({
           sex: detainees.sex,
           placeOfBirth: detainees.placeOfBirth,
           dateOfBirth: detainees.dateOfBirth,
+          photoUrl: detainees.photoUrl,
           parentNames: detainees.parentNames,
           originNeighborhood: detainees.originNeighborhood,
           education: detainees.education,
           employment: detainees.employment,
           maritalStatus: detainees.maritalStatus,
-          maritalDetails: detainees.maritalDetails,
+          numberOfChildren: detainees.numberOfChildren,
+          spouseName: detainees.spouseName,
           religion: detainees.religion,
           residence: detainees.residence,
           phoneNumber: detainees.phoneNumber,
@@ -98,14 +100,12 @@ export const detaineesRouter = router({
           arrestDate: detainees.arrestDate,
           arrestLocation: detainees.arrestLocation,
           arrestedBy: detainees.arrestedBy,
-          arrestTime: detainees.arrestTime,
           arrivalDate: detainees.arrivalDate,
-          arrivalTime: detainees.arrivalTime,
-          cellNumber: detainees.cellNumber,
           location: detainees.location,
           status: detainees.status,
           releaseDate: detainees.releaseDate,
           releaseReason: detainees.releaseReason,
+          transferDestination: detainees.transferDestination,
           createdBy: detainees.createdBy,
           updatedBy: detainees.updatedBy,
           createdAt: detainees.createdAt,
@@ -150,12 +150,14 @@ export const detaineesRouter = router({
           sex: detainees.sex,
           placeOfBirth: detainees.placeOfBirth,
           dateOfBirth: detainees.dateOfBirth,
+          photoUrl: detainees.photoUrl,
           parentNames: detainees.parentNames,
           originNeighborhood: detainees.originNeighborhood,
           education: detainees.education,
           employment: detainees.employment,
           maritalStatus: detainees.maritalStatus,
-          maritalDetails: detainees.maritalDetails,
+          numberOfChildren: detainees.numberOfChildren,
+          spouseName: detainees.spouseName,
           religion: detainees.religion,
           residence: detainees.residence,
           phoneNumber: detainees.phoneNumber,
@@ -163,14 +165,12 @@ export const detaineesRouter = router({
           arrestDate: detainees.arrestDate,
           arrestLocation: detainees.arrestLocation,
           arrestedBy: detainees.arrestedBy,
-          arrestTime: detainees.arrestTime,
           arrivalDate: detainees.arrivalDate,
-          arrivalTime: detainees.arrivalTime,
-          cellNumber: detainees.cellNumber,
           location: detainees.location,
           status: detainees.status,
           releaseDate: detainees.releaseDate,
           releaseReason: detainees.releaseReason,
+          transferDestination: detainees.transferDestination,
           createdBy: detainees.createdBy,
           updatedBy: detainees.updatedBy,
           createdAt: detainees.createdAt,
@@ -196,23 +196,6 @@ export const detaineesRouter = router({
   create: protectedProcedure
     .input(createDetaineeSchema)
     .mutation(async ({ ctx, input }) => {
-      // Helper function to convert time string (HH:mm) to timestamp
-      const timeStringToTimestamp = (
-        timeStr: string | undefined
-      ): Date | undefined => {
-        if (!timeStr) return undefined;
-        const today = new Date();
-        const [hours, minutes] = timeStr.split(":").map(Number);
-        const timestamp = new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          today.getDate(),
-          hours,
-          minutes
-        );
-        return timestamp;
-      };
-
       // Wrap detainee creation and audit log in a transaction
       const result = await ctx.db.transaction(async (tx) => {
         // 1. Insert detainee
@@ -224,12 +207,14 @@ export const detaineesRouter = router({
             sex: input.sex,
             placeOfBirth: input.placeOfBirth,
             dateOfBirth: input.dateOfBirth,
+            photoUrl: input.photoUrl,
             parentNames: input.parentNames,
             originNeighborhood: input.originNeighborhood,
             education: input.education,
             employment: input.employment,
             maritalStatus: input.maritalStatus,
-            maritalDetails: input.maritalDetails,
+            numberOfChildren: input.numberOfChildren,
+            spouseName: input.spouseName,
             religion: input.religion,
             residence: input.residence,
             phoneNumber: input.phoneNumber?.replace(/\s/g, ""), // Strip spaces from phone
@@ -237,10 +222,7 @@ export const detaineesRouter = router({
             arrestDate: input.arrestDate,
             arrestLocation: input.arrestLocation,
             arrestedBy: input.arrestedBy,
-            arrestTime: timeStringToTimestamp(input.arrestTime),
             arrivalDate: input.arrivalDate,
-            arrivalTime: timeStringToTimestamp(input.arrivalTime),
-            cellNumber: input.cellNumber,
             location: input.location,
             status: "in_custody",
             createdBy: ctx.user.id,
@@ -288,33 +270,10 @@ export const detaineesRouter = router({
         });
       }
 
-      // Helper function to convert time string (HH:mm) to timestamp
-      const timeStringToTimestamp = (
-        timeStr: string | undefined
-      ): Date | undefined => {
-        if (!timeStr) return undefined;
-        const today = new Date();
-        const [hours, minutes] = timeStr.split(":").map(Number);
-        const timestamp = new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          today.getDate(),
-          hours,
-          minutes
-        );
-        return timestamp;
-      };
-
-      // Process time fields and phone number
+      // Process phone number
       const processedUpdateData = {
         ...updateData,
         phoneNumber: updateData.phoneNumber?.replace(/\s/g, ""), // Strip spaces from phone
-        arrestTime: updateData.arrestTime
-          ? timeStringToTimestamp(updateData.arrestTime)
-          : undefined,
-        arrivalTime: updateData.arrivalTime
-          ? timeStringToTimestamp(updateData.arrivalTime)
-          : undefined,
       };
 
       // Wrap detainee update and audit log in a transaction

@@ -1,6 +1,6 @@
 {
-  "id": "f6807d1f-a125-4eaf-933b-bcd501eec805",
-  "prevId": "bf1892c0-ad81-49fe-ab6c-e6657d4aa8af",
+  "id": "3e562bd7-6e4c-42d6-9187-a4fc47f74485",
+  "prevId": "f6807d1f-a125-4eaf-933b-bcd501eec805",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -299,6 +299,12 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'in_custody'"
+        },
+        "transfer_destination": {
+          "name": "transfer_destination",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
         },
         "release_date": {
           "name": "release_date",

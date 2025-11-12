@@ -11,7 +11,7 @@ export interface UploadResponse {
 
 export async function uploadFile(
   file: File,
-  type: "employee" | "document" | "statement"
+  type: "employee" | "detainee" | "document" | "statement"
 ): Promise<UploadResponse> {
   try {
     const formData = new FormData();

@@ -80,6 +80,7 @@ export const detainees = pgTable(
     sex: varchar("sex", { length: 10 }).notNull(), // Sex (Male/Female/Other)
     placeOfBirth: varchar("place_of_birth", { length: 255 }), // Lieu de naissance
     dateOfBirth: timestamp("date_of_birth"), // Date de naissance
+    photoUrl: varchar("photo_url", { length: 500 }), // Photo URL or path
 
     // Family Information
     parentNames: text("parent_names"), // Details of parents (nom)
@@ -89,7 +90,8 @@ export const detainees = pgTable(
     education: text("education"), // Etude faites (Education completed)
     employment: varchar("employment", { length: 255 }), // Employment/Job
     maritalStatus: varchar("marital_status", { length: 50 }), // Etat civil (Single/Married/etc.)
-    maritalDetails: text("marital_details"), // married to, kids details
+    numberOfChildren: integer("number_of_children"), // Number of children
+    spouseName: varchar("spouse_name", { length: 100 }), // Spouse name
     religion: varchar("religion", { length: 100 }), // Religion
 
     // Contact Information
@@ -103,14 +105,12 @@ export const detainees = pgTable(
     arrestDate: timestamp("arrest_date"), // Date yakukamatiwa
     arrestLocation: varchar("arrest_location", { length: 255 }), // provenance (lieu/territoire)
     arrestedBy: varchar("arrested_by", { length: 255 }), // menye alimuleta (who brought them)
-    arrestTime: timestamp("arrest_time"), // time taken
     arrivalDate: timestamp("arrival_date"), // date arrived at detention facility
-    arrivalTime: timestamp("arrival_time"), // time arrived
 
     // Custody Information
-    cellNumber: varchar("cell_number", { length: 50 }), // cells
     location: varchar("location", { length: 255 }), // location (facility/wing)
     status: varchar("status", { length: 50 }).default("in_custody"), // status (in_custody, released, transferred, etc.)
+    transferDestination: varchar("transfer_destination", { length: 255 }), // Where the detainee was transferred to
 
     // Release Information
     releaseDate: timestamp("release_date"),

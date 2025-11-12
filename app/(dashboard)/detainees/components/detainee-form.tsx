@@ -18,7 +18,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { TimePicker } from "@/components/time-picker";
 import {
   Select,
   SelectContent,
@@ -26,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, ChevronDown } from "lucide-react";
+import { Plus, ChevronDown, Upload } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,74 +37,46 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import Image from "next/image";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { trpc } from "@/components/trpc-provider";
+import { uploadFile, validateImageFile, deleteFile } from "@/lib/upload-utils";
 import { toastNotification } from "@/components/toast-notification";
+import { FormDescription } from "@/components/ui/form";
 
 // Form validation schema matching the database schema
 const detaineeFormSchema = z.object({
-  firstName: z
-    .string()
-    .min(2, "Le prénom doit contenir au moins 2 caractères")
-    .max(20, "Le prénom ne peut pas dépasser 20 caractères"),
-  lastName: z
-    .string()
-    .min(2, "Le nom doit contenir au moins 2 caractères")
-    .max(20, "Le nom ne peut pas dépasser 20 caractères"),
+  firstName: z.string().min(2, "Min 2 caractères").max(20, "Max 20 caractères"),
+  lastName: z.string().min(2, "Min 2 caractères").max(20, "Max 20 caractères"),
   sex: z.enum(["Male", "Female"], {
-    message: "Veuillez sélectionner le sexe",
+    message: "Sélectionner le sexe",
   }),
-  placeOfBirth: z
-    .string()
-    .min(2, "Le lieu de naissance est requis")
-    .max(20, "Le lieu de naissance ne peut pas dépasser 20 caractères"),
+  placeOfBirth: z.string().min(2, "Requis").max(20, "Max 20 caractères"),
   dateOfBirth: z
     .date({
-      message: "La date de naissance est requise",
+      message: "Date requise",
     })
-    .max(new Date(), "La date de naissance ne peut pas être dans le futur")
-    .min(
-      new Date("1940-01-01"),
-      "La date de naissance ne peut pas être avant 1940"
-    ),
-  parentNames: z
-    .string()
-    .max(100, "Les noms des parents ne peuvent pas dépasser 100 caractères")
-    .optional(),
-  originNeighborhood: z
-    .string()
-    .max(25, "Le quartier d'origine ne peut pas dépasser 25 caractères")
-    .optional(),
-  education: z
-    .string()
-    .max(30, "L'éducation ne peut pas dépasser 30 caractères")
-    .optional(),
-  employment: z
-    .string()
-    .max(25, "La profession ne peut pas dépasser 25 caractères")
-    .optional(),
+    .max(new Date(), "Date trop récente")
+    .min(new Date("1940-01-01"), "Date trop ancienne"),
+  photoUrl: z.string().optional(),
+  parentNames: z.string().max(100, "Max 100 caractères").optional(),
+  originNeighborhood: z.string().max(25, "Max 25 caractères").optional(),
+  education: z.string().max(30, "Max 30 caractères").optional(),
+  employment: z.string().max(25, "Max 25 caractères").optional(),
   maritalStatus: z
     .enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"])
     .optional(),
-  maritalDetails: z
-    .string()
-    .max(100, "Les détails maritaux ne peuvent pas dépasser 100 caractères")
-    .optional(),
-  religion: z
-    .string()
-    .max(25, "La religion ne peut pas dépasser 25 caractères")
-    .optional(),
-  residence: z
-    .string()
-    .min(2, "La résidence est requise")
-    .max(25, "La résidence ne peut pas dépasser 25 caractères"),
+  numberOfChildren: z.number().int().min(0).max(50).optional(),
+  spouseName: z.string().max(100, "Max 100 caractères").optional(),
+  religion: z.string().max(25, "Max 25 caractères").optional(),
+  residence: z.string().min(2, "Requis").max(25, "Max 25 caractères"),
   phoneNumber: z
     .string()
     .regex(
       /^\+[1-9]\d{1,3}\s?[0-9\s]{6,14}$/,
-      "Format invalide. Le numéro doit être au format international (+XXX suivi de 6-12 chiffres)"
+      "Format: +XXX suivi de 6-12 chiffres"
     )
     .refine(
       (val) => {
@@ -129,32 +100,14 @@ const detaineeFormSchema = z.object({
     )
     .optional()
     .or(z.literal("")),
-  crimeReason: z
-    .string()
-    .min(2, "Le motif du crime est requis")
-    .max(200, "Le motif du crime ne peut pas dépasser 200 caractères"),
+  crimeReason: z.string().min(2, "Requis").max(200, "Max 200 caractères"),
   arrestDate: z.date({
-    message: "La date d'arrestation est requise",
+    message: "Date requise",
   }),
-  arrestLocation: z
-    .string()
-    .min(2, "Le lieu d'arrestation est requis")
-    .max(100, "Le lieu d'arrestation ne peut pas dépasser 100 caractères"),
-  arrestedBy: z
-    .string()
-    .max(100, "Le nom de l'agent ne peut pas dépasser 100 caractères")
-    .optional(),
-  arrestTime: z.string().optional(),
+  arrestLocation: z.string().min(2, "Requis").max(100, "Max 100 caractères"),
+  arrestedBy: z.string().max(100, "Max 100 caractères").optional(),
   arrivalDate: z.date().optional(),
-  arrivalTime: z.string().optional(),
-  cellNumber: z
-    .string()
-    .max(20, "Le numéro de cellule ne peut pas dépasser 20 caractères")
-    .optional(),
-  location: z
-    .string()
-    .max(50, "L'emplacement ne peut pas dépasser 50 caractères")
-    .optional(),
+  location: z.string().max(50, "Max 50 caractères").optional(),
 });
 
 type DetaineeFormValues = z.infer<typeof detaineeFormSchema>;
@@ -165,20 +118,36 @@ interface DetaineeFormProps {
 
 export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Track uploaded files for cleanup
+  const [newlyUploadedFile, setNewlyUploadedFile] = useState<string | null>(
+    null
+  );
 
   // TRPC mutation for creating detainee
   const createDetainee = trpc.detainees.create.useMutation({
     onSuccess: () => {
       toastNotification.success("Succès", "Détenu ajouté avec succès");
       form.reset();
+      setImagePreview(null);
+      setNewlyUploadedFile(null); // Clear tracking on success
       setIsOpen(false);
       onSuccess?.();
     },
-    onError: (error) => {
+    onError: async (error) => {
       toastNotification.error(
         "Erreur",
         error.message || "Erreur lors de l'ajout du détenu"
       );
+
+      // Delete newly uploaded file if detainee creation fails
+      if (newlyUploadedFile) {
+        await deleteFile(newlyUploadedFile);
+        setNewlyUploadedFile(null);
+      }
     },
   });
 
@@ -190,12 +159,14 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
       sex: undefined,
       placeOfBirth: "",
       dateOfBirth: undefined,
+      photoUrl: "",
       parentNames: "",
       originNeighborhood: "",
       education: "",
       employment: "",
       maritalStatus: undefined,
-      maritalDetails: "",
+      numberOfChildren: undefined,
+      spouseName: "",
       religion: "",
       residence: "",
       phoneNumber: "",
@@ -203,27 +174,104 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
       arrestDate: undefined,
       arrestLocation: "",
       arrestedBy: "",
-      arrestTime: "", // Time field as string
-      arrivalDate: undefined, // Date field
-      arrivalTime: "", // Time field as string
-      cellNumber: "",
+      arrivalDate: undefined,
       location: "",
     },
   });
 
-  const handleSubmit = (data: DetaineeFormValues) => {
-    // Normalize phone number by stripping all spaces before submission
-    const normalizedData = {
-      ...data,
-      phoneNumber: data.phoneNumber
-        ? data.phoneNumber.replace(/\s/g, "")
-        : undefined,
-    };
-    createDetainee.mutate(normalizedData);
+  const handleSubmit = async (data: DetaineeFormValues) => {
+    // Prevent submission while file is uploading
+    if (isUploading) {
+      toastNotification.error(
+        "Upload en cours",
+        "Veuillez attendre que le téléchargement de la photo soit terminé"
+      );
+      return;
+    }
+
+    try {
+      // Normalize phone number by stripping all spaces before submission
+      const normalizedData = {
+        ...data,
+        phoneNumber: data.phoneNumber
+          ? data.phoneNumber.replace(/\s/g, "")
+          : undefined,
+      };
+      await createDetainee.mutateAsync(normalizedData);
+    } catch {
+      // Error is handled by the mutation
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      toastNotification.error("Erreur de fichier", validationError);
+      return;
+    }
+    setIsUploading(true);
+
+    try {
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setImagePreview(result);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload file
+      const uploadResult = await uploadFile(file, "detainee");
+
+      if (uploadResult.success && uploadResult.filePath) {
+        // Delete previously uploaded file if user uploads again before submitting
+        if (newlyUploadedFile && newlyUploadedFile !== uploadResult.filePath) {
+          await deleteFile(newlyUploadedFile);
+        }
+
+        // Track this newly uploaded file for potential cleanup
+        setNewlyUploadedFile(uploadResult.filePath);
+
+        form.setValue("photoUrl", uploadResult.filePath);
+        toastNotification.success("Succès", "Photo téléchargée avec succès!");
+      } else {
+        throw new Error(uploadResult.error || "Échec du téléchargement");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      toastNotification.error(
+        "Erreur de téléchargement",
+        "Erreur lors du téléchargement de la photo"
+      );
+      setImagePreview(null);
+      form.setValue("photoUrl", "");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDialogClose = async (open: boolean) => {
+    // If closing the dialog and there's a newly uploaded file that wasn't saved
+    if (!open && newlyUploadedFile) {
+      await deleteFile(newlyUploadedFile);
+      setNewlyUploadedFile(null);
+    }
+
+    setIsOpen(open);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleDialogClose}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="w-4 h-4 mr-2" />
@@ -256,7 +304,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -268,15 +316,17 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                     name="lastName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-700">Nom</FormLabel>
+                        <FormLabel className="text-gray-700">
+                          Nom de famille
+                        </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Mukamba"
+                            placeholder="Bemba Mukamba"
                             maxLength={20}
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -303,7 +353,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             <SelectItem value="Female">Femme</SelectItem>
                           </SelectContent>
                         </Select>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -355,9 +405,93 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             />
                           </PopoverContent>
                         </Popover>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Photo Upload Field */}
+                  <FormField
+                    control={form.control}
+                    name="photoUrl"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel className="text-gray-700">
+                          Photo du détenu
+                        </FormLabel>
+                        <FormControl>
+                          <Input type="hidden" {...field} />
+                        </FormControl>
+                        <div
+                          className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors min-h-[120px]"
+                          onClick={triggerFileInput}
+                        >
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="hidden"
+                            id="image-upload"
+                            disabled={isUploading}
+                          />
+
+                          {isUploading ? (
+                            <>
+                              <Spinner className="h-8 w-8 text-blue-600 mb-1" />
+                              <div className="text-blue-600 font-medium">
+                                Téléchargement en cours...
+                              </div>
+                            </>
+                          ) : !imagePreview ? (
+                            <>
+                              <Upload className="h-8 w-8 text-gray-400 mb-1" />
+                              <div className="text-blue-600 font-medium">
+                                Télécharger une photo
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                PNG, JPG, GIF jusqu&apos;à 5MB
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full flex items-center gap-4">
+                              <div className="relative w-24 h-24 flex-shrink-0 rounded-md overflow-hidden">
+                                <Image
+                                  src={imagePreview}
+                                  alt="Aperçu de la photo du détenu"
+                                  fill
+                                  className="object-cover"
+                                  onError={() => {
+                                    console.error(
+                                      "Failed to load image:",
+                                      imagePreview
+                                    );
+                                    setImagePreview(null);
+                                  }}
+                                  unoptimized={imagePreview.startsWith(
+                                    "/api/files"
+                                  )}
+                                />
+                              </div>
+                              <div className="flex-1 flex flex-col">
+                                <p className="text-sm font-medium truncate">
+                                  Photo sélectionnée
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Cliquez pour changer la photo
+                                </p>
+                              </div>
+                              <Upload className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <FormDescription>
+                          Cliquez sur la zone pour télécharger une photo du
+                          détenu.
+                        </FormDescription>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -373,7 +507,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                         <FormControl>
                           <Input placeholder="Goma" maxLength={15} {...field} />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -395,7 +529,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -417,7 +551,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -452,7 +586,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             <SelectItem value="Veuf(ve)">Veuf(ve)</SelectItem>
                           </SelectContent>
                         </Select>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -461,20 +595,51 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
 
                   <FormField
                     control={form.control}
-                    name="maritalDetails"
+                    name="numberOfChildren"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
-                          Détails état civil
+                          Nombre d&apos;enfants
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Nombre d'enfants, conjoint..."
-                            maxLength={50}
+                            type="number"
+                            min="0"
+                            max="50"
+                            placeholder="0"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value
+                                  ? parseInt(e.target.value)
+                                  : undefined
+                              )
+                            }
+                          />
+                        </FormControl>
+                        <div className="max-h-[0.5rem]">
+                          <FormMessage className="text-xs" />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="spouseName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">
+                          Nom du conjoint(e)
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Marie Mukamba"
+                            maxLength={100}
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -496,7 +661,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -518,7 +683,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -538,7 +703,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -560,7 +725,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -571,18 +736,18 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                     control={form.control}
                     name="phoneNumber"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="md:col-span-2">
                         <FormLabel className="text-gray-700">
                           Téléphone
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="+243 970 123 456 ou +250 788 123 456"
+                            placeholder="+243 970 123 456"
                             maxLength={20}
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -604,7 +769,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                     control={form.control}
                     name="crimeReason"
                     render={({ field }) => (
-                      <FormItem className="md:col-span-2">
+                      <FormItem>
                         <FormLabel className="text-gray-700">
                           Motif du crime
                         </FormLabel>
@@ -615,7 +780,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -625,7 +790,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                     control={form.control}
                     name="arrestLocation"
                     render={({ field }) => (
-                      <FormItem className="md:col-span-2">
+                      <FormItem>
                         <FormLabel className="text-gray-700">
                           Lieu d&apos;arrestation
                         </FormLabel>
@@ -636,7 +801,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -681,29 +846,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             />
                           </PopoverContent>
                         </Popover>
-                        <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="arrestTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-700">
-                          Heure d&apos;arrestation
-                        </FormLabel>
-                        <FormControl>
-                          <TimePicker
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Sélectionner l'heure d'arrestation"
-                          />
-                        </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -714,7 +857,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                     control={form.control}
                     name="arrestedBy"
                     render={({ field }) => (
-                      <FormItem className="md:col-span-2">
+                      <FormItem>
                         <FormLabel className="text-gray-700">
                           Arrêté par
                         </FormLabel>
@@ -725,7 +868,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -771,47 +914,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             />
                           </PopoverContent>
                         </Popover>
-                        <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="arrivalTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-700">
-                          Heure d&apos;arrivée
-                        </FormLabel>
-                        <FormControl>
-                          <TimePicker
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Sélectionner l'heure d'arrivée"
-                          />
-                        </FormControl>
-                        <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="cellNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-700">
-                          Numéro de cellule
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="C-12" maxLength={10} {...field} />
-                        </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -827,13 +930,9 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                           Localisation
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Bloc A"
-                            maxLength={10}
-                            {...field}
-                          />
+                          <Input placeholder="Goma" maxLength={10} {...field} />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>

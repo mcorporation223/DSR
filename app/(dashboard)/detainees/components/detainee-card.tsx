@@ -91,7 +91,8 @@ export function DetaineeCard({
                   : detainee.sex === "Female"
                   ? "Femme"
                   : "N/A"}
-                {detainee.cellNumber && ` • Cellule ${detainee.cellNumber}`}
+                {(detainee.cellNumber as string) &&
+                  ` • Cellule ${detainee.cellNumber as string}`}
               </p>
             </div>
           </div>

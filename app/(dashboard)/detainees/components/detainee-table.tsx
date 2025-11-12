@@ -33,6 +33,8 @@ import { DetaineeForm } from "./detainee-form";
 import { EditDetaineeForm } from "./edit-detainee-form";
 import { DeleteDetaineeDialog } from "./delete-detainee-dialog";
 import { DetaineeDetailsDialog } from "./detainee-details-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getFileUrl } from "@/lib/upload-utils";
 
 // Types for detainee data - Updated to match database schema exactly
 interface Detainee extends Record<string, unknown> {
@@ -42,12 +44,14 @@ interface Detainee extends Record<string, unknown> {
   sex: string;
   placeOfBirth: string | null;
   dateOfBirth: string | null; // This comes as string from the database
+  photoUrl: string | null;
   parentNames: string | null;
   originNeighborhood: string | null;
   education: string | null;
   employment: string | null;
   maritalStatus: string | null;
-  maritalDetails: string | null;
+  numberOfChildren: number | null;
+  spouseName: string | null;
   religion: string | null;
   residence: string | null;
   phoneNumber: string | null;
@@ -55,13 +59,12 @@ interface Detainee extends Record<string, unknown> {
   arrestDate: string | null; // This comes as string from the database
   arrestLocation: string | null;
   arrestedBy: string | null;
-  arrestTime: string | null;
-  arrivalTime: string | null;
-  cellNumber: string | null;
+  arrivalDate: string | null;
   location: string | null;
   status: string | null;
   releaseDate: string | null;
   releaseReason: string | null;
+  transferDestination: string | null;
   createdBy: string | null;
   updatedBy: string | null;
   createdAt: string; // This comes as string from the database
@@ -258,8 +261,12 @@ export function DetaineesTable() {
 
         return (
           <div className="flex items-center gap-3">
-            {/* <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
               <Avatar className="h-8 w-8">
+                <AvatarImage
+                  src={detainee.photoUrl ? getFileUrl(detainee.photoUrl) : ""}
+                  alt={fullName || "User"}
+                />
                 <AvatarFallback className="bg-gray-200">
                   {fullName
                     ? fullName
@@ -271,7 +278,7 @@ export function DetaineesTable() {
                     : "D"}
                 </AvatarFallback>
               </Avatar>
-            </div> */}
+            </div>
             <div
               className="text-sm font-medium text-gray-900 truncate max-w-[140px]"
               title={fullName}
@@ -391,16 +398,6 @@ export function DetaineesTable() {
           className="text-sm text-gray-900 truncate block max-w-[150px]"
           title={(value as string) || "N/A"}
         >
-          {(value as string) || "N/A"}
-        </span>
-      ),
-    },
-    {
-      key: "cellNumber",
-      label: "Cellule",
-      className: "w-24",
-      render: (value) => (
-        <span className="text-sm text-gray-900">
           {(value as string) || "N/A"}
         </span>
       ),
@@ -688,7 +685,6 @@ export const detaineeColumnConfig = [
   { key: "crimeReason", label: "Motif d'Arrestation", hideable: false },
   { key: "arrestDate", label: "Date d'Arrestation", hideable: false },
   { key: "arrestLocation", label: "Lieu d'Arrestation", hideable: true },
-  { key: "cellNumber", label: "Cellule", hideable: true },
   { key: "status", label: "Statut", hideable: false },
   { key: "phoneNumber", label: "Téléphone", hideable: true },
   { key: "religion", label: "Religion", hideable: true },

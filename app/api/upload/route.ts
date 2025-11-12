@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File;
-    const type = formData.get("type") as string; // 'employee', 'document', 'statement'
+    const type = formData.get("type") as string; // 'employee', 'detainee', 'document', 'statement'
 
     if (!file) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
@@ -62,6 +62,9 @@ export async function POST(request: NextRequest) {
       case "employee":
         uploadDir = path.join(uploadsBasePath, "employees", "photos");
         break;
+      case "detainee":
+        uploadDir = path.join(uploadsBasePath, "detainees", "photos");
+        break;
       case "document":
         uploadDir = path.join(uploadsBasePath, "documents");
         break;
@@ -89,6 +92,8 @@ export async function POST(request: NextRequest) {
     const relativePath =
       type === "employee"
         ? path.join("employees/photos", fileName)
+        : type === "detainee"
+        ? path.join("detainees/photos", fileName)
         : type === "statement"
         ? path.join("statements", fileName)
         : path.join(type, fileName);

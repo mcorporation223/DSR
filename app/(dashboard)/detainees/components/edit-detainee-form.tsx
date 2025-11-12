@@ -17,7 +17,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { TimePicker } from "@/components/time-picker";
 import {
   Select,
   SelectContent,
@@ -25,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Upload } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,76 +36,51 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { trpc } from "@/components/trpc-provider";
+import {
+  uploadFile,
+  validateImageFile,
+  getFileUrl,
+  deleteFile,
+} from "@/lib/upload-utils";
 import { toastNotification } from "@/components/toast-notification";
 import type { Detainee } from "./detainee-table";
-import { Textarea } from "@/components/ui/textarea";
 
 // Form validation schema matching the database schema
 const editDetaineeFormSchema = z.object({
-  firstName: z
-    .string()
-    .min(2, "Le prénom doit contenir au moins 2 caractères")
-    .max(20, "Le prénom ne peut pas dépasser 20 caractères"),
-  lastName: z
-    .string()
-    .min(2, "Le nom doit contenir au moins 2 caractères")
-    .max(20, "Le nom ne peut pas dépasser 20 caractères"),
+  firstName: z.string().min(2, "Min 2 caractères").max(20, "Max 20 caractères"),
+  lastName: z.string().min(2, "Min 2 caractères").max(20, "Max 20 caractères"),
   sex: z.enum(["Male", "Female"], {
-    message: "Veuillez sélectionner le sexe",
+    message: "Sélectionner le sexe",
   }),
-  placeOfBirth: z
-    .string()
-    .min(2, "Le lieu de naissance est requis")
-    .max(20, "Le lieu de naissance ne peut pas dépasser 20 caractères"),
+  placeOfBirth: z.string().min(2, "Requis").max(20, "Max 20 caractères"),
   dateOfBirth: z
     .date({
-      message: "La date de naissance est requise",
+      message: "Date requise",
     })
-    .max(new Date(), "La date de naissance ne peut pas être dans le futur")
-    .min(
-      new Date("1940-01-01"),
-      "La date de naissance ne peut pas être avant 1940"
-    ),
-  parentNames: z
-    .string()
-    .max(100, "Les noms des parents ne peuvent pas dépasser 100 caractères")
-    .optional(),
-  originNeighborhood: z
-    .string()
-    .max(25, "Le quartier d'origine ne peut pas dépasser 25 caractères")
-    .optional(),
-  education: z
-    .string()
-    .max(30, "L'éducation ne peut pas dépasser 30 caractères")
-    .optional(),
-  employment: z
-    .string()
-    .max(25, "La profession ne peut pas dépasser 25 caractères")
-    .optional(),
+    .max(new Date(), "Date trop récente")
+    .min(new Date("1940-01-01"), "Date trop ancienne"),
+  photoUrl: z.string().optional(),
+  parentNames: z.string().max(100, "Max 100 caractères").optional(),
+  originNeighborhood: z.string().max(25, "Max 25 caractères").optional(),
+  education: z.string().max(30, "Max 30 caractères").optional(),
+  employment: z.string().max(25, "Max 25 caractères").optional(),
   maritalStatus: z
     .enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"])
     .optional(),
-  maritalDetails: z
-    .string()
-    .max(100, "Les détails maritaux ne peuvent pas dépasser 100 caractères")
-    .optional(),
-  religion: z
-    .string()
-    .max(25, "La religion ne peut pas dépasser 25 caractères")
-    .optional(),
-  residence: z
-    .string()
-    .min(2, "La résidence est requise")
-    .max(25, "La résidence ne peut pas dépasser 25 caractères"),
+  numberOfChildren: z.number().int().min(0).max(50).optional(),
+  spouseName: z.string().max(100, "Max 100 caractères").optional(),
+  religion: z.string().max(25, "Max 25 caractères").optional(),
+  residence: z.string().min(2, "Requis").max(25, "Max 25 caractères"),
   phoneNumber: z
     .string()
     .regex(
       /^\+[1-9]\d{1,3}\s?[0-9\s]{6,14}$/,
-      "Format invalide. Le numéro doit être au format international (+XXX suivi de 6-12 chiffres)"
+      "Format: +XXX suivi de 6-12 chiffres"
     )
     .refine(
       (val) => {
@@ -130,38 +104,22 @@ const editDetaineeFormSchema = z.object({
     )
     .optional()
     .or(z.literal("")),
-  crimeReason: z
-    .string()
-    .min(2, "Le motif du crime est requis")
-    .max(200, "Le motif du crime ne peut pas dépasser 200 caractères"),
+  crimeReason: z.string().min(2, "Requis").max(200, "Max 200 caractères"),
   arrestDate: z.date({
-    message: "La date d'arrestation est requise",
+    message: "Date requise",
   }),
-  arrestLocation: z
-    .string()
-    .min(2, "Le lieu d'arrestation est requis")
-    .max(100, "Le lieu d'arrestation ne peut pas dépasser 100 caractères"),
-  arrestedBy: z
-    .string()
-    .max(100, "Le nom de l'agent ne peut pas dépasser 100 caractères")
-    .optional(),
-  arrestTime: z.string().optional(),
+  arrestLocation: z.string().min(2, "Requis").max(100, "Max 100 caractères"),
+  arrestedBy: z.string().max(100, "Max 100 caractères").optional(),
   arrivalDate: z.date().optional(),
-  arrivalTime: z.string().optional(),
-  cellNumber: z
-    .string()
-    .max(20, "Le numéro de cellule ne peut pas dépasser 20 caractères")
-    .optional(),
-  location: z
-    .string()
-    .max(50, "L'emplacement ne peut pas dépasser 50 caractères")
-    .optional(),
-  status: z.enum(["in_custody", "released", "transferred"]).optional(),
+  location: z.string().max(50, "Max 50 caractères").optional(),
+
+  // Status management fields
+  status: z.enum(["in_custody", "released", "transferred"], {
+    message: "Sélectionner le statut",
+  }),
   releaseDate: z.date().optional(),
-  releaseReason: z
-    .string()
-    .max(200, "Le motif de libération ne peut pas dépasser 200 caractères")
-    .optional(),
+  releaseReason: z.string().max(500, "Max 500 caractères").optional(),
+  transferDestination: z.string().max(255, "Max 255 caractères").optional(),
 });
 
 type EditDetaineeFormValues = z.infer<typeof editDetaineeFormSchema>;
@@ -179,18 +137,42 @@ export function EditDetaineeForm({
   onClose,
   onSuccess,
 }: EditDetaineeFormProps) {
+  // Image upload state
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Track uploaded files for cleanup
+  const [newlyUploadedFile, setNewlyUploadedFile] = useState<string | null>(
+    null
+  );
+  const [originalPhotoUrl, setOriginalPhotoUrl] = useState<string | null>(null);
+
   // TRPC mutation for updating detainee
   const updateDetainee = trpc.detainees.update.useMutation({
     onSuccess: () => {
       toastNotification.success("Succès", "Détenu modifié avec succès");
+      setNewlyUploadedFile(null); // Clear tracking on success
+      setOriginalPhotoUrl(form.getValues("photoUrl") || null); // Update original to current
       onClose();
       onSuccess?.();
     },
-    onError: (error) => {
+    onError: async (error) => {
       toastNotification.error(
         "Erreur",
         error.message || "Erreur lors de la modification du détenu"
       );
+
+      // Delete newly uploaded file if detainee update fails
+      if (newlyUploadedFile) {
+        await deleteFile(newlyUploadedFile);
+        setNewlyUploadedFile(null);
+
+        // Restore original photo URL in form
+        if (originalPhotoUrl) {
+          form.setValue("photoUrl", originalPhotoUrl);
+        }
+      }
     },
   });
 
@@ -202,12 +184,14 @@ export function EditDetaineeForm({
       sex: undefined,
       placeOfBirth: "",
       dateOfBirth: undefined,
+      photoUrl: "",
       parentNames: "",
       originNeighborhood: "",
       education: "",
       employment: "",
       maritalStatus: undefined,
-      maritalDetails: "",
+      numberOfChildren: undefined,
+      spouseName: "",
       religion: "",
       residence: "",
       phoneNumber: "",
@@ -215,27 +199,103 @@ export function EditDetaineeForm({
       arrestDate: undefined,
       arrestLocation: "",
       arrestedBy: "",
-      arrestTime: "",
       arrivalDate: undefined,
-      arrivalTime: "",
-      cellNumber: "",
       location: "",
       status: undefined,
       releaseDate: undefined,
       releaseReason: "",
+      transferDestination: "",
     },
   });
 
-  // Helper function to convert timestamp to time string (HH:mm)
-  const timestampToTimeString = (timestamp: string | null): string => {
-    if (!timestamp) return "";
-    const date = new Date(timestamp);
-    return format(date, "HH:mm");
+  // Image upload functions
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      toastNotification.error("Erreur de fichier", validationError);
+      return;
+    }
+    setIsUploading(true);
+
+    try {
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setImagePreview(result);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload file
+      const uploadResult = await uploadFile(file, "detainee");
+
+      if (uploadResult.success && uploadResult.filePath) {
+        // Delete old file when replacing (edit mode only)
+        if (originalPhotoUrl && originalPhotoUrl !== uploadResult.filePath) {
+          await deleteFile(originalPhotoUrl);
+        }
+
+        // Delete previously uploaded file if user uploads again before submitting
+        if (newlyUploadedFile && newlyUploadedFile !== uploadResult.filePath) {
+          await deleteFile(newlyUploadedFile);
+        }
+
+        // Track this newly uploaded file for potential cleanup
+        setNewlyUploadedFile(uploadResult.filePath);
+
+        form.setValue("photoUrl", uploadResult.filePath);
+        toastNotification.success("Succès", "Photo téléchargée avec succès!");
+      } else {
+        throw new Error(uploadResult.error || "Échec du téléchargement");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      toastNotification.error(
+        "Erreur de téléchargement",
+        "Erreur lors du téléchargement de la photo"
+      );
+      setImagePreview(null);
+      form.setValue("photoUrl", "");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // Reset and populate form when detainee changes
   useEffect(() => {
     if (detainee && isOpen) {
+      // Set image preview for existing detainee photo
+      if (detainee.photoUrl) {
+        const imageUrl = getFileUrl(detainee.photoUrl as string);
+        // Track original photo URL for cleanup when replacing
+        setOriginalPhotoUrl(detainee.photoUrl as string);
+
+        // Test if the image can be loaded
+        const img = document.createElement("img");
+        img.onload = () => setImagePreview(imageUrl);
+        img.onerror = () => {
+          console.warn("Failed to load detainee photo:", imageUrl);
+          setImagePreview(null);
+        };
+        img.src = imageUrl;
+      } else {
+        setImagePreview(null);
+        setOriginalPhotoUrl(null);
+      }
+
+      // Reset newly uploaded file tracking when loading a detainee
+      setNewlyUploadedFile(null);
+
       form.reset({
         firstName: detainee.firstName || "",
         lastName: detainee.lastName || "",
@@ -244,6 +304,7 @@ export function EditDetaineeForm({
         dateOfBirth: detainee.dateOfBirth
           ? new Date(detainee.dateOfBirth)
           : undefined,
+        photoUrl: (detainee.photoUrl as string) || "",
         parentNames: detainee.parentNames || "",
         originNeighborhood: detainee.originNeighborhood || "",
         education: detainee.education || "",
@@ -254,7 +315,8 @@ export function EditDetaineeForm({
           | "Divorcé(e)"
           | "Veuf(ve)"
           | undefined,
-        maritalDetails: detainee.maritalDetails || "",
+        numberOfChildren: (detainee.numberOfChildren as number) || undefined,
+        spouseName: (detainee.spouseName as string) || "",
         religion: detainee.religion || "",
         residence: detainee.residence || "",
         phoneNumber: detainee.phoneNumber || "",
@@ -264,12 +326,9 @@ export function EditDetaineeForm({
           : undefined,
         arrestLocation: detainee.arrestLocation || "",
         arrestedBy: detainee.arrestedBy || "",
-        arrestTime: timestampToTimeString(detainee.arrestTime as string),
         arrivalDate: detainee.arrivalDate
           ? new Date(detainee.arrivalDate as string)
           : undefined,
-        arrivalTime: timestampToTimeString(detainee.arrivalTime as string),
-        cellNumber: detainee.cellNumber || "",
         location: detainee.location || "",
         status: detainee.status as
           | "in_custody"
@@ -280,6 +339,7 @@ export function EditDetaineeForm({
           ? new Date(detainee.releaseDate)
           : undefined,
         releaseReason: detainee.releaseReason || "",
+        transferDestination: detainee.transferDestination || "",
       });
     }
   }, [detainee, isOpen, form]);
@@ -287,13 +347,33 @@ export function EditDetaineeForm({
   const handleSubmit = (data: EditDetaineeFormValues) => {
     if (!detainee) return;
 
+    // Prevent submission while file is uploading
+    if (isUploading) {
+      toastNotification.error(
+        "Upload en cours",
+        "Veuillez attendre que le téléchargement de la photo soit terminé"
+      );
+      return;
+    }
+
     updateDetainee.mutate({
       id: detainee.id,
       ...data,
     });
   };
 
-  const handleClose = () => {
+  const handleClose = async () => {
+    // If there's a newly uploaded file that wasn't saved, delete it
+    if (newlyUploadedFile && newlyUploadedFile !== originalPhotoUrl) {
+      await deleteFile(newlyUploadedFile);
+      setNewlyUploadedFile(null);
+
+      // Restore original photo in form
+      if (originalPhotoUrl) {
+        form.setValue("photoUrl", originalPhotoUrl);
+      }
+    }
+
     form.reset();
     onClose();
   };
@@ -330,7 +410,7 @@ export function EditDetaineeForm({
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -350,7 +430,7 @@ export function EditDetaineeForm({
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -377,7 +457,7 @@ export function EditDetaineeForm({
                             <SelectItem value="Female">Femme</SelectItem>
                           </SelectContent>
                         </Select>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -429,7 +509,93 @@ export function EditDetaineeForm({
                             />
                           </PopoverContent>
                         </Popover>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
+                          <FormMessage className="text-xs" />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Photo Upload Field */}
+                  <FormField
+                    control={form.control}
+                    name="photoUrl"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel className="text-gray-700">
+                          Photo du détenu
+                        </FormLabel>
+                        <FormControl>
+                          <Input type="hidden" {...field} />
+                        </FormControl>
+                        <div
+                          className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors min-h-[120px]"
+                          onClick={triggerFileInput}
+                        >
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="hidden"
+                            id="image-upload"
+                            disabled={isUploading}
+                          />
+
+                          {isUploading ? (
+                            <>
+                              <Spinner className="h-8 w-8 text-blue-600 mb-1" />
+                              <div className="text-blue-600 font-medium">
+                                Téléchargement en cours...
+                              </div>
+                            </>
+                          ) : !imagePreview ? (
+                            <>
+                              <Upload className="h-8 w-8 text-gray-400 mb-1" />
+                              <div className="text-blue-600 font-medium">
+                                Télécharger une photo
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                PNG, JPG, GIF jusqu&apos;à 5MB
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full flex items-center gap-4">
+                              <div className="relative w-24 h-24 flex-shrink-0 rounded-md overflow-hidden">
+                                <Image
+                                  src={imagePreview}
+                                  alt="Aperçu de la photo du détenu"
+                                  fill
+                                  className="object-cover"
+                                  onError={() => {
+                                    console.error(
+                                      "Failed to load image:",
+                                      imagePreview
+                                    );
+                                    setImagePreview(null);
+                                  }}
+                                  unoptimized={imagePreview.startsWith(
+                                    "/api/files"
+                                  )}
+                                />
+                              </div>
+                              <div className="flex-1 flex flex-col">
+                                <p className="text-sm font-medium truncate">
+                                  Photo sélectionnée
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Cliquez pour changer la photo
+                                </p>
+                              </div>
+                              <Upload className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Cliquez sur la zone pour télécharger une photo du
+                          détenu.
+                        </div>
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -447,7 +613,7 @@ export function EditDetaineeForm({
                         <FormControl>
                           <Input placeholder="Goma" maxLength={20} {...field} />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -469,7 +635,7 @@ export function EditDetaineeForm({
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -491,7 +657,7 @@ export function EditDetaineeForm({
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -526,7 +692,7 @@ export function EditDetaineeForm({
                             <SelectItem value="Veuf(ve)">Veuf(ve)</SelectItem>
                           </SelectContent>
                         </Select>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -535,20 +701,51 @@ export function EditDetaineeForm({
 
                   <FormField
                     control={form.control}
-                    name="maritalDetails"
+                    name="numberOfChildren"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
-                          Détails état civil
+                          Nombre d&apos;enfants
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Nombre d'enfants, conjoint..."
+                            type="number"
+                            min="0"
+                            max="50"
+                            placeholder="0"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(
+                                e.target.value
+                                  ? parseInt(e.target.value)
+                                  : undefined
+                              )
+                            }
+                          />
+                        </FormControl>
+                        <div className="max-h-[0.5rem]">
+                          <FormMessage className="text-xs" />
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="spouseName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">
+                          Nom du conjoint(e)
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Marie Mukamba"
                             maxLength={100}
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -570,7 +767,7 @@ export function EditDetaineeForm({
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -592,7 +789,7 @@ export function EditDetaineeForm({
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -612,7 +809,7 @@ export function EditDetaineeForm({
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -634,7 +831,7 @@ export function EditDetaineeForm({
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -645,18 +842,18 @@ export function EditDetaineeForm({
                     control={form.control}
                     name="phoneNumber"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="md:col-span-2">
                         <FormLabel className="text-gray-700">
                           Téléphone
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="+243 970 123 456 ou +250 788 123 456"
+                            placeholder="+243 970 123 456"
                             maxLength={20}
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -678,7 +875,7 @@ export function EditDetaineeForm({
                     control={form.control}
                     name="crimeReason"
                     render={({ field }) => (
-                      <FormItem className="md:col-span-2">
+                      <FormItem>
                         <FormLabel className="text-gray-700">
                           Motif du crime
                         </FormLabel>
@@ -689,7 +886,7 @@ export function EditDetaineeForm({
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -699,7 +896,7 @@ export function EditDetaineeForm({
                     control={form.control}
                     name="arrestLocation"
                     render={({ field }) => (
-                      <FormItem className="md:col-span-2">
+                      <FormItem>
                         <FormLabel className="text-gray-700">
                           Lieu d&apos;arrestation
                         </FormLabel>
@@ -710,7 +907,7 @@ export function EditDetaineeForm({
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -755,29 +952,7 @@ export function EditDetaineeForm({
                             />
                           </PopoverContent>
                         </Popover>
-                        <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="arrestTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-700">
-                          Heure d&apos;arrestation
-                        </FormLabel>
-                        <FormControl>
-                          <TimePicker
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Sélectionner l'heure d'arrestation"
-                          />
-                        </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -788,7 +963,7 @@ export function EditDetaineeForm({
                     control={form.control}
                     name="arrestedBy"
                     render={({ field }) => (
-                      <FormItem className="md:col-span-2">
+                      <FormItem>
                         <FormLabel className="text-gray-700">
                           Arrêté par
                         </FormLabel>
@@ -799,7 +974,7 @@ export function EditDetaineeForm({
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -845,47 +1020,7 @@ export function EditDetaineeForm({
                             />
                           </PopoverContent>
                         </Popover>
-                        <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="arrivalTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-700">
-                          Heure d&apos;arrivée
-                        </FormLabel>
-                        <FormControl>
-                          <TimePicker
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Sélectionner l'heure d'arrivée"
-                          />
-                        </FormControl>
-                        <div className="h-[24px]">
-                          <FormMessage className="text-xs" />
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="cellNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-gray-700">
-                          Numéro de cellule
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="C-12" maxLength={20} {...field} />
-                        </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
@@ -907,13 +1042,24 @@ export function EditDetaineeForm({
                             {...field}
                           />
                         </FormControl>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
                     )}
                   />
+                </div>
+              </div>
 
+              {/* Status Management Section */}
+              <div className="space-y-4">
+                <div className="border-t border-gray-200 pt-4">
+                  <h3 className="text-lg font-semibold text-gray-900 px-4">
+                    Gestion du statut
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
                   <FormField
                     control={form.control}
                     name="status"
@@ -939,21 +1085,21 @@ export function EditDetaineeForm({
                             </SelectItem>
                           </SelectContent>
                         </Select>
-                        <div className="h-[24px]">
+                        <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
                         </div>
                       </FormItem>
                     )}
                   />
 
-                  {/* Show release fields if status is released */}
+                  {/* Show release fields when status is "released" */}
                   {form.watch("status") === "released" && (
                     <>
                       <FormField
                         control={form.control}
                         name="releaseDate"
                         render={({ field }) => (
-                          <FormItem className="md:col-span-2">
+                          <FormItem>
                             <FormLabel className="text-gray-700">
                               Date de libération
                             </FormLabel>
@@ -971,9 +1117,7 @@ export function EditDetaineeForm({
                                         locale: fr,
                                       })
                                     ) : (
-                                      <span>
-                                        Sélectionner date de libération
-                                      </span>
+                                      <span>Sélectionner une date</span>
                                     )}
                                     <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
                                   </Button>
@@ -987,13 +1131,15 @@ export function EditDetaineeForm({
                                   mode="single"
                                   selected={field.value}
                                   onSelect={field.onChange}
-                                  captionLayout="dropdown"
-                                  disabled={(date) => date > new Date()}
+                                  disabled={(date) =>
+                                    date > new Date() ||
+                                    date < new Date("1900-01-01")
+                                  }
                                   initialFocus
                                 />
                               </PopoverContent>
                             </Popover>
-                            <div className="h-[24px]">
+                            <div className="max-h-[0.5rem]">
                               <FormMessage className="text-xs" />
                             </div>
                           </FormItem>
@@ -1004,24 +1150,49 @@ export function EditDetaineeForm({
                         control={form.control}
                         name="releaseReason"
                         render={({ field }) => (
-                          <FormItem className="md:col-span-2">
+                          <FormItem>
                             <FormLabel className="text-gray-700">
                               Motif de libération
                             </FormLabel>
                             <FormControl>
-                              <Textarea
-                                placeholder="Fin de peine, acquittement..."
-                                maxLength={200}
+                              <Input
+                                placeholder="Acquittement, libération conditionnelle..."
+                                maxLength={500}
                                 {...field}
                               />
                             </FormControl>
-                            <div className="h-[24px]">
+                            <div className="max-h-[0.5rem]">
                               <FormMessage className="text-xs" />
                             </div>
                           </FormItem>
                         )}
                       />
                     </>
+                  )}
+
+                  {/* Show transfer destination when status is "transferred" */}
+                  {form.watch("status") === "transferred" && (
+                    <FormField
+                      control={form.control}
+                      name="transferDestination"
+                      render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                          <FormLabel className="text-gray-700">
+                            Destination de transfert
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Prison centrale de Goma, Tribunal de..."
+                              maxLength={255}
+                              {...field}
+                            />
+                          </FormControl>
+                          <div className="max-h-[0.5rem]">
+                            <FormMessage className="text-xs" />
+                          </div>
+                        </FormItem>
+                      )}
+                    />
                   )}
                 </div>
               </div>
@@ -1035,11 +1206,23 @@ export function EditDetaineeForm({
                 >
                   Annuler
                 </Button>
-                <Button type="submit" disabled={updateDetainee.isPending}>
-                  {updateDetainee.isPending && (
-                    <Spinner className="w-4 h-4 mr-2" />
+                <Button
+                  type="submit"
+                  disabled={updateDetainee.isPending || isUploading}
+                >
+                  {isUploading ? (
+                    <>
+                      <Spinner className="w-4 h-4 mr-2" />
+                      Téléchargement en cours...
+                    </>
+                  ) : updateDetainee.isPending ? (
+                    <>
+                      <Spinner className="w-4 h-4 mr-2" />
+                      Modification en cours...
+                    </>
+                  ) : (
+                    "Modifier le détenu"
                   )}
-                  Modifier le détenu
                 </Button>
               </DialogFooter>
             </form>
