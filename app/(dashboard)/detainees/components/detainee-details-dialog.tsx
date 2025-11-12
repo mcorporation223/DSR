@@ -6,7 +6,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getFileUrl } from "@/lib/upload-utils";
 import type { Detainee } from "./detainee-table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
@@ -37,15 +38,6 @@ export function DetaineeDetailsDialog({
     return new Date(dateString).toLocaleString("fr-FR");
   };
 
-  const formatTime = (dateTimeString: string | null) => {
-    if (!dateTimeString) return "N/A";
-    return new Date(dateTimeString).toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
-
   // Get status display info
   const getStatusDisplay = (status: string | null) => {
     switch (status) {
@@ -67,7 +59,14 @@ export function DetaineeDetailsDialog({
       <DialogContent className="max-w-4xl max-h-[80vh]">
         <DialogHeader>
           <div className="flex items-center gap-4 mb-4">
-            {/* <Avatar className="h-16 w-16">
+            <Avatar className="h-16 w-16">
+              {detainee.photoUrl ? (
+                <AvatarImage
+                  src={getFileUrl(detainee.photoUrl)}
+                  alt={`Photo de ${fullName}`}
+                  className="object-cover"
+                />
+              ) : null}
               <AvatarFallback className="bg-gray-200 text-lg">
                 {fullName
                   ? fullName
@@ -78,7 +77,7 @@ export function DetaineeDetailsDialog({
                       .toUpperCase()
                   : "D"}
               </AvatarFallback>
-            </Avatar> */}
+            </Avatar>
             <div className="flex-1">
               <DialogTitle className="text-xl flex font-semibold text-gray-900">
                 {fullName}
@@ -94,11 +93,6 @@ export function DetaineeDetailsDialog({
                     {statusInfo.text}
                   </span>
                 </div>
-                {detainee.cellNumber && (
-                  <Badge variant="outline" className="text-gray-600">
-                    Cellule: {detainee.cellNumber}
-                  </Badge>
-                )}
               </div>
             </div>
           </div>
@@ -169,16 +163,23 @@ export function DetaineeDetailsDialog({
                   </p>
                 </div>
 
-                {detainee.maritalDetails && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Détails état civil
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      {detainee.maritalDetails}
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Nombre d&apos;enfants
+                  </label>
+                  <p className="text-sm text-gray-900">
+                    {detainee.numberOfChildren || "N/A"}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Nom du conjoint
+                  </label>
+                  <p className="text-sm text-gray-900">
+                    {detainee.spouseName || "N/A"}
+                  </p>
+                </div>
 
                 <div>
                   <label className="text-sm font-medium text-gray-500">
@@ -276,24 +277,6 @@ export function DetaineeDetailsDialog({
                     {detainee.arrestedBy || "N/A"}
                   </p>
                 </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Heure d&apos;arrestation
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {formatTime(detainee.arrestTime)}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
-                    Heure d&apos;arrivée
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {formatTime(detainee.arrivalTime)}
-                  </p>
-                </div>
               </div>
             </div>
 
@@ -321,43 +304,12 @@ export function DetaineeDetailsDialog({
 
                 <div>
                   <label className="text-sm font-medium text-gray-500">
-                    Numéro de cellule
-                  </label>
-                  <p className="text-sm text-gray-900">
-                    {detainee.cellNumber || "N/A"}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-500">
                     Localisation
                   </label>
                   <p className="text-sm text-gray-900">
                     {detainee.location || "N/A"}
                   </p>
                 </div>
-
-                {detainee.releaseDate && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Date de libération
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      {formatDate(detainee.releaseDate)}
-                    </p>
-                  </div>
-                )}
-
-                {detainee.releaseReason && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Motif de libération
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      {detainee.releaseReason}
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
 

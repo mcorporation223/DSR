@@ -58,6 +58,7 @@ export const createDetaineeSchema = z.object({
       new Date("1940-01-01"),
       "La date de naissance ne peut pas être avant 1940"
     ),
+  photoUrl: z.string().optional(),
   parentNames: z
     .string()
     .transform((val) => val.trim())
@@ -91,13 +92,14 @@ export const createDetaineeSchema = z.object({
   maritalStatus: z
     .enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"])
     .optional(),
-  maritalDetails: z
+  numberOfChildren: z.number().min(0).max(20).optional(),
+  spouseName: z
     .string()
     .transform((val) => val.trim())
     .pipe(
       z
         .string()
-        .max(100, "Les détails maritaux ne peuvent pas dépasser 100 caractères")
+        .max(100, "Le nom du conjoint ne peut pas dépasser 100 caractères")
     )
     .optional(),
   religion: z
@@ -152,18 +154,7 @@ export const createDetaineeSchema = z.object({
         .max(100, "Le nom de l'agent ne peut pas dépasser 100 caractères")
     )
     .optional(),
-  arrestTime: z.string().optional(),
   arrivalDate: z.coerce.date().optional(),
-  arrivalTime: z.string().optional(),
-  cellNumber: z
-    .string()
-    .transform((val) => val.trim())
-    .pipe(
-      z
-        .string()
-        .max(20, "Le numéro de cellule ne peut pas dépasser 20 caractères")
-    )
-    .optional(),
   location: z
     .string()
     .transform((val) => val.trim())
@@ -197,6 +188,7 @@ export const updateDetaineeSchema = z.object({
     .max(new Date())
     .min(new Date("1940-01-01"))
     .optional(),
+  photoUrl: z.string().optional(),
   parentNames: z
     .string()
     .transform((val) => val.trim())
@@ -220,7 +212,8 @@ export const updateDetaineeSchema = z.object({
   maritalStatus: z
     .enum(["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"])
     .optional(),
-  maritalDetails: z
+  numberOfChildren: z.number().min(0).max(20).optional(),
+  spouseName: z
     .string()
     .transform((val) => val.trim())
     .pipe(z.string().max(100))
@@ -259,14 +252,7 @@ export const updateDetaineeSchema = z.object({
     .transform((val) => val.trim())
     .pipe(z.string().max(100))
     .optional(),
-  arrestTime: z.string().optional(),
   arrivalDate: z.coerce.date().optional(),
-  arrivalTime: z.string().optional(),
-  cellNumber: z
-    .string()
-    .transform((val) => val.trim())
-    .pipe(z.string().max(20))
-    .optional(),
   location: z
     .string()
     .transform((val) => val.trim())
@@ -278,6 +264,11 @@ export const updateDetaineeSchema = z.object({
     .string()
     .transform((val) => val.trim())
     .pipe(z.string().max(200))
+    .optional(),
+  transferDestination: z
+    .string()
+    .transform((val) => val.trim())
+    .pipe(z.string().max(255))
     .optional(),
 });
 

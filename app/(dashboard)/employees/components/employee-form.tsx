@@ -463,7 +463,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                           </FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="Jean-Baptiste"
+                              placeholder="Jean"
                               maxLength={20}
                               {...field}
                             />
@@ -485,7 +485,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                           </FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="Mbemba Tshimanga"
+                              placeholder="Bemba Tshimanga"
                               maxLength={20}
                               {...field}
                             />
@@ -830,7 +830,7 @@ export const EmployeeForm = forwardRef<EmployeeFormRef, EmployeeFormProps>(
                           </FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="+243 970 123 456 ou +250 788 123 456"
+                              placeholder="+243 970 123 456"
                               maxLength={20}
                               {...field}
                             />
