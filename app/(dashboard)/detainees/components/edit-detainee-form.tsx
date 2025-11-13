@@ -54,7 +54,7 @@ import type { Detainee } from "./detainee-table";
 const editDetaineeFormSchema = z.object({
   firstName: z.string().min(2, "Min 2 caractères").max(20, "Max 20 caractères"),
   lastName: z.string().min(2, "Min 2 caractères").max(20, "Max 20 caractères"),
-  sex: z.enum(["Male", "Female"], {
+  sex: z.enum(["M", "F"], {
     message: "Sélectionner le sexe",
   }),
   placeOfBirth: z.string().min(2, "Requis").max(20, "Max 20 caractères"),
@@ -299,7 +299,7 @@ export function EditDetaineeForm({
       form.reset({
         firstName: detainee.firstName || "",
         lastName: detainee.lastName || "",
-        sex: detainee.sex as "Male" | "Female",
+        sex: detainee.sex as "M" | "F",
         placeOfBirth: detainee.placeOfBirth || "",
         dateOfBirth: detainee.dateOfBirth
           ? new Date(detainee.dateOfBirth)
@@ -453,8 +453,8 @@ export function EditDetaineeForm({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Male">Homme</SelectItem>
-                            <SelectItem value="Female">Femme</SelectItem>
+                            <SelectItem value="M">Homme</SelectItem>
+                            <SelectItem value="F">Femme</SelectItem>
                           </SelectContent>
                         </Select>
                         <div className="max-h-[0.5rem]">

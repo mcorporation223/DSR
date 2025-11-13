@@ -37,7 +37,7 @@ export const createDetaineeSchema = z.object({
         .min(2, "Le nom doit contenir au moins 2 caractères")
         .max(20, "Le nom ne peut pas dépasser 20 caractères")
     ),
-  sex: z.enum(["Male", "Female"], {
+  sex: z.enum(["M", "F"], {
     message: "Veuillez sélectionner le sexe",
   }),
   placeOfBirth: z
@@ -177,7 +177,7 @@ export const updateDetaineeSchema = z.object({
     .transform((val) => val.trim())
     .pipe(z.string().min(2).max(20))
     .optional(),
-  sex: z.enum(["Male", "Female"]).optional(),
+  sex: z.enum(["M", "F"]).optional(),
   placeOfBirth: z
     .string()
     .transform((val) => val.trim())

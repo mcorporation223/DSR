@@ -5,6 +5,7 @@ import { and, count, desc, asc, eq, or, ilike, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { z } from "zod";
 import {
   statementInputSchema,
   statementUpdateSchema,
@@ -15,6 +16,35 @@ import {
 import { logStatementAction, captureChanges } from "@/lib/audit-logger";
 
 export const statementsRouter = router({
+  getByDetaineeId: protectedProcedure
+    .input(z.object({ detaineeId: z.string().uuid() }))
+    .query(async ({ input }) => {
+      // Create aliases for users table to join twice
+      const createdByUser = alias(users, "createdByUser");
+      const updatedByUser = alias(users, "updatedByUser");
+
+      const statementsResult = await db
+        .select({
+          id: statements.id,
+          fileUrl: statements.fileUrl,
+          detaineeId: statements.detaineeId,
+          createdBy: statements.createdBy,
+          updatedBy: statements.updatedBy,
+          createdAt: statements.createdAt,
+          updatedAt: statements.updatedAt,
+          // Join with users table to get names
+          createdByName: sql<string>`CONCAT(${createdByUser.firstName}, ' ', ${createdByUser.lastName})`,
+          updatedByName: sql<string>`CONCAT(${updatedByUser.firstName}, ' ', ${updatedByUser.lastName})`,
+        })
+        .from(statements)
+        .leftJoin(createdByUser, eq(statements.createdBy, createdByUser.id))
+        .leftJoin(updatedByUser, eq(statements.updatedBy, updatedByUser.id))
+        .where(eq(statements.detaineeId, input.detaineeId))
+        .orderBy(desc(statements.createdAt));
+
+      return statementsResult;
+    }),
+
   getAll: protectedProcedure
     .input(statementQuerySchema)
     .query(async ({ input }) => {
