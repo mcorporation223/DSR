@@ -296,14 +296,29 @@ export function EmployeeDetailsDialog({
           </DialogHeader>
           <div className="flex justify-center p-4">
             <div className="relative max-w-full max-h-[70vh]">
-              <Image
-                src={employee.photoUrl ? getFileUrl(employee.photoUrl) : ""}
-                alt={fullName}
-                width={800}
-                height={600}
-                className="max-w-full max-h-[70vh] object-contain rounded-lg"
-                style={{ width: "auto", height: "auto" }}
-              />
+              {employee.photoUrl ? (
+                <Image
+                  src={getFileUrl(employee.photoUrl)}
+                  alt={fullName}
+                  width={800}
+                  height={600}
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                  style={{ width: "auto", height: "auto" }}
+                  onError={() => {
+                    console.error(
+                      "Failed to load employee photo:",
+                      getFileUrl(employee.photoUrl!)
+                    );
+                  }}
+                  unoptimized={getFileUrl(employee.photoUrl).startsWith(
+                    "/api/files"
+                  )}
+                />
+              ) : (
+                <div className="flex items-center justify-center w-[400px] h-[300px] bg-gray-100 rounded-lg">
+                  <p className="text-gray-500">Aucune photo disponible</p>
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>

@@ -295,7 +295,7 @@ export function DetaineesTable() {
       className: "w-20",
       render: (value) => (
         <span className="text-sm text-gray-900">
-          {value === "Male" ? "Homme" : value === "Female" ? "Femme" : "N/A"}
+          {(value as string) || "N/A"}
         </span>
       ),
     },
@@ -502,6 +502,7 @@ export function DetaineesTable() {
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
+                disabled
                 onSelect={() => handleDeleteDetainee(detainee)}
               >
                 <Trash2 className="w-4 h-4 mr-2" />

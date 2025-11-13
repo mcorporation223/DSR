@@ -86,11 +86,7 @@ export function DetaineeCard({
                 {fullName || "Nom non défini"}
               </h3>
               <p className="text-sm text-gray-600">
-                {detainee.sex === "Male"
-                  ? "Homme"
-                  : detainee.sex === "Female"
-                  ? "Femme"
-                  : "N/A"}
+                {detainee.sex || "N/A"}
                 {(detainee.cellNumber as string) &&
                   ` • Cellule ${detainee.cellNumber as string}`}
               </p>

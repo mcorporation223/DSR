@@ -50,7 +50,7 @@ import { FormDescription } from "@/components/ui/form";
 const detaineeFormSchema = z.object({
   firstName: z.string().min(2, "Min 2 caractères").max(20, "Max 20 caractères"),
   lastName: z.string().min(2, "Min 2 caractères").max(20, "Max 20 caractères"),
-  sex: z.enum(["Male", "Female"], {
+  sex: z.enum(["M", "F"], {
     message: "Sélectionner le sexe",
   }),
   placeOfBirth: z.string().min(2, "Requis").max(20, "Max 20 caractères"),
@@ -349,8 +349,8 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Male">Homme</SelectItem>
-                            <SelectItem value="Female">Femme</SelectItem>
+                            <SelectItem value="M">Homme</SelectItem>
+                            <SelectItem value="F">Femme</SelectItem>
                           </SelectContent>
                         </Select>
                         <div className="max-h-[0.5rem]">
@@ -525,7 +525,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                         <FormControl>
                           <Input
                             placeholder="Jean et Marie Mukamba"
-                            maxLength={15}
+                            maxLength={100}
                             {...field}
                           />
                         </FormControl>
@@ -542,12 +542,12 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700">
-                          Quartier d&apos;origine
+                          Village d&apos;origine
                         </FormLabel>
                         <FormControl>
                           <Input
                             placeholder="Himbi"
-                            maxLength={20}
+                            maxLength={80}
                             {...field}
                           />
                         </FormControl>
@@ -679,7 +679,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                         <FormControl>
                           <Input
                             placeholder="Licence en Administration Publique"
-                            maxLength={20}
+                            maxLength={80}
                             {...field}
                           />
                         </FormControl>
@@ -699,7 +699,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                         <FormControl>
                           <Input
                             placeholder="Commerçant"
-                            maxLength={20}
+                            maxLength={80}
                             {...field}
                           />
                         </FormControl>
@@ -721,7 +721,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                         <FormControl>
                           <Input
                             placeholder="Goma - Himbi"
-                            maxLength={20}
+                            maxLength={80}
                             {...field}
                           />
                         </FormControl>
@@ -797,7 +797,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                         <FormControl>
                           <Input
                             placeholder="Goma Centre"
-                            maxLength={20}
+                            maxLength={80}
                             {...field}
                           />
                         </FormControl>
@@ -864,7 +864,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                         <FormControl>
                           <Input
                             placeholder="Police Nationale"
-                            maxLength={15}
+                            maxLength={80}
                             {...field}
                           />
                         </FormControl>
@@ -930,7 +930,7 @@ export function DetaineeForm({ onSuccess }: DetaineeFormProps) {
                           Localisation
                         </FormLabel>
                         <FormControl>
-                          <Input placeholder="Goma" maxLength={10} {...field} />
+                          <Input placeholder="Goma" maxLength={80} {...field} />
                         </FormControl>
                         <div className="max-h-[0.5rem]">
                           <FormMessage className="text-xs" />
