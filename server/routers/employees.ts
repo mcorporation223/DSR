@@ -32,7 +32,8 @@ export const employeesRouter = router({
           or(
             ilike(employees.firstName, `%${search}%`),
             ilike(employees.lastName, `%${search}%`),
-            ilike(employees.email, `%${search}%`)
+            ilike(employees.email, `%${search}%`),
+            ilike(employees.deploymentLocation, `%${search}%`)
           )
         );
       }
