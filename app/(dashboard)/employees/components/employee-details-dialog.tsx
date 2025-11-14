@@ -292,7 +292,7 @@ export function EmployeeDetailsDialog({
       <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Photo de {fullName}</DialogTitle>
+            <DialogTitle>{fullName}</DialogTitle>
           </DialogHeader>
           <div className="flex justify-center p-4">
             <div className="relative max-w-full max-h-[70vh]">
