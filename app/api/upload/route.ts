@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File;
-    const type = formData.get("type") as string; // 'employee', 'detainee', 'document', 'statement'
+    const type = formData.get("type") as string; // 'employee', 'detainee', 'document', 'statement', 'seizure'
 
     if (!file) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
@@ -71,6 +71,9 @@ export async function POST(request: NextRequest) {
       case "statement":
         uploadDir = path.join(uploadsBasePath, "statements");
         break;
+      case "seizure":
+        uploadDir = path.join(uploadsBasePath, "seizures", "photos");
+        break;
       default:
         uploadDir = path.join(uploadsBasePath, "misc");
     }
@@ -96,6 +99,8 @@ export async function POST(request: NextRequest) {
         ? path.join("detainees/photos", fileName)
         : type === "statement"
         ? path.join("statements", fileName)
+        : type === "seizure"
+        ? path.join("seizures/photos", fileName)
         : path.join(type, fileName);
 
     return NextResponse.json({

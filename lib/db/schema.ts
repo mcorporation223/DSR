@@ -9,6 +9,7 @@ import {
   uuid,
   jsonb,
   index,
+  unique,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -34,8 +35,26 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const userProvinces = pgTable(
+  "user_provinces",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    province: varchar("province", { length: 100 }).notNull(), // "north_kivu" | "south_kivu"
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    unique().on(table.userId, table.province),
+    index("user_provinces_user_idx").using("btree", table.userId),
+    index("user_provinces_province_idx").using("btree", table.province),
+  ]
+);
+
 export const employees = pgTable("employees", {
   id: uuid("id").defaultRandom().primaryKey(),
+  province: varchar("province", { length: 100 }), // "north_kivu" | "south_kivu" - nullable initially
   firstName: varchar("first_name", { length: 100 }),
   lastName: varchar("last_name", { length: 100 }),
   sex: varchar("sex", { length: 10 }).notNull(),
@@ -73,6 +92,7 @@ export const detainees = pgTable(
   "detainees",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    province: varchar("province", { length: 100 }), // "north_kivu" | "south_kivu" - nullable initially
 
     // Personal Information
     firstName: varchar("first_name", { length: 100 }),
@@ -138,6 +158,7 @@ export const incidents = pgTable(
   "incidents",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    province: varchar("province", { length: 100 }), // "north_kivu" | "south_kivu" - nullable initially
 
     // Basic Incident Information
     incidentDate: timestamp("incident_date").notNull(), // Date
@@ -193,6 +214,7 @@ export const victims = pgTable(
 
 export const reports = pgTable("reports", {
   id: uuid("id").defaultRandom().primaryKey(),
+  province: varchar("province", { length: 100 }), // "north_kivu" | "south_kivu" - nullable initially
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content"),
   location: varchar("location", { length: 255 }),
@@ -211,17 +233,14 @@ export const seizures = pgTable(
   "seizures",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    province: varchar("province", { length: 100 }), // "north_kivu" | "south_kivu" - nullable initially
 
     // Basic Item Information
-    itemName: varchar("item_name", { length: 255 }).notNull(), // Name/description of seized item
+    itemName: varchar("item_name", { length: 255 }).notNull(), // Name of seized item
     type: varchar("type", { length: 100 }).notNull(), // Type (cars, motorcycles, objects, etc.)
 
     // Location Information
     seizureLocation: varchar("seizure_location", { length: 255 }), // Provenance (lieu ya saisie) - where it was seized
-
-    // Vehicle-specific Information (for cars, motorcycles, etc.)
-    chassisNumber: varchar("chassis_number", { length: 100 }), // No chassie
-    plateNumber: varchar("plate_number", { length: 50 }), // Plaque (license plate)
 
     // Owner Information
     ownerName: varchar("owner_name", { length: 255 }), // Proprietaire names
@@ -229,6 +248,8 @@ export const seizures = pgTable(
 
     // Seizure Details
     seizureDate: timestamp("seizure_date").notNull(), // When it was seized
+    seizureDetails: text("seizure_details"), // Detailed information about the seized item
+    photoUrl: varchar("photo_url", { length: 500 }), // Photo URL or path
 
     // Status and Legal
     status: varchar("status", { length: 50 }).default("in_custody"), // in_custody, released, disposed, etc.
@@ -253,6 +274,7 @@ export const seizures = pgTable(
 
 export const statements = pgTable("statements", {
   id: uuid("id").defaultRandom().primaryKey(),
+  province: varchar("province", { length: 100 }), // "north_kivu" | "south_kivu" - nullable initially
   fileUrl: varchar("file_url", { length: 500 }).notNull(), // URL or path to the statement file
   detaineeId: uuid("detainee_id")
     .notNull()
@@ -272,6 +294,7 @@ export const auditLogs = pgTable(
   "audit_logs",
   {
     id: bigserial("id", { mode: "number" }).primaryKey(),
+    province: varchar("province", { length: 100 }), // "north_kivu" | "south_kivu" | null - null for system-level actions
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }), // Fixed: Changed from varchar to uuid
@@ -317,3 +340,6 @@ export type NewSeizure = typeof seizures.$inferInsert;
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
+
+export type UserProvince = typeof userProvinces.$inferSelect;
+export type NewUserProvince = typeof userProvinces.$inferInsert;
