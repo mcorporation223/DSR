@@ -342,7 +342,7 @@ export function DetaineeDetailsDialog({
                           Date de transfert
                         </label>
                         <p className="text-sm text-gray-900">
-                          {formatDate(detainee.updatedAt)}
+                          {formatDate(detainee.transferDate)}
                         </p>
                       </div>
 

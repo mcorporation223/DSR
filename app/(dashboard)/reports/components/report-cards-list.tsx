@@ -3,8 +3,24 @@
 import { ReportCard } from "./report-card";
 import type { Report } from "./reports-table";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, ChevronLeft, ChevronRight } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  Search,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
+  X,
+} from "lucide-react";
+import {
+  CardsGridSkeleton,
+  CardSkeletonPresets,
+} from "@/components/card-skeleton";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useState, useCallback } from "react";
 import { trpc } from "@/components/trpc-provider";
 import { ReportForm } from "./report-form";
@@ -104,6 +120,7 @@ export function ReportCardsList({
   // State management
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchDate, setSearchDate] = useState<Date | undefined>(undefined);
   const [sortBy, setSortBy] = useState<"reportDate" | "title" | "createdAt">(
     "reportDate"
   );
@@ -130,6 +147,7 @@ export function ReportCardsList({
     page: currentPage,
     limit: itemsPerPage,
     search: searchTerm || undefined,
+    searchDate: searchDate ? searchDate.toISOString().split("T")[0] : undefined,
     sortBy,
     sortOrder,
   });
@@ -148,6 +166,28 @@ export function ReportCardsList({
     setSearchTerm(value);
     setCurrentPage(1);
   }, []);
+
+  const handleDateSearch = useCallback((date: Date | undefined) => {
+    setSearchDate(date);
+    setCurrentPage(1);
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setSearchTerm("");
+    setSearchDate(undefined);
+    setCurrentPage(1);
+  }, []);
+
+  const hasActiveFilters = searchTerm || searchDate;
+
+  // Format date for display in the date picker trigger
+  const formatDateForDisplay = (date: Date) => {
+    return date.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
 
   const handleSortChange = useCallback(
     (newSortBy: typeof sortBy) => {
@@ -234,15 +274,62 @@ export function ReportCardsList({
         </div>
 
         {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <input
-            type="text"
-            placeholder="Rechercher un rapport..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
-          />
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Rechercher par titre, contenu..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Date Picker */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={`flex-1 justify-start text-left font-normal border-gray-300 bg-white text-gray-700 ${
+                    !searchDate && "text-muted-foreground"
+                  }`}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {searchDate ? (
+                    formatDateForDisplay(searchDate)
+                  ) : (
+                    <span>Filtrer par date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={searchDate}
+                  onSelect={handleDateSearch}
+                  disabled={(date) =>
+                    date > new Date() || date < new Date("2020-01-01")
+                  }
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="h-11 px-3 text-gray-500 hover:text-gray-700 shrink-0"
+                title="Effacer les filtres"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Sort Filters */}
@@ -290,12 +377,7 @@ export function ReportCardsList({
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex items-center justify-center h-64">
-          <div className="flex items-center space-x-2">
-            <Spinner className="w-5 h-5" />
-            <span className="text-gray-600">Chargement des rapports...</span>
-          </div>
-        </div>
+        <CardsGridSkeleton count={12} cardProps={CardSkeletonPresets.simple} />
       )}
 
       {/* Empty State */}
@@ -320,7 +402,11 @@ export function ReportCardsList({
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               Aucun rapport
             </h3>
-            <p className="text-gray-500">{emptyMessage}</p>
+            <p className="text-gray-500">
+              {hasActiveFilters
+                ? "Aucun rapport ne correspond à vos critères de recherche. Essayez de modifier vos filtres."
+                : emptyMessage}
+            </p>
           </div>
         </div>
       )}

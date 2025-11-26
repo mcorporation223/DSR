@@ -270,6 +270,7 @@ export const updateDetaineeSchema = z.object({
     .transform((val) => val.trim())
     .pipe(z.string().max(255))
     .optional(),
+  transferDate: z.coerce.date().optional(),
 });
 
 // Type exports for use in components

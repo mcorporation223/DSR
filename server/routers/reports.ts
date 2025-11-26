@@ -18,7 +18,7 @@ export const reportsRouter = router({
   getAll: protectedProcedure
     .input(reportQuerySchema)
     .query(async ({ input }) => {
-      const { page, limit, search, sortBy, sortOrder } = input;
+      const { page, limit, search, searchDate, sortBy, sortOrder } = input;
       const offset = (page - 1) * limit;
 
       const whereConditions: SQL[] = [];
@@ -30,6 +30,20 @@ export const reportsRouter = router({
             ilike(reports.title, `%${search}%`),
             ilike(reports.content, `%${search}%`),
             ilike(reports.location, `%${search}%`)
+          )!
+        );
+      }
+
+      // Date filtering - search for reports on a specific date
+      if (searchDate) {
+        const searchDateObj = new Date(searchDate);
+        const nextDay = new Date(searchDateObj);
+        nextDay.setDate(nextDay.getDate() + 1);
+
+        whereConditions.push(
+          and(
+            sql`${reports.reportDate} >= ${searchDateObj}`,
+            sql`${reports.reportDate} < ${nextDay}`
           )!
         );
       }

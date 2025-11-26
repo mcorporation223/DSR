@@ -1,8 +1,23 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Search, Edit, Trash2, Eye, Inbox } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  MoreHorizontal,
+  Search,
+  Edit,
+  Trash2,
+  Eye,
+  Inbox,
+  Calendar as CalendarIcon,
+  X,
+} from "lucide-react";
+import { TableSkeleton } from "@/components/table-skeleton";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +59,7 @@ export function ReportsTable() {
   // All the state that was previously in the page component
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchDate, setSearchDate] = useState<Date | undefined>(undefined);
   const [sortBy, setSortBy] = useState<"reportDate" | "title" | "createdAt">(
     "reportDate"
   );
@@ -77,6 +93,7 @@ export function ReportsTable() {
     page: currentPage,
     limit: itemsPerPage,
     search: searchTerm || undefined,
+    searchDate: searchDate ? searchDate.toISOString().split("T")[0] : undefined,
     sortBy,
     sortOrder,
   });
@@ -102,6 +119,28 @@ export function ReportsTable() {
     setSearchTerm(value);
     setCurrentPage(1); // Reset to first page when searching
   }, []);
+
+  const handleDateSearch = useCallback((date: Date | undefined) => {
+    setSearchDate(date);
+    setCurrentPage(1); // Reset to first page when searching
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setSearchTerm("");
+    setSearchDate(undefined);
+    setCurrentPage(1);
+  }, []);
+
+  const hasActiveFilters = searchTerm || searchDate;
+
+  // Format date for display in the date picker trigger
+  const formatDateForDisplay = (date: Date) => {
+    return date.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
 
   const handleSort = useCallback(
     (columnKey: string) => {
@@ -392,15 +431,60 @@ export function ReportsTable() {
           <h1 className="text-2xl font-bold text-gray-900">Rapports</h1>
         </div>
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Rechercher par titre, contenu..."
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm w-64"
+              />
+            </div>
+
+            {/* Date Picker */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={`w-48 justify-start text-left font-normal border-gray-300 bg-white text-gray-700 ${
+                    !searchDate && "text-muted-foreground"
+                  }`}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {searchDate ? (
+                    formatDateForDisplay(searchDate)
+                  ) : (
+                    <span>Filtrer par date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={searchDate}
+                  onSelect={handleDateSearch}
+                  disabled={(date) =>
+                    date > new Date() || date < new Date("2020-01-01")
+                  }
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="h-9 px-2 text-gray-500 hover:text-gray-700"
+                title="Effacer les filtres"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
           {/* <Button
             variant="outline"
@@ -420,10 +504,15 @@ export function ReportsTable() {
 
       {/* Loading state */}
       {isLoading && (
-        <div className="flex items-center justify-center h-32">
-          <Spinner className="w-6 h-6 text-blue-500" />
-          <span className="ml-2 text-gray-600">Chargement des rapports...</span>
-        </div>
+        <TableSkeleton
+          rows={6}
+          columns={5}
+          showAvatar={false}
+          showStatusBadge={false}
+          showActions={true}
+          showPagination={true}
+          columnWidths={["w-32", "w-20", "w-24", "w-40", "w-16"]}
+        />
       )}
 
       {/* Table */}
@@ -441,7 +530,7 @@ export function ReportsTable() {
                 Aucun rapport trouvé
               </h3>
               <p className="text-sm text-gray-500 max-w-sm text-center">
-                {searchTerm
+                {hasActiveFilters
                   ? "Aucun rapport ne correspond à vos critères de recherche. Essayez de modifier vos filtres."
                   : "Commencez par créer le premier rapport dans le système."}
               </p>

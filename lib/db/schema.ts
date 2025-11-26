@@ -131,6 +131,7 @@ export const detainees = pgTable(
     location: varchar("location", { length: 255 }), // location (facility/wing)
     status: varchar("status", { length: 50 }).default("in_custody"), // status (in_custody, released, transferred, etc.)
     transferDestination: varchar("transfer_destination", { length: 255 }), // Where the detainee was transferred to
+    transferDate: timestamp("transfer_date"), // When the detainee was transferred
 
     // Release Information
     releaseDate: timestamp("release_date"),

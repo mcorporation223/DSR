@@ -120,6 +120,7 @@ const editDetaineeFormSchema = z.object({
   releaseDate: z.date().optional(),
   releaseReason: z.string().max(500, "Max 500 caractères").optional(),
   transferDestination: z.string().max(255, "Max 255 caractères").optional(),
+  transferDate: z.date().optional(),
 });
 
 type EditDetaineeFormValues = z.infer<typeof editDetaineeFormSchema>;
@@ -205,6 +206,7 @@ export function EditDetaineeForm({
       releaseDate: undefined,
       releaseReason: "",
       transferDestination: "",
+      transferDate: undefined,
     },
   });
 
@@ -340,6 +342,9 @@ export function EditDetaineeForm({
           : undefined,
         releaseReason: detainee.releaseReason || "",
         transferDestination: detainee.transferDestination || "",
+        transferDate: detainee.transferDate
+          ? new Date(detainee.transferDate as string)
+          : undefined,
       });
     }
   }, [detainee, isOpen, form]);
@@ -1172,27 +1177,80 @@ export function EditDetaineeForm({
 
                   {/* Show transfer destination when status is "transferred" */}
                   {form.watch("status") === "transferred" && (
-                    <FormField
-                      control={form.control}
-                      name="transferDestination"
-                      render={({ field }) => (
-                        <FormItem className="md:col-span-2">
-                          <FormLabel className="text-gray-700">
-                            Destination de transfert
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Prison centrale de Goma, Tribunal de..."
-                              maxLength={255}
-                              {...field}
-                            />
-                          </FormControl>
-                          <div className="max-h-[0.5rem]">
-                            <FormMessage className="text-xs" />
-                          </div>
-                        </FormItem>
-                      )}
-                    />
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="transferDestination"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-gray-700">
+                              Destination de transfert
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Prison centrale de Goma, Tribunal de..."
+                                maxLength={255}
+                                {...field}
+                              />
+                            </FormControl>
+                            <div className="max-h-[0.5rem]">
+                              <FormMessage className="text-xs" />
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="transferDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-gray-700">
+                              Date de transfert
+                            </FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    className={`w-full justify-start text-left font-normal ${
+                                      !field.value && "text-muted-foreground"
+                                    }`}
+                                  >
+                                    {field.value ? (
+                                      format(field.value, "dd/MM/yyyy", {
+                                        locale: fr,
+                                      })
+                                    ) : (
+                                      <span>Sélectionner une date</span>
+                                    )}
+                                    <ChevronDown className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                              >
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  disabled={(date) =>
+                                    date > new Date() ||
+                                    date < new Date("1900-01-01")
+                                  }
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <div className="max-h-[0.5rem]">
+                              <FormMessage className="text-xs" />
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </>
                   )}
                 </div>
               </div>
