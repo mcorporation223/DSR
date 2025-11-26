@@ -10,7 +10,7 @@ import {
   Eye,
   Inbox,
 } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
+import { TableSkeleton } from "@/components/table-skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -534,12 +534,15 @@ export function EmployeesTable() {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex items-center justify-center h-64">
-          <div className="flex items-center space-x-2">
-            <Spinner className="w-4 h-4" />
-            <span className="text-gray-600">Chargement des employés...</span>
-          </div>
-        </div>
+        <TableSkeleton
+          rows={8}
+          columns={6}
+          showAvatar={true}
+          showStatusBadge={true}
+          showActions={true}
+          showPagination={true}
+          columnWidths={["w-32", "w-16", "w-24", "w-20", "w-28", "w-16"]}
+        />
       )}
 
       {/* Table */}

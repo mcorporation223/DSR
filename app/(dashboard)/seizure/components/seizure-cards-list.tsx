@@ -11,7 +11,10 @@ import {
   Car,
   Bike,
 } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  CardsGridSkeleton,
+  CardSkeletonPresets,
+} from "@/components/card-skeleton";
 
 // Mobile Pagination Component
 interface MobilePaginationProps {
@@ -318,12 +321,11 @@ export function SeizureCardsList() {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex items-center space-x-2">
-            <Spinner className="w-4 h-4" />
-            <span className="text-gray-600">Chargement des saisies...</span>
-          </div>
-        </div>
+        <CardsGridSkeleton
+          count={10}
+          cardProps={CardSkeletonPresets.status}
+          gridCols="grid-cols-1 gap-4"
+        />
       )}
 
       {/* Results */}

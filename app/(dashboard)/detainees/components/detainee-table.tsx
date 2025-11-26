@@ -10,7 +10,7 @@ import {
   Eye,
   Inbox,
 } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
+import { TableSkeleton } from "@/components/table-skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +65,7 @@ interface Detainee extends Record<string, unknown> {
   releaseDate: string | null;
   releaseReason: string | null;
   transferDestination: string | null;
+  transferDate: string | null;
   createdBy: string | null;
   updatedBy: string | null;
   createdAt: string; // This comes as string from the database
@@ -612,12 +613,23 @@ export function DetaineesTable() {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex items-center justify-center h-64">
-          <div className="flex items-center space-x-2">
-            <Spinner className="w-4 h-4" />
-            <span className="text-gray-600">Chargement des détenus...</span>
-          </div>
-        </div>
+        <TableSkeleton
+          rows={8}
+          columns={7}
+          showAvatar={true}
+          showStatusBadge={true}
+          showActions={true}
+          showPagination={true}
+          columnWidths={[
+            "w-32",
+            "w-16",
+            "w-24",
+            "w-28",
+            "w-32",
+            "w-20",
+            "w-16",
+          ]}
+        />
       )}
 
       {/* Table */}

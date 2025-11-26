@@ -10,7 +10,7 @@ import {
   FileText,
   Inbox,
 } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
+import { TableSkeleton } from "@/components/table-skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -358,12 +358,15 @@ export function StatementsTable() {
 
       {/* Loading state */}
       {isLoading && (
-        <div className="flex items-center justify-center h-32">
-          <Spinner className="w-6 h-6 text-blue-500" />
-          <span className="ml-2 text-gray-600">
-            Chargement des déclarations...
-          </span>
-        </div>
+        <TableSkeleton
+          rows={6}
+          columns={4}
+          showAvatar={false}
+          showStatusBadge={false}
+          showActions={true}
+          showPagination={true}
+          columnWidths={["w-40", "w-32", "w-28", "w-16"]}
+        />
       )}
 
       {/* Table */}

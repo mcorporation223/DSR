@@ -20,6 +20,7 @@ export const reportQuerySchema = z.object({
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(100).default(10),
   search: z.string().optional(),
+  searchDate: z.string().optional(), // For specific date search (YYYY-MM-DD format)
   sortBy: z
     .enum(["reportDate", "title", "createdAt", "updatedAt"])
     .default("reportDate"),

@@ -1,0 +1,1 @@
+ALTER TABLE "detainees" ADD COLUMN "transfer_date" timestamp;

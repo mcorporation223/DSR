@@ -4,7 +4,7 @@ import { EmployeeCard } from "./employee-card";
 import type { Employee } from "./employees-table";
 import { Button } from "@/components/ui/button";
 import { Search, Filter, ChevronLeft, ChevronRight, Inbox } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
+import { CardsGridSkeleton } from "@/components/card-skeleton";
 import { useState, useCallback } from "react";
 import { trpc } from "@/components/trpc-provider";
 import { EmployeeForm } from "./employee-form";
@@ -239,12 +239,15 @@ export function EmployeeCardsList() {
 
       {/* Loading State */}
       {isLoading && (
-        <div className="flex items-center justify-center h-64">
-          <div className="flex items-center space-x-2">
-            <Spinner className="w-5 h-5" />
-            <span className="text-gray-600">Chargement des employés...</span>
-          </div>
-        </div>
+        <CardsGridSkeleton
+          count={4}
+          cardProps={{
+            showAvatar: true,
+            showStatusBadge: true,
+            showContactInfo: true,
+          }}
+          gridCols="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        />
       )}
 
       {/* Empty State */}
