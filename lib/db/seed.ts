@@ -252,10 +252,10 @@ async function seed() {
     await db.insert(seizures).values([
       {
         itemName: "Motorcycle Yamaha DT 125",
-        type: "motorcycles",
+        type: "vehicule",
+        seizureDetails:
+          "Moto Yamaha DT 125 couleur rouge, état bon. Saisie lors d'un contrôle routier.",
         seizureLocation: "Avenue de la Paix, Goma",
-        chassisNumber: "MD01E-123456",
-        plateNumber: "CD-123-NK",
         ownerName: "Claude Muhindo",
         ownerResidence: "Quartier Ndosho, Goma",
         seizureDate: new Date("2024-09-05"),
@@ -265,10 +265,10 @@ async function seed() {
       },
       {
         itemName: "Toyota Hilux Pick-up",
-        type: "cars",
+        type: "vehicule",
+        seizureDetails:
+          "Pick-up Toyota Hilux blanc double cabine, utilisé pour le transport commercial illégal.",
         seizureLocation: "Marché Central, Goma",
-        chassisNumber: "JTFTN3AD9D0123456",
-        plateNumber: "CD-456-NK",
         ownerName: "Jeanne Nyirahabimana",
         ownerResidence: "Quartier Kyeshero, Goma",
         seizureDate: new Date("2024-09-08"),
@@ -278,7 +278,9 @@ async function seed() {
       },
       {
         itemName: "Sac d'argent liquide",
-        type: "objects",
+        type: "objet",
+        seizureDetails:
+          "Sac contenant de l'argent liquide en francs congolais et dollars américains. Montant total estimé à 5000 USD.",
         seizureLocation: "Domicile suspect, Quartier Mabanga",
         ownerName: "Inconnu",
         seizureDate: new Date("2024-09-09"),

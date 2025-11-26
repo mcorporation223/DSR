@@ -34,18 +34,20 @@ import { EditSeizureForm } from "./edit-seizure-form";
 import { DeleteSeizureDialog } from "./delete-seizure-dialog";
 import { SeizureDetailsDialog } from "./seizure-details-dialog";
 import { formatDate } from "@/lib/formatters";
+import { getFileUrl } from "@/lib/upload-utils";
+import Image from "next/image";
 
 // Types for seizure data
 interface Seizure extends Record<string, unknown> {
   id: string;
   itemName: string;
   type: string;
+  details: string | null;
   seizureLocation: string | null;
-  chassisNumber: string | null;
-  plateNumber: string | null;
   ownerName: string | null;
   ownerResidence: string | null;
   seizureDate: Date;
+  photoUrl: string | null;
   status: string | null;
   releaseDate: Date | null;
   createdBy: string | null;
@@ -65,7 +67,7 @@ export function SeizureTable() {
   >("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [typeFilter, setTypeFilter] = useState<
-    "car" | "motorcycle" | undefined
+    "vehicule" | "objet" | undefined
   >(undefined);
   const [statusFilter, setStatusFilter] = useState<string | undefined>(
     undefined
@@ -129,7 +131,7 @@ export function SeizureTable() {
   }, []);
 
   const handleTypeFilter = useCallback(
-    (type: "car" | "motorcycle" | undefined) => {
+    (type: "vehicule" | "objet" | undefined) => {
       setTypeFilter(type);
       setCurrentPage(1); // Reset to first page when filtering
     },
@@ -228,25 +230,73 @@ export function SeizureTable() {
 
   const allColumns: TableColumn<Seizure>[] = [
     {
-      key: "type",
-      label: "Type",
-      className: "w-32 px-4",
-      sortable: true,
-      render: (value) => (
-        <span className="text-sm text-gray-900">{value as string}</span>
-      ),
+      key: "photoUrl",
+      label: "Photo",
+      className: "w-20",
+      align: "center",
+      render: (value, seizure) => {
+        if (!value) {
+          return (
+            <div className="w-12 h-12 bg-gray-100 rounded-md flex items-center justify-center">
+              <span className="text-xs text-gray-400">Aucune</span>
+            </div>
+          );
+        }
+
+        const imageUrl = getFileUrl(value as string);
+        return (
+          <div className="w-12 h-12 rounded-md overflow-hidden border">
+            <Image
+              src={imageUrl}
+              alt={`Photo de ${seizure.itemName}`}
+              width={48}
+              height={48}
+              className="object-cover w-full h-full"
+              onError={() => {
+                console.warn("Failed to load seizure photo:", imageUrl);
+              }}
+              unoptimized={imageUrl.startsWith("/api/files")}
+            />
+          </div>
+        );
+      },
     },
     {
       key: "itemName",
-      label: "Nom/Description",
+      label: "Nom",
       className: "w-48",
       sortable: true,
       render: (value) => (
         <span
-          className="text-sm text-gray-900 truncate block max-w-[180px]"
+          className="text-sm text-gray-900 truncate block max-w-[180px] font-medium"
           title={value as string}
         >
           {value as string}
+        </span>
+      ),
+    },
+    {
+      key: "type",
+      label: "Type",
+      className: "w-28",
+      sortable: true,
+      render: (value) => {
+        const type = (value as string) || "vehicule";
+        const displayText = type === "vehicule" ? "Véhicule" : "Objet";
+
+        return <span className="text-sm text-gray-900">{displayText}</span>;
+      },
+    },
+    {
+      key: "details",
+      label: "Détails",
+      className: "w-48",
+      render: (value) => (
+        <span
+          className="text-sm text-gray-600 truncate block max-w-[180px]"
+          title={(value as string) || "Aucun détail"}
+        >
+          {(value as string) || "-"}
         </span>
       ),
     },
@@ -283,16 +333,6 @@ export function SeizureTable() {
           className="text-sm text-gray-900 truncate block max-w-[150px]"
           title={(value as string) || "N/A"}
         >
-          {(value as string) || "-"}
-        </span>
-      ),
-    },
-    {
-      key: "plateNumber",
-      label: "Plaque",
-      className: "w-24",
-      render: (value) => (
-        <span className="text-sm text-gray-900 font-mono">
           {(value as string) || "-"}
         </span>
       ),
@@ -457,26 +497,26 @@ export function SeizureTable() {
             Tous
           </Button>
           <Button
-            variant={typeFilter === "car" ? "default" : "outline"}
+            variant={typeFilter === "vehicule" ? "default" : "outline"}
             className={
-              typeFilter === "car"
+              typeFilter === "vehicule"
                 ? ""
                 : "border-gray-300 bg-white text-gray-700"
             }
-            onClick={() => handleTypeFilter("car")}
+            onClick={() => handleTypeFilter("vehicule")}
           >
-            Voitures
+            Vehicules
           </Button>
           <Button
-            variant={typeFilter === "motorcycle" ? "default" : "outline"}
+            variant={typeFilter === "objet" ? "default" : "outline"}
             className={
-              typeFilter === "motorcycle"
+              typeFilter === "objet"
                 ? ""
                 : "border-gray-300 bg-white text-gray-700"
             }
-            onClick={() => handleTypeFilter("motorcycle")}
+            onClick={() => handleTypeFilter("objet")}
           >
-            Motos
+            Objets
           </Button>
 
           {/* Column Visibility & Add Button */}
@@ -555,12 +595,13 @@ export function SeizureTable() {
 
 // Define column configuration for visibility control
 export const seizureColumnConfig = [
+  { key: "photoUrl", label: "Photo", hideable: false },
+  { key: "itemName", label: "Nom", hideable: false },
   { key: "type", label: "Type", hideable: false },
-  { key: "itemName", label: "Nom/Description", hideable: false },
+  { key: "details", label: "Détails", hideable: true },
   { key: "seizureDate", label: "Date Saisie", hideable: false },
   { key: "seizureLocation", label: "Lieu Saisie", hideable: false },
   { key: "ownerName", label: "Propriétaire", hideable: true },
-  { key: "plateNumber", label: "Plaque", hideable: true },
   { key: "status", label: "Statut", hideable: false },
   { key: "releaseDate", label: "Date Restitution", hideable: true },
   { key: "createdAt", label: "Date de Création", hideable: false },

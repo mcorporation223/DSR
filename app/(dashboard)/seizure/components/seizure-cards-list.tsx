@@ -107,7 +107,7 @@ export function SeizureCardsList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<
-    "car" | "motorcycle" | undefined
+    "vehicule" | "objet" | undefined
   >(undefined);
   const [statusFilter, setStatusFilter] = useState<string | undefined>(
     undefined
@@ -157,7 +157,7 @@ export function SeizureCardsList() {
   }, []);
 
   const handleTypeFilter = useCallback(
-    (type: "car" | "motorcycle" | undefined) => {
+    (type: "vehicule" | "objet" | undefined) => {
       setTypeFilter(type);
       setCurrentPage(1);
     },
@@ -267,20 +267,20 @@ export function SeizureCardsList() {
           Tous types
         </Button>
         <Button
-          variant={typeFilter === "car" ? "default" : "outline"}
+          variant={typeFilter === "vehicule" ? "default" : "outline"}
           size="sm"
-          onClick={() => handleTypeFilter("car")}
+          onClick={() => handleTypeFilter("vehicule")}
         >
           <Car className="w-4 h-4 mr-2" />
-          Voitures
+          Véhicules
         </Button>
         <Button
-          variant={typeFilter === "motorcycle" ? "default" : "outline"}
+          variant={typeFilter === "objet" ? "default" : "outline"}
           size="sm"
-          onClick={() => handleTypeFilter("motorcycle")}
+          onClick={() => handleTypeFilter("objet")}
         >
           <Bike className="w-4 h-4 mr-2" />
-          Motos
+          Objets
         </Button>
       </div>
 

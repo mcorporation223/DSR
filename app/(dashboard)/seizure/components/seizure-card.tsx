@@ -72,9 +72,9 @@ export function SeizureCard({
   // Type icon configuration
   const getTypeIcon = () => {
     switch (seizure.type) {
-      case "car":
+      case "vehicule":
         return <Car className="w-4 h-4" />;
-      case "motorcycle":
+      case "objet":
         return <Bike className="w-4 h-4" />;
       default:
         return <Car className="w-4 h-4" />;
@@ -83,12 +83,12 @@ export function SeizureCard({
 
   const getTypeLabel = () => {
     switch (seizure.type) {
-      case "car":
-        return "Voiture";
-      case "motorcycle":
-        return "Moto";
+      case "vehicule":
+        return "Véhicule";
+      case "objet":
+        return "Objet";
       default:
-        return seizure.type;
+        return String(seizure.type);
     }
   };
 
@@ -179,55 +179,57 @@ export function SeizureCard({
           </div>
 
           {/* Location */}
-          {seizure.seizureLocation && (
+          {seizure.seizureLocation ? (
             <div className="flex items-center space-x-2 text-sm">
               <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <span className="text-gray-600">Lieu:</span>
               <span className="font-medium text-gray-900 truncate">
-                {seizure.seizureLocation}
+                {String(seizure.seizureLocation)}
               </span>
             </div>
-          )}
+          ) : null}
 
           {/* Owner */}
-          {seizure.ownerName && (
+          {seizure.ownerName ? (
             <div className="flex items-center space-x-2 text-sm">
               <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <span className="text-gray-600">Propriétaire:</span>
               <span className="font-medium text-gray-900 truncate">
-                {seizure.ownerName}
+                {String(seizure.ownerName)}
               </span>
             </div>
-          )}
+          ) : null}
 
           {/* Plate Number */}
-          {seizure.plateNumber && (
+          {seizure.plateNumber ? (
             <div className="flex items-center space-x-2 text-sm">
               <Hash className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <span className="text-gray-600">Plaque:</span>
               <span className="font-medium text-gray-900 font-mono">
-                {seizure.plateNumber}
+                {String(seizure.plateNumber)}
               </span>
             </div>
-          )}
+          ) : null}
 
           {/* Release Date */}
-          {seizure.releaseDate && (
+          {seizure.releaseDate ? (
             <div className="flex items-center space-x-2 text-sm">
               <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <span className="text-gray-600">Restitution:</span>
               <span className="font-medium text-gray-900">
-                {formatDate(seizure.releaseDate)}
+                {formatDate(seizure.releaseDate as Date)}
               </span>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Additional Info */}
         <div className="pt-2 border-t border-gray-100">
           <div className="flex items-center justify-between text-xs text-gray-500">
             <span>Créé le {formatDate(seizure.createdAt)}</span>
-            {seizure.createdByName && <span>par {seizure.createdByName}</span>}
+            {seizure.createdByName ? (
+              <span>par {String(seizure.createdByName)}</span>
+            ) : null}
           </div>
         </div>
       </CardContent>

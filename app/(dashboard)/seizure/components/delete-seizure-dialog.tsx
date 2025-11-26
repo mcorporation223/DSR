@@ -78,8 +78,7 @@ export function DeleteSeizureDialog({
                   {seizure.itemName || "Nom non disponible"}
                 </div>
                 <div className="text-sm text-gray-500">
-                  {seizure.type} -{" "}
-                  {seizure.plateNumber || "Plaque non spécifiée"}
+                  {seizure.type} - {seizure.seizureLocation || "Lieu non spécifié"}
                 </div>
                 {seizure.ownerName && (
                   <div className="text-sm text-gray-500">

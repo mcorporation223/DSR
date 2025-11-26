@@ -70,12 +70,12 @@ export const seizuresRouter = router({
           id: seizures.id,
           itemName: seizures.itemName,
           type: seizures.type,
+          details: seizures.seizureDetails,
           seizureLocation: seizures.seizureLocation,
-          chassisNumber: seizures.chassisNumber,
-          plateNumber: seizures.plateNumber,
           ownerName: seizures.ownerName,
           ownerResidence: seizures.ownerResidence,
           seizureDate: seizures.seizureDate,
+          photoUrl: seizures.photoUrl,
           status: seizures.status,
           releaseDate: seizures.releaseDate,
           createdBy: seizures.createdBy,
@@ -113,12 +113,12 @@ export const seizuresRouter = router({
           id: seizures.id,
           itemName: seizures.itemName,
           type: seizures.type,
+          details: seizures.seizureDetails,
           seizureLocation: seizures.seizureLocation,
-          chassisNumber: seizures.chassisNumber,
-          plateNumber: seizures.plateNumber,
           ownerName: seizures.ownerName,
           ownerResidence: seizures.ownerResidence,
           seizureDate: seizures.seizureDate,
+          photoUrl: seizures.photoUrl,
           status: seizures.status,
           releaseDate: seizures.releaseDate,
           createdBy: seizures.createdBy,
@@ -149,7 +149,13 @@ export const seizuresRouter = router({
     .input(seizureInputSchema)
     .mutation(async ({ input, ctx }) => {
       const seizureData = {
-        ...input,
+        itemName: input.itemName,
+        type: input.type,
+        seizureDetails: input.details, // Map details to seizureDetails column
+        seizureLocation: input.seizureLocation,
+        ownerName: input.ownerName,
+        ownerResidence: input.ownerResidence,
+        photoUrl: input.photoUrl,
         seizureDate: new Date(input.seizureDate),
         status: "in_custody", // Automatically set status to in_custody
         releaseDate: null, // Always null when creating new seizure
@@ -162,11 +168,11 @@ export const seizuresRouter = router({
         .values(seizureData)
         .returning();
 
-      // Log the seizure creation
       await logSeizureAction(ctx.user, "create", newSeizure[0].id, {
         description: `Nouvelle saisie enregistrée: ${input.itemName}`,
         itemName: input.itemName,
         type: input.type,
+        details: input.details,
         seizureLocation: input.seizureLocation,
         ownerName: input.ownerName,
       });
@@ -193,9 +199,16 @@ export const seizuresRouter = router({
         });
       }
 
-      // Prepare update data with proper date conversion
+      // Prepare update data with proper date conversion and field mapping
       const updateData: Record<string, unknown> = {
-        ...seizureData,
+        itemName: seizureData.itemName,
+        type: seizureData.type,
+        seizureDetails: seizureData.details, // Map details to seizureDetails column
+        seizureLocation: seizureData.seizureLocation,
+        ownerName: seizureData.ownerName,
+        ownerResidence: seizureData.ownerResidence,
+        photoUrl: seizureData.photoUrl,
+        status: seizureData.status,
         updatedBy: ctx.user.id,
         updatedAt: new Date(),
       };
@@ -265,7 +278,6 @@ export const seizuresRouter = router({
           });
         }
 
-        // 2. Insert audit log within the same transaction
         await tx.insert(auditLogs).values({
           userId: ctx.user.id,
           action: "delete",
@@ -275,10 +287,9 @@ export const seizuresRouter = router({
             description: `Suppression de la saisie: ${seizureToDelete[0].itemName}`,
             itemName: seizureToDelete[0].itemName,
             type: seizureToDelete[0].type,
+            details: seizureToDelete[0].seizureDetails,
             seizureLocation: seizureToDelete[0].seizureLocation,
             ownerName: seizureToDelete[0].ownerName,
-            plateNumber: seizureToDelete[0].plateNumber,
-            chassisNumber: seizureToDelete[0].chassisNumber,
           },
         });
 

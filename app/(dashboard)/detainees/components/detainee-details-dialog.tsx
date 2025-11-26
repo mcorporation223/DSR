@@ -315,14 +315,56 @@ export function DetaineeDetailsDialog({
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">
-                      Localisation
-                    </label>
-                    <p className="text-sm text-gray-900">
-                      {detainee.location || "N/A"}
-                    </p>
-                  </div>
+                  {detainee.status === "released" ? (
+                    <>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          Date de libération
+                        </label>
+                        <p className="text-sm text-gray-900">
+                          {formatDate(detainee.releaseDate)}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          Raison
+                        </label>
+                        <p className="text-sm text-gray-900">
+                          {detainee.releaseReason || "N/A"}
+                        </p>
+                      </div>
+                    </>
+                  ) : detainee.status === "transferred" ? (
+                    <>
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          Date de transfert
+                        </label>
+                        <p className="text-sm text-gray-900">
+                          {formatDate(detainee.updatedAt)}
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-500">
+                          Destination du transfert
+                        </label>
+                        <p className="text-sm text-gray-900">
+                          {detainee.transferDestination || "N/A"}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div>
+                      <label className="text-sm font-medium text-gray-500">
+                        Localisation
+                      </label>
+                      <p className="text-sm text-gray-900">
+                        {detainee.location || "N/A"}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
