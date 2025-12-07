@@ -48,6 +48,17 @@ services:
     networks:
       - dsr-network
 
+  # Watchtower Service for Automatic Container Updates
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300
+    networks:
+      - dsr-network
+
 # Named volumes for data persistence
 volumes:
   postgres_data:
