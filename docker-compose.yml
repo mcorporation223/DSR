@@ -50,7 +50,7 @@ services:
 
   # Watchtower Service for Automatic Container Updates
   watchtower:
-    image: containrrr/watchtower
+    image: containrrr/watchtower:latest
     container_name: watchtower
     restart: unless-stopped
     volumes:
