@@ -41,7 +41,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - /home/yaveldgarcia/Bureau/dsr-data/uploads:/app/uploads
+      - uploads_data:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -62,6 +62,8 @@ services:
 # Named volumes for data persistence
 volumes:
   postgres_data:
+    driver: local
+  uploads_data:
     driver: local
 
 # Custom network for service communication
