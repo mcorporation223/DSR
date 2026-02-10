@@ -41,7 +41,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - /home/yaveldgarcia/dsr-data/uploads:/app/uploads
+      - /home/yaveldgarcia/Bureau/dsr-data/uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
