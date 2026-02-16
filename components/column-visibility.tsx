@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -8,7 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Columns} from "lucide-react";
+import { Columns } from "lucide-react";
 
 export interface ColumnVisibilityOption {
   key: string;
@@ -28,46 +28,53 @@ export function ColumnVisibility({
   onVisibilityChange,
   storageKey = "table-column-visibility",
 }: ColumnVisibilityProps) {
-  const [columnState, setColumnState] = useState<ColumnVisibilityOption[]>(
-    () => {
-      // Initialize state on first render
-      if (typeof window !== "undefined") {
-        const saved = localStorage.getItem(storageKey);
-        if (saved) {
-          try {
-            const savedColumns = JSON.parse(saved);
-            return columns.map((col) => {
-              const savedCol = savedColumns.find(
-                (s: ColumnVisibilityOption) => s.key === col.key
-              );
-              return savedCol ? { ...col, visible: savedCol.visible } : col;
-            });
-          } catch (error) {
-            console.error("Error loading column visibility:", error);
-          }
-        }
-      }
-      return columns;
-    }
-  );
+  // Always initialize with default columns to avoid hydration mismatch
+  const [columnState, setColumnState] =
+    useState<ColumnVisibilityOption[]>(columns);
+  const [isMounted, setIsMounted] = useState(false);
+  const initialLoadCompleteRef = useRef(false);
 
-  // Save to localStorage when state changes
+  // Load from localStorage after mount (only once)
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(storageKey, JSON.stringify(columnState));
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        try {
+          const savedColumns = JSON.parse(saved);
+          const mergedColumns = columns.map((col) => {
+            const savedCol = savedColumns.find(
+              (s: ColumnVisibilityOption) => s.key === col.key,
+            );
+            return savedCol ? { ...col, visible: savedCol.visible } : col;
+          });
+          setColumnState(mergedColumns);
+        } catch (error) {
+          console.error("Error loading column visibility:", error);
+        }
+      }
     }
-  }, [columnState, storageKey]);
+    setIsMounted(true);
+    // Mark initial load complete on next tick to skip the first effect run
+    setTimeout(() => {
+      initialLoadCompleteRef.current = true;
+    }, 0);
+  }, []); // Empty deps - run only once on mount
 
-  // Notify parent of changes using useCallback to prevent unnecessary re-renders
+  // Notify parent and save to localStorage after user changes (skip initial load)
   useEffect(() => {
-    onVisibilityChange(columnState);
-  }, [columnState, onVisibilityChange]);
+    if (initialLoadCompleteRef.current && isMounted) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(storageKey, JSON.stringify(columnState));
+      }
+      onVisibilityChange(columnState);
+    }
+  }, [columnState, storageKey, isMounted, onVisibilityChange]);
 
   const handleToggleColumn = useCallback((key: string) => {
     setColumnState((prev) =>
       prev.map((col) =>
-        col.key === key ? { ...col, visible: !col.visible } : col
-      )
+        col.key === key ? { ...col, visible: !col.visible } : col,
+      ),
     );
   }, []);
 
@@ -77,7 +84,7 @@ export function ColumnVisibility({
 
   const handleHideAll = useCallback(() => {
     setColumnState((prev) =>
-      prev.map((col) => (col.hideable ? { ...col, visible: false } : col))
+      prev.map((col) => (col.hideable ? { ...col, visible: false } : col)),
     );
   }, []);
 
