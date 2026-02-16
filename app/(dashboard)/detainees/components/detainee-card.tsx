@@ -18,8 +18,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { getFileUrl } from "@/lib/upload-utils";
 import type { Detainee } from "./detainee-table";
 
 interface DetaineeCardProps {
@@ -70,6 +71,10 @@ export function DetaineeCard({
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <Avatar className="h-12 w-12 flex-shrink-0">
+              <AvatarImage
+                src={detainee.photoUrl ? getFileUrl(detainee.photoUrl) : ""}
+                alt={fullName || "Detainee"}
+              />
               <AvatarFallback className="bg-gray-200 text-gray-600">
                 {fullName
                   ? fullName
